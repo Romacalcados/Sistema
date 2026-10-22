@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romaneio - Calçados Roma</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .filters-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 900px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .filters-container label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        .filters-container input,
+        .filters-container select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        .search-btn {
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .search-btn:hover {
+            background-color: #0056b3;
+        }
+        .table-container {
+            width: 90%;
+            max-width: 900px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .summary-card {
+            background-color: #e9f5ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 900px;
+        }
+        .summary-card p {
+            margin: 5px 0;
+        }
+        .summary-card .total {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #004085;
+        }
+        .summary-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #cce5ff;
+        }
+        /* Novo estilo para a linha pendente */
+        .pending-row {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+    <script src="navegacao.js"></script>
+    <script>
+        // Inicializa a barra imediatamente usando os dados salvos localmente.
+        // Depois que o Firebase confirmar o usuário, a barra é atualizada com os dados reais.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.SistemaNavegacao && !document.querySelector('.sistema-topbar')) {
+                window.SistemaNavegacao.init({
+                    userLevel: localStorage.getItem('calcadosroma-65ac6:userNivelAcesso') || '05',
+                    userName: localStorage.getItem('calcadosroma-65ac6:userName') || 'Usuário',
+                    title: 'Controle de produção Calçados Roma',
+                    onLogout: function () {
+                        localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                        localStorage.removeItem('calcadosroma-65ac6:userName');
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+
+    <div class="main-content">
+        <div class="filters-container">
+            <div class="form-group">
+                <label for="filterDataInicio">Data Início:</label>
+                <input type="date" id="filterDataInicio">
+            </div>
+            <div class="form-group">
+                <label for="filterDataFim">Data Fim:</label>
+                <input type="date" id="filterDataFim">
+            </div>
+            <div class="form-group">
+                <label for="filterAtelie">Ateliê Responsável:</label>
+                <select id="filterAtelie">
+                    <option value="">Selecione um Ateliê</option>
+                </select>
+            </div>
+            <button class="search-btn" id="searchButton">Gerar Relatório</button>
+        </div>
+
+        <div id="summaryCard" class="summary-card" style="display: none;">
+            </div>
+        
+        <div id="pendingSummaryCard" class="summary-card" style="display: none;">
+            </div>
+
+        <div class="table-container" style="display: none;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Remessa</th>
+                        <th>Talão</th>
+                        <th>Linha.Modelo</th>
+                        <th>Pares</th>
+                        <th>Data Saída Costura</th>
+                        <th>Data Entrada Distribuição</th>
+                    </tr>
+                </thead>
+                <tbody id="taloesTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        const firebaseConfig = window.FIREBASE_CONFIG;
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Elementos da Página
+        const filterDataInicio = document.getElementById('filterDataInicio');
+        const filterDataFim = document.getElementById('filterDataFim');
+        const filterAtelie = document.getElementById('filterAtelie');
+        const searchButton = document.getElementById('searchButton');
+        const taloesTableBody = document.getElementById('taloesTableBody');
+        const summaryCard = document.getElementById('summaryCard');
+        const pendingSummaryCard = document.getElementById('pendingSummaryCard');
+        const tableContainer = document.querySelector('.table-container');
+
+        let currentUserName = '';
+        // --- Controle de Autenticação e Carregamento de Dados ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDocRef = doc(db, 'Usuario', user.email);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+                    const nivelAcesso = String(userData.nivelAcesso || '');
+                    currentUserName = userData.Nome || 'Usuário';
+
+                    localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+                    localStorage.setItem('calcadosroma-65ac6:userName', currentUserName);
+
+                    window.SistemaNavegacao.init({
+                        userLevel: nivelAcesso,
+                        userName: currentUserName,
+                        title: 'Controle de produção Calçados Roma',
+                        onLogout: async () => {
+                            try {
+                                await signOut(auth);
+                                localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                                localStorage.removeItem('calcadosroma-65ac6:userName');
+                                window.location.href = 'login.html';
+                            } catch (error) {
+                                console.error('Erro ao fazer logout:', error);
+                                alert('Erro ao fazer logout. Tente novamente.');
+                            }
+                        }
+                    });
+
+                    loadAtelies();
+                } else {
+                    alert('Dados do usuário não encontrados. Faça login novamente.');
+                    await signOut(auth);
+                    window.location.href = 'login.html';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // --- Carregar Ateliês (Usuários de Nível 03) para o Dropdown ---
+        async function loadAtelies() {
+            try {
+                const q = query(collection(db, 'atelies'), where('setor', '==', 'costura'));
+                const querySnapshot = await getDocs(q);
+                filterAtelie.innerHTML = '<option value="">Selecione um Ateliê</option>';
+                querySnapshot.forEach((doc) => {
+                    const atelieName = doc.data().nome;
+                    if (atelieName) {
+                        const option = document.createElement('option');
+                        option.value = atelieName;
+                        option.textContent = atelieName;
+                        filterAtelie.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error("Erro ao carregar ateliês:", error);
+            }
+        }
+
+        // --- Gerar Relatório de Romaneio ---
+        searchButton.addEventListener('click', async () => {
+            const dataInicio = filterDataInicio.value;
+            const dataFim = filterDataFim.value;
+            const atelieResponsavel = filterAtelie.value;
+
+            if (!dataInicio || !dataFim || !atelieResponsavel) {
+                alert('Por favor, preencha a data de início, data de fim e selecione um ateliê.');
+                return;
+            }
+
+            // Exibir mensagem de busca
+            taloesTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Buscando talões...</td></tr>';
+            summaryCard.style.display = 'none';
+            pendingSummaryCard.style.display = 'none';
+            tableContainer.style.display = 'none';
+
+            let taloes = [];
+
+            try {
+                const taloesColRef = collection(db, 'taloes');
+                const q = query(
+                    taloesColRef,
+                    where('idAtelieResponsavel', '==', atelieResponsavel),
+                    where('dataSaidaCostura', '>=', dataInicio),
+                    where('dataSaidaCostura', '<=', dataFim)
+                );
+
+                const querySnapshot = await getDocs(q);
+                taloes = querySnapshot.docs.map(doc => doc.data());
+
+                renderReport(taloes);
+
+            } catch (error) {
+                console.error("Erro ao gerar relatório:", error);
+                taloesTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Erro ao buscar dados.</td></tr>';
+            }
+        });
+
+        // --- Renderizar o relatório na tela ---
+        function renderReport(taloes) {
+            summaryCard.style.display = 'block';
+            pendingSummaryCard.style.display = 'block';
+            tableContainer.style.display = 'block';
+
+            let totalParesGeral = 0;
+            let totalParesPendentes = 0;
+            let totalTaloesPendentes = 0;
+            const resumoPorLinhaModelo = {};
+            const resumoPendentePorModelo = {};
+
+            if (taloes.length === 0) {
+                summaryCard.innerHTML = `
+                    <h4>Romaneio para o ateliê: <strong>${filterAtelie.value}</strong></h4>
+                    <p>Período: ${formatDate(filterDataInicio.value)} a ${formatDate(filterDataFim.value)}</p>
+                    <p class="total">Nenhum talão encontrado para este ateliê e período.</p>
+                `;
+                taloesTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum talão encontrado para este ateliê e período.</td></tr>';
+                pendingSummaryCard.style.display = 'none';
+                return;
+            }
+            
+            // Processar os dados para o resumo
+            taloes.forEach(talao => {
+                const pares = talao.pares || 0;
+                const modelo = talao.modelo || 'N/A';
+                
+                // Soma para o resumo geral
+                totalParesGeral += pares;
+                const chaveGeral = `${talao.linha || 'N/A'} - ${modelo}`;
+                if (!resumoPorLinhaModelo[chaveGeral]) {
+                    resumoPorLinhaModelo[chaveGeral] = 0;
+                }
+                resumoPorLinhaModelo[chaveGeral] += pares;
+
+                // Soma para o resumo de pendentes
+                
+                if (!talao.dataEntradaDistribuicao) {
+                    totalTaloesPendentes++;
+                    totalParesPendentes += pares;
+                    if (!resumoPendentePorModelo[modelo]) {
+                        resumoPendentePorModelo[modelo] = 0;
+                    }
+                    resumoPendentePorModelo[modelo] += pares;
+                }
+            });
+
+            // Renderizar o card de resumo geral
+            let summaryDetailsHtml = '';
+            for (const [key, value] of Object.entries(resumoPorLinhaModelo)) {
+                summaryDetailsHtml += `<div class="summary-item"><span>${key}</span> <span>${value} pares</span></div>`;
+            }
+
+            summaryCard.innerHTML = `
+                <h4>Romaneio para o ateliê: <strong>${filterAtelie.value}</strong></h4>
+                <p>Período: ${formatDate(filterDataInicio.value)} a ${formatDate(filterDataFim.value)}</p>
+                <div class="summary-details">
+                    <p><strong>Total de talões:</strong> ${taloes.length}</p>
+                    <p><strong>Total de pares:</strong> ${totalParesGeral}</p>
+                </div>
+                <hr>
+                <h5>Pares por Linha e Modelo:</h5>
+                <div class="summary-details">${summaryDetailsHtml}</div>
+            `;
+            
+            // Renderizar o card de resumo de pendentes
+            let pendingDetailsHtml = '';
+            if (Object.keys(resumoPendentePorModelo).length > 0) {
+                for (const [key, value] of Object.entries(resumoPendentePorModelo)) {
+                    pendingDetailsHtml += `<div class="summary-item"><span>${key}</span> <span>${value} pares</span></div>`;
+                }
+                pendingSummaryCard.innerHTML = `
+                    <h4>Talões Pendentes de Entrada na Distribuição</h4>
+                    <p>Talões que saíram da costura, mas ainda não foram lidos na distribuição.</p>
+                    <div class="summary-details">
+                        <p><strong>Total de talões pendentes:</strong> ${totalTaloesPendentes}</p>
+                        <p><strong>Total de pares pendentes:</strong> ${totalParesPendentes}</p>
+                    </div>
+                    <hr>
+                    <h5>Pares Pendentes por Modelo:</h5>
+                    <div class="summary-details">${pendingDetailsHtml}</div>
+                `;
+            } else {
+                pendingSummaryCard.innerHTML = `
+                    <h4>Talões Pendentes de Entrada na Distribuição</h4>
+                    <p class="total">Nenhum talão pendente encontrado.</p>
+                `;
+            }
+
+            // Renderizar a tabela
+            taloesTableBody.innerHTML = '';
+            taloes.forEach(talao => {
+                const row = document.createElement('tr');
+                // Adiciona a classe "pending-row" se não houver dataEntradaDistribuicao
+                if (!talao.dataEntradaDistribuicao) {
+                    row.className = 'pending-row';
+                }
+                row.innerHTML = `
+                    <td>${talao.numeroRemessa || ''}</td>
+                    <td>${talao.numeroTalaoSequencial || ''}</td>
+                    <td>${talao.linha || ''}.${talao.modelo || ''}</td>
+                    <td>${talao.pares || 0}</td>
+                    <td>${formatDate(talao.dataSaidaCostura)}</td>
+                    <td>${formatDate(talao.dataEntradaDistribuicao) || 'PENDENTE'}</td>
+                `;
+                taloesTableBody.appendChild(row);
+            });
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+    </script>
+</body>
+</html>
+

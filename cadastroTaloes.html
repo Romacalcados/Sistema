@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Talões - Calçados Roma</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .user-info {
+            font-size: 14px;
+            text-align: right;
+        }
+        .user-info span {
+            display: block;
+            font-weight: bold;
+        }
+        nav {
+            background-color: #555;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.8em
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+            display: block;
+        }
+        nav ul li a:hover {
+            background-color: #777;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-group label {
+            flex-basis: 150px;
+            color: #555;
+            text-align: right;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="date"],
+        .form-group input[type="file"],
+        .form-group select {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 10px;
+            box-sizing: border-box;
+        }
+        button:not(.sistema-menu-btn):not(.sistema-logout-btn):not(.sistema-menu-close) {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:not(.sistema-menu-btn):not(.sistema-logout-btn):not(.sistema-menu-close):hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 15px;
+            font-size: 0.9em;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: left; /* Garante que a mensagem esteja alinhada com o texto */
+        }
+        .success-message {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error-message {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .info-message {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+        button#logoutButton {
+            background-color: #dc3545;
+            margin-left: 20px;
+        }
+        button#logoutButton:hover {
+            background-color: #c82333;
+        }
+    </style>
+    <script src="navegacao.js"></script>
+</head>
+<body>
+    <div class="main-content">
+        <div class="container">
+            <h2>Importar Talões via CSV</h2>
+            <form id="importTaloesForm">
+                <div class="form-group">
+                    <label for="csvFile">Selecionar Arquivo CSV:</label>
+                    <input type="file" id="csvFile" accept=".csv" required>
+                </div>
+                <div class="form-group">
+                    <label for="dataCorte">Data de Corte:</label>
+                    <input type="date" id="dataCorte" required>
+                </div>
+                <div class="form-group">
+                    <label for="dataEntrega">Data de Entrega:</label>
+                    <input type="date" id="dataEntrega" required>
+                </div>
+                <div class="form-group">
+                    <label for="tipoCliente">Tipo de Cliente:</label>
+                    <select id="tipoCliente" required>
+                        <option value="">Selecione o Tipo de Cliente</option>
+                        <option value="Exportacao">Exportação</option>
+                        <option value="Cliente especial">Cliente Especial</option>
+                        <option value="Mercado Interno">Mercado Interno</option>
+                        <option value="Estoque">Estoque</option>
+                        <option value="Amostra">Amostra</option>
+                    </select>
+                </div>
+                <button type="submit">Processar e Cadastrar Talões</button>
+                <p id="message" class="message"></p>
+                <p id="progressMessage" class="message"></p>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import {prepararNovoTalao,criarTalaoSemSobrescrever,limparCacheModelos} from "./roma-dados.js";
+        // Importações e configuração do Firebase (mantido o que já estava)
+        const firebaseConfig = window.FIREBASE_CONFIG;
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js"; // Removido collection, query, where, getDocs pois não são usados aqui
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Elementos do formulário de cadastro de talões
+        const importTaloesForm = document.getElementById('importTaloesForm');
+        const csvFileInput = document.getElementById('csvFile');
+        const dataCorteInput = document.getElementById('dataCorte');
+        const dataEntregaInput = document.getElementById('dataEntrega'); // Novo
+        const tipoClienteSelect = document.getElementById('tipoCliente'); // Novo
+        const messageDiv = document.getElementById('message');
+        const progressMessageDiv = document.getElementById('progressMessage');
+        // --- Controle de Autenticação e Carregamento do Menu para esta página ---
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const userDocRef = doc(db, 'Usuario', user.email);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (!userDocSnap.exists()) {
+                    alert('Dados do usuário não encontrados. Faça login novamente.');
+                    await signOut(auth);
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+                const nivelAcesso = String(userData.nivelAcesso || '');
+                const userName = userData.Nome || 'Usuário';
+
+                localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+                localStorage.setItem('calcadosroma-65ac6:userName', userName);
+
+                window.SistemaNavegacao.init({
+                    userLevel: nivelAcesso,
+                    userName,
+                    title: 'Controle de produção Calçados Roma',
+                    onLogout: async () => {
+                        try {
+                            await signOut(auth);
+                            localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                            localStorage.removeItem('calcadosroma-65ac6:userName');
+                            window.location.href = 'login.html';
+                        } catch (error) {
+                            console.error('Erro ao fazer logout:', error);
+                            alert('Erro ao fazer logout. Tente novamente.');
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Erro ao carregar usuário:', error);
+                alert('Erro ao carregar dados do usuário. Faça login novamente.');
+                await signOut(auth);
+                window.location.href = 'login.html';
+            }
+        });
+
+        // --- Mapeamento Tipo de Cliente para Cor do Talão ---
+        const corTalaoMapping = {
+            'Exportacao': 'Azul',
+            'Cliente especial': 'Rosa',
+            'Mercado Interno': 'Branco',
+            'Estoque': 'Amarelo',
+            'Amostra': 'Verde'
+        };
+
+        // --- Lógica de Importação e Cadastro de Talões ---
+        importTaloesForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            messageDiv.textContent = '';
+            messageDiv.className = 'message';
+            progressMessageDiv.textContent = '';
+            progressMessageDiv.className = 'message';
+
+            const file = csvFileInput.files[0];
+            const dataCorte = dataCorteInput.value;
+            const dataEntrega = dataEntregaInput.value; // Novo
+            const tipoCliente = tipoClienteSelect.value; // Novo
+
+            if (!file || !dataCorte || !dataEntrega || !tipoCliente) { // Validação de novos campos
+                messageDiv.textContent = 'Por favor, selecione um arquivo CSV, Data de Corte, Data de Entrega e Tipo de Cliente.';
+                messageDiv.classList.add('error-message');
+                return;
+            }
+
+            const corTalao = corTalaoMapping[tipoCliente]; // Derivar a cor do talão
+
+            if (!corTalao) {
+                messageDiv.textContent = 'Tipo de Cliente selecionado não possui uma cor de talão mapeada.';
+                messageDiv.classList.add('error-message');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const csvData = event.target.result;
+                const lines = csvData.split('\n');
+                const taloesToSave = [];
+                let currentRemessa = ''; // Variável para rastrear a remessa atual
+
+                let headerPassed = false;
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+
+                    if (line.length === 0) {
+                        continue;
+                    }
+
+                    if (line.startsWith('Mini Fáb.;Rem.;;Tal.;;Linha;')) {
+                        headerPassed = true;
+                        continue;
+                    }
+
+                    if (!headerPassed) {
+                        continue;
+                    }
+
+                    if (line.includes("Total Remessa") || line.includes("Total Min. Fab.") || line.includes("Total Geral")) {
+                        continue;
+                    }
+
+                    const columns = line.split(';');
+
+                    if (columns.length < 13 || !columns[3] || !columns[12]) {
+                        console.warn(`Linha ${i + 1} ignorada por ter formato inválido ou dados insuficientes:`, line);
+                        continue;
+                    }
+
+                    const numeroRemessaRaw = columns[1] ? columns[1].replace('.0', '') : '';
+                    const numeroTalao = columns[3] ? columns[3].replace('.0', '') : '';
+                    const linha = columns[5] ? columns[5].replace('.0', '') : '';
+                    const modelo = columns[6] ? columns[6].replace('.0', '') : '';
+                    const corSapato = columns[9] ? columns[9].replace('.0', '') : '';
+                    const pares = parseInt(columns[12]) || 0;
+
+                    if (numeroRemessaRaw) {
+                        currentRemessa = numeroRemessaRaw;
+                    } else if (!currentRemessa) {
+                        console.warn(`Linha ${i + 1} ignorada: Não foi possível determinar o número da remessa.`, line);
+                        continue;
+                    }
+                    
+                    const finalNumeroRemessa = currentRemessa;
+
+                    if (!finalNumeroRemessa || !numeroTalao || !linha || !modelo || !corSapato || pares === 0) {
+                        console.warn(`Linha ${i + 1} ignorada por falta de dados essenciais após parsing:`, line);
+                        continue;
+                    }
+
+                    // Gerar o ID do documento no Firestore (mantém o mesmo formato para evitar duplicação em campos diferentes)
+                    const talaoIdentificador = `${finalNumeroRemessa}_${numeroTalao}_${linha}_${modelo}_${corSapato}`;
+                    
+                    // NOVO: Gerar o código de barras no formato desejado
+                    const codigoBarrasGerado = `1${finalNumeroRemessa}+${numeroTalao}`;
+
+                    taloesToSave.push({
+                        id: talaoIdentificador, // Usar como ID do documento no Firestore
+                        codigoBarrasIdentificador: codigoBarrasGerado, // NOVO: Campo no documento com o formato específico
+                        numeroRemessa: finalNumeroRemessa,
+                        numeroTalaoSequencial: numeroTalao,
+                        linha: linha,
+                        modelo: modelo,
+                        corSapato: corSapato,
+                        pares: pares,
+                        dataCorte: dataCorte,
+                        dataEntrega: dataEntrega, // NOVO
+                        tipoCliente: tipoCliente, // NOVO
+                        corTalao: corTalao, // NOVO (derivado de tipoCliente)
+                        statusGeral: 'Pendente',
+                        statusCorte: 'Aguardando Material',
+                        statusCostura: 'Aguardando Material',
+                        statusMontagem: 'Aguardando Material',
+                        corteDataInicio: '', corteDataFim: '', corteUsuario: '',
+                        costuraDataInicio: '', costuraDataFim: '', costuraUsuario: '',
+                        montagemDataInicio: '', montagemDataFim: '', montagemUsuario: '',
+                        dataRegistro: new Date().toISOString().split('T')[0]
+                    });
+                }
+
+                if (taloesToSave.length === 0) {
+                    messageDiv.textContent = 'Nenhum talao válido encontrado no arquivo CSV para cadastro. Verifique o formato do arquivo.';
+                    messageDiv.classList.add('error-message');
+                    return;
+                }
+
+                progressMessageDiv.textContent = `Processando ${taloesToSave.length} taloes...`;
+                progressMessageDiv.classList.add('info-message');
+
+                let cadastradosComSucesso = 0;
+                let falhas = 0;
+                let existentes = 0;
+                const detalhesFalhas=new Set();
+
+                limparCacheModelos();
+                for (const talao of taloesToSave) {
+                    try {
+                        const talaoRef = doc(db, 'taloes', talao.id);
+                        const docSnap = await getDoc(talaoRef);
+
+                        if (docSnap.exists()) {
+                            existentes++;
+                            console.warn(`Talao ${talao.id} já existe no Firestore. Ignorado.`);
+                        } else {
+                            const preparado=await prepararNovoTalao(db,talao);
+                            if(await criarTalaoSemSobrescrever(db,talaoRef,preparado))cadastradosComSucesso++;else existentes++;
+                        }
+                    } catch (error) {
+                        falhas++;
+                        detalhesFalhas.add(error.message);
+                        console.error(`Erro ao cadastrar o talão ${talao.id}:`, error);
+                    }
+                }
+
+                messageDiv.textContent = `Processamento concluído: ${cadastradosComSucesso} talões cadastrados, ${existentes} talões já existentes (ignorados), ${falhas} falhas. ${[...detalhesFalhas].slice(0,5).join(" • ")}`;
+                messageDiv.classList.add(falhas ? 'error-message' : 'success-message');
+                progressMessageDiv.textContent = '';
+                csvFileInput.value = ''; // Limpa o campo de arquivo
+                dataCorteInput.value = ''; // Limpa a data de corte
+                dataEntregaInput.value = ''; // Limpa a data de entrega
+                tipoClienteSelect.value = ''; // Limpa o tipo de cliente
+            };
+
+            reader.onerror = () => {
+                messageDiv.textContent = 'Erro ao ler o arquivo CSV.';
+                messageDiv.classList.add('error-message');
+            };
+
+            reader.readAsText(file);
+        });
+    </script>
+</body>
+
+</html>

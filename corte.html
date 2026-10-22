@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corte - Calçados Roma</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .user-info {
+            font-size: 14px;
+            text-align: right;
+        }
+        .user-info span {
+            display: block;
+            font-weight: bold;
+        }
+        nav {
+            background-color: #555;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.8em
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+            display: block;
+        }
+        nav ul li a:hover {
+            background-color: #777;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* AJUSTE 1: FILTERS CONTAINER 100% E MAIS COMPACTO */
+        .filters-container {
+            background-color: #fff;
+            padding: 10px; 
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;             
+            max-width: 100%;         
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); /* slightly wider columns for date fields */
+            gap: 8px; 
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .filters-container label {
+            display: block;
+            margin-bottom: 2px; 
+            color: #555;
+            font-size: 0.70em; /* Fonte menor */
+        }
+        .filters-container input[type="text"],
+        .filters-container input[type="date"],
+        .filters-container select {
+            width: 100%;
+            padding: 8px 10px;        
+            font-size: 0.9em;         
+            height: 32px;             
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .filters-container input[type="checkbox"] {
+            width: auto; 
+            height: auto; 
+            transform: scale(1.4); 
+            margin-left: 5px; 
+            margin-bottom: 2px;
+            align-self: flex-end;
+        }
+
+        /* Styles for new bulk action controls */
+        .bulk-actions-container {
+            grid-column: 1 / -1; /* Occupies all columns */
+            display: flex;
+            gap: 10px;
+            align-items: flex-end; /* Align to bottom */
+            margin-top: 10px; /* Top spacing */
+            border-top: 1px solid #eee; /* Visual separator */
+            padding-top: 10px;
+        }
+        .bulk-actions-container .form-group {
+            flex: 1; /* Allow fields to grow */
+            min-width: 150px; /* Minimum width for selects */
+        }
+        .bulk-actions-container button {
+            padding: 8px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: background-color 0.3s ease;
+            height: 32px; 
+        }
+        .bulk-actions-container button:hover {
+            background-color: #218838;
+        }
+
+        /* AJUSTE 3: Card de Relatório */
+        .report-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            flex-grow: 1;
+            text-align: center;
+            border-left: 5px solid #007bff; /* Color highlight */
+            min-width: 200px;
+        }
+        .report-card h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #555;
+            text-transform: uppercase;
+        }
+        .report-card p {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        /* FIM AJUSTE 3 */
+
+
+        .table-container {
+            width: 100%;
+            max-width: 100%; 
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        table {
+        table-layout: fixed;
+        width: 100%;
+        }
+        table th,
+        table td {
+            padding: 4px 6px;
+            font-size: 0.75em;
+            line-height: 1;
+            height: 25px; 
+            vertical-align: middle;
+        }
+        table th {
+            background-color: #f8f8f8;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+        }
+        table tbody tr:hover {
+            background-color: #7e7e7e;
+        }
+
+        .atelie-dropdown {
+            font-size: 0.85em;     
+            padding: 4px 8px;      
+            min-width: 100px;     
+            border-radius: 4px;
+            height: 25px; 
+        }
+
+        /* Define column widths */
+        table th:nth-child(1), table td:nth-child(1) { width: 8%; } 
+        table th:nth-child(2), table td:nth-child(2) { width: 5%; } 
+        table th:nth-child(3), table td:nth-child(3) { width: 3%; } 
+        table th:nth-child(4), table td:nth-child(4) { width: 5%; } 
+        table th:nth-child(5), table td:nth-child(5) { width: 5%; } 
+        table th:nth-child(6), table td:nth-child(6) { width: 5%; } 
+        table th:nth-child(7), table td:nth-child(7) { width: 3%; } 
+        table th:nth-child(8), table td:nth-child(8) { width: 8%; } 
+        table th:nth-child(9), table td:nth-child(9) { width: 8%; } 
+        table th:nth-child(10), table td:nth-child(10) { width: 8%; } 
+        table th:nth-child(11), table td:nth-child(11) { width: 8%; } 
+        table th:nth-child(12), table td:nth-child(12) { width: 5%; text-align: center; } 
+        table th:nth-child(13), table td:nth-child(13) { width: 5%; text-align: center; } 
+        table th:nth-child(14), table td:nth-child(14) { width: 5%; text-align: center; } 
+        table th:nth-child(15), table td:nth-child(15) { width: 5%; text-align: center; } 
+
+        /* Row colors based on client type */
+        .row-azul { background-color: #8dbafd; } /* Exportação */
+        .row-rosa { background-color: #e2c5cf; } /* Cliente especial */
+        .row-branco { background-color: #ffffff; } /* Mercado Interno */
+        .row-amarelo { background-color: #faf192; } /* Estoque */
+        .row-verde { background-color: #8ef897; } /* Amostra */
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            font-size: 0.85em; 
+            font-weight: bold;
+            color: rgb(0, 0, 0);
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        input[type="checkbox"] {
+            width: 14px;       
+            height: 14px;      
+            transform: scale(1.1); 
+            cursor: pointer;
+        }
+
+        .status-badge.aguardando-material { background-color: #ff9800; } /* Orange */
+        .status-badge.em-producao { background-color: #2196f3; } /* Blue */
+        .status-badge.cortado { background-color: #4caf50; } /* Green */
+        .status-badge.costurando { background-color: #9c27b0; } /* Purple */
+
+        button#logoutButton {
+            background-color: #f82e2e; 
+            color: white;
+            border: none;
+            padding: 2px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        button#logoutButton:hover {
+            background-color: #c82333;
+        }
+
+        .search-button {
+            background-color: #007bff; /* Azul */
+            color: white;
+            border: none;
+            padding: 0 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            height: 32px; 
+            width: 100%;
+        }
+        .search-button:hover {
+            background-color: #0056b3; 
+        }
+        .search-button:active {
+            background-color: #00428a; 
+            transform: translateY(1px);
+        }
+        
+
+        .date-range-input-wrap {
+            display: flex;
+            align-items: stretch;
+            gap: 4px;
+        }
+        .date-range-input-wrap input {
+            cursor: pointer;
+            background-color: #fff;
+        }
+        .calendar-open-button {
+            width: 38px;
+            height: 32px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .calendar-open-button:hover {
+            background-color: #e9ecef;
+        }
+
+        .date-range-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        .date-range-overlay.active {
+            display: flex;
+        }
+        .date-range-modal {
+            background: #fff;
+            width: min(585px, 100%);
+            border-radius: 12px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+            padding: 16px 18px;
+            box-sizing: border-box;
+        }
+        .date-range-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .date-range-modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .calendar-close-button {
+            border: none;
+            background: transparent;
+            font-size: 30px;
+            line-height: 1;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .calendar-nav button {
+            border: none;
+            background: #fff;
+            font-size: 30px;
+            cursor: pointer;
+            color: #444;
+            width: 42px;
+            height: 34px;
+            border-radius: 6px;
+        }
+        .calendar-nav button:hover {
+            background: #f1f1f1;
+        }
+        #calendarMonthTitle {
+            font-weight: bold;
+            color: #444;
+            font-size: 18px;
+            text-transform: capitalize;
+        }
+        .calendar-weekdays,
+        .calendar-days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+        }
+        .calendar-weekdays div {
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+            padding: 6px 0;
+        }
+        .calendar-day {
+            border: none;
+            background: #fff;
+            height: 38px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+            position: relative;
+        }
+        .calendar-day.other-month {
+            color: #aaa;
+        }
+        .calendar-day.in-range {
+            background: #dff0d8;
+        }
+        .calendar-day.range-start,
+        .calendar-day.range-end {
+            background: #25ad09;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 999px;
+        }
+        .calendar-day.today:not(.range-start):not(.range-end) {
+            font-weight: bold;
+            box-shadow: inset 0 0 0 2px #25ad09;
+            border-radius: 999px;
+        }
+        .calendar-day:hover {
+            background: #eaf7e6;
+            border-radius: 999px;
+        }
+        .calendar-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 14px;
+        }
+        .calendar-footer-text {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.25;
+        }
+        .calendar-footer-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .calendar-footer-actions button {
+            border: none;
+            border-radius: 6px;
+            height: 40px;
+            padding: 0 16px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        #clearCalendarButton {
+            background: #e9ecef;
+            color: #111;
+        }
+        #applyCalendarButton {
+            background: #007bff;
+            color: #fff;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+        #taloesTableBody.is-loading {
+            opacity: 0.65;
+        }
+
+    </style>
+    <script src="navegacao.js"></script>
+</head>
+<body>
+<div class="main-content">
+        <div class="filters-container">
+            <div class="form-group">
+                <label for="filterDataCorteRange">Data Corte:</label>
+                <div class="date-range-input-wrap">
+                    <input type="text" id="filterDataCorteRange" placeholder="Selecionar data/período" readonly>
+                    <button type="button" id="openCalendarButton" class="calendar-open-button" title="Abrir calendário">📅</button>
+                </div>
+                <input type="hidden" id="filterDataCorteInicio">
+                <input type="hidden" id="filterDataCorteFim">
+            </div>
+            <div class="form-group">
+                <label for="filterRemessa">Remessa:</label>
+                <input type="text" id="filterRemessa" placeholder="Núm. da Remessa">
+            </div>
+            <div class="form-group">
+                <label for="filterTalao">Talão:</label>
+                <input type="text" id="filterTalao" placeholder="Núm. do Talão">
+            </div>
+            <div class="form-group">
+                <label for="filterLinha">Linha:</label>
+                <input type="text" id="filterLinha" placeholder="Linha">
+            </div>
+            <div class="form-group">
+                <label for="filterModelo">Modelo:</label>
+                <input type="text" id="filterModelo" placeholder="Modelo">
+            </div>
+            <div class="form-group">
+                <label for="filterCor">Cor:</label>
+                <input type="text" id="filterCor" placeholder="Núm Cor">
+            </div>
+            <div class="form-group">
+                <label for="filterTipoCliente">Tipo de Cliente:</label>
+                <select id="filterTipoCliente">
+                    <option value="">Todos</option>
+                    <option value="Exportacao">Exportação</option>
+                    <option value="Cliente especial">Cliente Especial</option>
+                    <option value="Mercado Interno">Mercado Interno</option>
+                    <option value="Estoque">Estoque</option>
+                    <option value="Amostra">Amostra</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="filterAteliePredesignado">Ateliê Pré-Designado:</label>
+                <select id="filterAteliePredesignado">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="filterStatusCorte">Status Corte:</label>
+                <select id="filterStatusCorte">
+                    <option value="">Todos</option>
+                    <option value="Aguardando Material">Aguardando Material</option>
+                    <option value="Em produção">Em produção</option>
+                    <option value="Cortado">Cortado</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="grid-column: span 1; display: flex; align-items: flex-end;">
+                <label for="corteAbertoCheckbox" style="margin-bottom: 5px; font-weight: bold;">Corte Aberto:</label>
+                <input type="checkbox" id="corteAbertoCheckbox">
+            </div>
+            <div class="form-group">
+                <label for="searchButton" style="visibility: hidden; height: 0; margin-bottom: 0;">_</label>
+                <button type="button" id="searchButton" class="search-button">Buscar Talões</button>
+            </div>
+
+            <div class="form-group">
+                <label for="clearFiltersButton" style="visibility: hidden; height: 0; margin-bottom: 0;">_</label>
+                <button type="button" id="clearFiltersButton" class="search-button" style="background-color: #6c757d;">Limpar Filtros</button>
+            </div>
+            <div class="bulk-actions-container">
+                <div class="form-group"><label for="bulkSetorSelect">Setor do responsável:</label><select id="bulkSetorSelect"><option value="costura">Costura</option><option value="palmilha">Palmilha</option><option value="sola">Sola</option></select></div>
+                <div class="form-group">
+                    <label for="bulkAtelieSelect">Ateliê dos talões selecionados:</label>
+                    <select id="bulkAtelieSelect">
+                        <option value="">Nenhum</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="bulkCheckboxSelect">Marcar/Desmarcar Checkbox (Massa):</label>
+                    <select id="bulkCheckboxSelect">
+                        <option value="">Nenhum</option>
+                        <optgroup label="Marcar como Concluído">
+                            <option value="cabedal_true">Cabedal Concluído</option>
+                            <option value="forro_true">Forro Concluído</option>
+                            <option value="tiras_true">Tiras Concluído</option>
+                            <option value="aviamento_true">Aviamento Concluído</option>
+                        </optgroup>
+                        <optgroup label="Desmarcar">
+                            <option value="cabedal_false">Desmarcar Cabedal</option>
+                            <option value="forro_false">Desmarcar Forro</option>
+                            <option value="tiras_false">Desmarcar Tiras</option>
+                            <option value="aviamento_false">Desmarcar Aviamento</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <button id="applyBulkActionButton" style="height: 32px;">Aplicar aos selecionados</button>
+            </div>
+
+        </div>
+
+        <div id="reportCardContainer" style="display: flex; gap: 15px; margin-bottom: 20px; width: 100%; max-width: 100%; flex-wrap: wrap;">
+            <div class="report-card" style="border-left: 5px solid #007bff;">
+                <h3>Talões Filtrados</h3>
+                <p id="taloesCount">0</p>
+            </div>
+            <div class="report-card" style="border-left: 5px solid #28a745;">
+                <h3>Total Pares</h3>
+                <p id="totalPares">0</p>
+            </div>
+            <div class="report-card" style="border-left: 5px solid #ffc107;">
+                <h3>Pares em Aberto</h3>
+                <p id="paresEmAberto">0</p>
+            </div>
+            <div class="report-card" style="border-left: 5px solid #4caf50;">
+                <h3>Pares Completos</h3>
+                <p id="paresCompletos">0</p>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><label><input id="selectVisibleTaloes" type="checkbox"> Sel.</label></th><th>Data Corte</th>
+                        <th>Remessa</th>
+                        <th>Talão</th>
+                        <th>Linha</th>
+                        <th>Modelo</th>
+                        <th>Cor</th>
+                        <th>Pares</th>
+                        <th>Tipo Cliente</th>
+                        <th>Ateliê Costura</th><th>Ateliê Palmilha</th><th>Ateliê Sola</th>
+                        <th>Status Corte</th>
+                        <th>Entrada Costura</th>
+                        <th>Cabedal</th>
+                        <th>Forro</th>
+                        <th>Tiras</th>
+                        <th>Aviamentos</th>
+                    </tr>
+                </thead>
+                <tbody id="taloesTableBody">
+                    <tr><td colspan="18" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <div id="dateRangeOverlay" class="date-range-overlay" aria-hidden="true">
+        <div class="date-range-modal" role="dialog" aria-modal="true" aria-labelledby="dateRangeModalTitle">
+            <div class="date-range-modal-header">
+                <h2 id="dateRangeModalTitle">Selecionar Data de Corte</h2>
+                <button type="button" id="closeDateRangeModal" class="calendar-close-button" aria-label="Fechar calendário">&times;</button>
+            </div>
+
+            <div class="calendar-nav">
+                <button type="button" id="prevMonthButton" aria-label="Mês anterior">&lsaquo;</button>
+                <div id="calendarMonthTitle"></div>
+                <button type="button" id="nextMonthButton" aria-label="Próximo mês">&rsaquo;</button>
+            </div>
+
+            <div class="calendar-weekdays">
+                <div>DOM.</div>
+                <div>SEG.</div>
+                <div>TER.</div>
+                <div>QUA.</div>
+                <div>QUI.</div>
+                <div>SEX.</div>
+                <div>SÁB.</div>
+            </div>
+            <div id="calendarDaysGrid" class="calendar-days-grid"></div>
+
+            <div class="calendar-footer">
+                <div id="calendarHelpText" class="calendar-footer-text">
+                    Clique em uma data para buscar somente aquele dia,<br>
+                    ou clique em duas datas para selecionar um período.
+                </div>
+                <div class="calendar-footer-actions">
+                    <button type="button" id="clearCalendarButton">Limpar</button>
+                    <button type="button" id="applyCalendarButton">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+    const firebaseConfig = window.FIREBASE_CONFIG;
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, updateDoc, query, where, orderBy, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Elementos do Filtro
+    const filterDataCorteRange = document.getElementById('filterDataCorteRange');
+    const openCalendarButton = document.getElementById('openCalendarButton');
+    const filterDataCorteInicio = document.getElementById('filterDataCorteInicio');
+    const filterDataCorteFim = document.getElementById('filterDataCorteFim');
+    const dateRangeOverlay = document.getElementById('dateRangeOverlay');
+    const closeDateRangeModal = document.getElementById('closeDateRangeModal');
+    const prevMonthButton = document.getElementById('prevMonthButton');
+    const nextMonthButton = document.getElementById('nextMonthButton');
+    const calendarMonthTitle = document.getElementById('calendarMonthTitle');
+    const calendarDaysGrid = document.getElementById('calendarDaysGrid');
+    const clearCalendarButton = document.getElementById('clearCalendarButton');
+    const applyCalendarButton = document.getElementById('applyCalendarButton');
+    const calendarHelpText = document.getElementById('calendarHelpText');
+    const filterRemessa = document.getElementById('filterRemessa');
+    const filterTalao = document.getElementById('filterTalao');
+    const filterLinha = document.getElementById('filterLinha');
+    const filterModelo = document.getElementById('filterModelo');
+    const filterCor = document.getElementById('filterCor');
+    const filterTipoCliente = document.getElementById('filterTipoCliente');
+    const filterAteliePredesignado = document.getElementById('filterAteliePredesignado');
+    const filterStatusCorte = document.getElementById('filterStatusCorte');
+    const corteAbertoCheckbox = document.getElementById('corteAbertoCheckbox'); // NOVO
+    const taloesTableBody = document.getElementById('taloesTableBody');
+
+    // Elementos do Card de Relatório (NOVO)
+    const taloesCountDisplay = document.getElementById('taloesCount');
+    const totalParesDisplay = document.getElementById('totalPares');
+    const paresEmAbertoDisplay = document.getElementById('paresEmAberto');
+    const paresCompletosDisplay = document.getElementById('paresCompletos');
+
+    // Novos Elementos para Ação em Massa
+    const bulkAtelieSelect = document.getElementById('bulkAtelieSelect');
+    const bulkCheckboxSelect = document.getElementById('bulkCheckboxSelect');
+    const applyBulkActionButton = document.getElementById('applyBulkActionButton');
+    const searchButton = document.getElementById('searchButton');
+    const clearFiltersButton = document.getElementById('clearFiltersButton');
+
+    let allTaloes = [];
+    let filteredTaloes = [];
+    let currentUserEmail = '';
+    let currentUserName = '';
+    let ateliesList = [];
+    const selectedTaloes=new Set();
+    const bulkSetorSelect=document.getElementById('bulkSetorSelect');
+    const selectVisibleTaloes=document.getElementById('selectVisibleTaloes');
+    let calendarViewDate = new Date();
+    let tempRangeStart = '';
+    let tempRangeEnd = '';
+    const MAX_ROWS_RENDER = 1200;
+
+    // AJUSTE 2: Inicia o checkbox de Corte Aberto marcado por padrão
+    corteAbertoCheckbox.checked = true;
+
+
+
+    // --- Calendário único com seleção de intervalo ---
+    const MONTH_FORMATTER = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
+
+    function toISODateLocal(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function parseISODateLocal(isoDate) {
+        if (!isoDate) return null;
+        const [year, month, day] = isoDate.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    }
+
+    function formatDateBR(isoDate) {
+        const date = parseISODateLocal(isoDate);
+        if (!date) return '';
+        return date.toLocaleDateString('pt-BR');
+    }
+
+    function updateDateRangeInputLabel() {
+        const start = filterDataCorteInicio.value;
+        const end = filterDataCorteFim.value;
+
+        if (start && end && start !== end) {
+            filterDataCorteRange.value = `${formatDateBR(start)} até ${formatDateBR(end)}`;
+        } else if (start) {
+            filterDataCorteRange.value = formatDateBR(start);
+        } else {
+            filterDataCorteRange.value = '';
+        }
+    }
+
+    function openDateRangePicker() {
+        tempRangeStart = filterDataCorteInicio.value;
+        tempRangeEnd = filterDataCorteFim.value;
+
+        const initialDate = parseISODateLocal(tempRangeStart) || new Date();
+        calendarViewDate = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
+
+        renderRangeCalendar();
+        dateRangeOverlay.classList.add('active');
+        dateRangeOverlay.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDateRangePicker() {
+        dateRangeOverlay.classList.remove('active');
+        dateRangeOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderRangeCalendar() {
+        calendarDaysGrid.innerHTML = '';
+        calendarMonthTitle.textContent = MONTH_FORMATTER.format(calendarViewDate);
+
+        const year = calendarViewDate.getFullYear();
+        const month = calendarViewDate.getMonth();
+        const firstDayOfMonth = new Date(year, month, 1);
+        const startDay = new Date(year, month, 1 - firstDayOfMonth.getDay());
+        const todayISO = toISODateLocal(new Date());
+
+        const fragment = document.createDocumentFragment();
+
+        for (let i = 0; i < 42; i++) {
+            const date = new Date(startDay);
+            date.setDate(startDay.getDate() + i);
+            const isoDate = toISODateLocal(date);
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'calendar-day';
+            button.textContent = date.getDate();
+            button.dataset.date = isoDate;
+
+            if (date.getMonth() !== month) {
+                button.classList.add('other-month');
+            }
+            if (isoDate === todayISO) {
+                button.classList.add('today');
+            }
+
+            const hasStart = !!tempRangeStart;
+            const hasEnd = !!tempRangeEnd;
+            if (hasStart && isoDate === tempRangeStart) {
+                button.classList.add('range-start');
+            }
+            if (hasEnd && isoDate === tempRangeEnd) {
+                button.classList.add('range-end');
+            }
+            if (hasStart && hasEnd && isoDate > tempRangeStart && isoDate < tempRangeEnd) {
+                button.classList.add('in-range');
+            }
+
+            button.addEventListener('click', () => selectCalendarDate(isoDate));
+            fragment.appendChild(button);
+        }
+
+        calendarDaysGrid.appendChild(fragment);
+
+        if (tempRangeStart && tempRangeEnd && tempRangeStart !== tempRangeEnd) {
+            calendarHelpText.innerHTML = `Período selecionado: <strong>${formatDateBR(tempRangeStart)} até ${formatDateBR(tempRangeEnd)}</strong>`;
+        } else if (tempRangeStart) {
+            calendarHelpText.innerHTML = `Data selecionada: <strong>${formatDateBR(tempRangeStart)}</strong><br>Clique em outra data para formar um período.`;
+        } else {
+            calendarHelpText.innerHTML = 'Clique em uma data para buscar somente aquele dia,<br>ou clique em duas datas para selecionar um período.';
+        }
+    }
+
+    function selectCalendarDate(isoDate) {
+        if (!tempRangeStart || (tempRangeStart && tempRangeEnd)) {
+            tempRangeStart = isoDate;
+            tempRangeEnd = '';
+        } else if (isoDate < tempRangeStart) {
+            tempRangeEnd = tempRangeStart;
+            tempRangeStart = isoDate;
+        } else {
+            tempRangeEnd = isoDate;
+        }
+
+        renderRangeCalendar();
+    }
+
+    openCalendarButton.addEventListener('click', openDateRangePicker);
+    filterDataCorteRange.addEventListener('click', openDateRangePicker);
+    closeDateRangeModal.addEventListener('click', closeDateRangePicker);
+    dateRangeOverlay.addEventListener('click', (event) => {
+        if (event.target === dateRangeOverlay) {
+            closeDateRangePicker();
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && dateRangeOverlay.classList.contains('active')) {
+            closeDateRangePicker();
+        }
+    });
+    prevMonthButton.addEventListener('click', () => {
+        calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() - 1, 1);
+        renderRangeCalendar();
+    });
+    nextMonthButton.addEventListener('click', () => {
+        calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + 1, 1);
+        renderRangeCalendar();
+    });
+    clearCalendarButton.addEventListener('click', () => {
+        tempRangeStart = '';
+        tempRangeEnd = '';
+        renderRangeCalendar();
+    });
+    applyCalendarButton.addEventListener('click', () => {
+        filterDataCorteInicio.value = tempRangeStart;
+        filterDataCorteFim.value = tempRangeEnd || tempRangeStart;
+        updateDateRangeInputLabel();
+        closeDateRangePicker();
+    });
+
+    // Um único listener na tabela deixa a página mais leve do que criar centenas/milhares de listeners por linha.
+    taloesTableBody.addEventListener('change', (event) => {
+        const target = event.target;
+        if (target.matches('input[type="checkbox"][data-id][data-etapa]')) {
+            void handleCheckboxChange(event);
+        } else if(target.matches('.talao-selection')) {
+            target.checked?selectedTaloes.add(target.dataset.id):selectedTaloes.delete(target.dataset.id);
+        } else if (target.matches('.atelie-dropdown')) {
+            void handleAtelieChange(event);
+        }
+    });
+
+
+    // Mapeamento Tipo de Cliente para Cor da Linha
+    const corTalaoMapping = {
+        'Exportacao': 'row-azul',
+        'Cliente especial': 'row-rosa',
+        'Mercado Interno': 'row-branco',
+        'Estoque': 'row-amarelo',
+        'Amostra': 'row-verde'
+    };
+
+    // Função para gerar o menu dinamicamente
+    function generateMenu(userLevel, userName) {
+        menuNav.innerHTML = '';
+        const userNivelText = nivelNomes[userLevel] || `Nível ${userLevel}`;
+        userNameDisplay.textContent = `Olá, ${userName || 'Usuário'}!`;
+        userNivelDisplay.textContent = `Setor: ${userNivelText}`;
+
+        pages.forEach(page => {
+            if (page.levels.includes(userLevel)) {
+                const listItem = document.createElement('li');
+                const link = document.createElement('a');
+                link.href = page.href;
+                link.textContent = page.name;
+                listItem.appendChild(link);
+                menuNav.appendChild(listItem);
+            }
+        });
+    }
+
+    // --- Controle de Autenticação e Carregamento de Dados ---
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUserEmail = user.email;
+            const userDocRef = doc(db, 'Usuario', user.email);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+                const nivelAcesso = userData.nivelAcesso;
+                currentUserName = userData.Nome;
+
+                localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', String(nivelAcesso || ''));
+                localStorage.setItem('calcadosroma-65ac6:userName', currentUserName || 'Usuário');
+
+                if (window.SistemaNavegacao && !window.SistemaNavegacao.podeAcessar(String(nivelAcesso || ''), 'corte.html')) {
+                    alert('Você não tem permissão para acessar esta página.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                window.SistemaNavegacao.init({
+                    userLevel: String(nivelAcesso || ''),
+                    userName: currentUserName,
+                    title: 'Controle de produção Calçados Roma',
+                    onLogout: async () => {
+                        try {
+                            await signOut(auth);
+                            localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                            localStorage.removeItem('calcadosroma-65ac6:userName');
+                            window.location.href = 'login.html';
+                        } catch (error) {
+                            console.error('Erro ao fazer logout:', error);
+                            alert('Erro ao fazer logout. Tente novamente.');
+                        }
+                    }
+                });
+
+                await loadAtelies();
+                // A busca inicial foi removida para aguardar o clique no botão "Buscar Talões".
+
+            } else {
+                alert('Dados do usuário não encontrados. Faça login novamente.');
+                await signOut(auth);
+                window.location.href = 'login.html';
+            }
+        } else {
+            window.location.href = 'login.html';
+        }
+    });
+
+    // --- Carregar Ateliês (Usuários de Nível 03) para o Dropdown ---
+    function populateBulkAtelies(){
+      bulkAtelieSelect.innerHTML='<option value="">Não alterar</option><option value="__clear__">Remover responsável</option>';
+      ateliesList.filter(a=>a.setor===bulkSetorSelect.value).forEach(a=>bulkAtelieSelect.add(new Option(a.nome,a.id)));
+    }
+    async function loadAtelies() {
+      const snap=await getDocs(collection(db,'atelies'));
+      ateliesList=snap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+      filterAteliePredesignado.innerHTML='<option value="">Todos os ateliês de Costura</option>';
+      ateliesList.filter(a=>a.setor==='costura').forEach(a=>filterAteliePredesignado.add(new Option(a.nome,a.id)));
+      populateBulkAtelies();
+      if(!window.Roma.canWrite('corte')){
+        window.Roma.setReadOnly([applyBulkActionButton,bulkAtelieSelect,bulkCheckboxSelect,bulkSetorSelect,selectVisibleTaloes]);
+        applyBulkActionButton.textContent='Consulta — alterações pelo Corte ou Admin';
+      }
+    }
+    bulkSetorSelect.addEventListener('change',populateBulkAtelies);
+    selectVisibleTaloes.addEventListener('change',()=>{
+      for(const input of taloesTableBody.querySelectorAll('.talao-selection')){
+        input.checked=selectVisibleTaloes.checked;
+        input.checked?selectedTaloes.add(input.dataset.id):selectedTaloes.delete(input.dataset.id);
+      }
+    });
+
+    // --- BUSCAR TALÕES DO FIRESTORE COM FILTROS ---
+    async function fetchTaloesWithFilters() {
+        const dataCorteInicio = filterDataCorteInicio.value;
+        const dataCorteFim = filterDataCorteFim.value;
+        const corteAbertoFilter = corteAbertoCheckbox.checked;
+
+        const tipoCliente = filterTipoCliente.value;
+        const ateliePredesignado = filterAteliePredesignado.value;
+        const statusCorte = filterStatusCorte.value;
+        const remessa = filterRemessa.value.toLowerCase().trim();
+        const talao = filterTalao.value.toLowerCase().trim();
+        const linha = filterLinha.value.toLowerCase().trim();
+        const modelo = filterModelo.value.toLowerCase().trim();
+        const cor = filterCor.value.toLowerCase().trim();
+
+        taloesTableBody.classList.add('is-loading');
+        taloesTableBody.innerHTML = '<tr><td colspan="18" style="text-align: center;">Buscando talões...</td></tr>';
+
+        const startedAt = performance.now();
+
+        try {
+            const taloesColRef = collection(db, 'taloes');
+            const constraints = [];
+
+            // Filtros que o Firestore consegue aplicar antes de baixar os dados.
+            // Isso deixa a página bem mais rápida, principalmente no período de data de corte.
+            if (tipoCliente) {
+                constraints.push(where('tipoCliente', '==', tipoCliente));
+            }
+            if (ateliePredesignado) {
+                constraints.push(where('atelieCosturaId', '==', ateliePredesignado));
+            }
+            if (statusCorte) {
+                constraints.push(where('statusCorte', '==', statusCorte));
+            }
+            if (dataCorteInicio) {
+                constraints.push(where('dataCorte', '>=', dataCorteInicio));
+            }
+            if (dataCorteFim) {
+                constraints.push(where('dataCorte', '<=', dataCorteFim));
+            }
+            if (dataCorteInicio || dataCorteFim) {
+                constraints.push(orderBy('dataCorte', 'asc'));
+            }
+
+            const q = constraints.length ? query(taloesColRef, ...constraints) : taloesColRef;
+            const querySnapshot = await getDocs(q);
+
+            allTaloes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            selectedTaloes.clear(); selectVisibleTaloes.checked=false;
+
+            // Filtros de texto continuam locais para permitir busca parcial com "contém".
+            filteredTaloes = allTaloes.filter(t => {
+                if (dataCorteInicio && (!t.dataCorte || t.dataCorte < dataCorteInicio)) return false;
+                if (dataCorteFim && (!t.dataCorte || t.dataCorte > dataCorteFim)) return false;
+
+                if (corteAbertoFilter) {
+                    const isCompleto = window.Roma.cutComplete(t);
+                    if (isCompleto) return false;
+                }
+
+                const remessaMatch = !remessa || (t.numeroRemessa && String(t.numeroRemessa).toLowerCase().includes(remessa));
+                const talaoMatch = !talao || (t.numeroTalaoSequencial && String(t.numeroTalaoSequencial).toLowerCase().includes(talao));
+                const linhaMatch = !linha || (t.linha && String(t.linha).toLowerCase().includes(linha));
+                const modeloMatch = !modelo || (t.modelo && String(t.modelo).toLowerCase().includes(modelo));
+                const corMatch = !cor || (t.corSapato && String(t.corSapato).toLowerCase().includes(cor));
+
+                return remessaMatch && talaoMatch && linhaMatch && modeloMatch && corMatch;
+            });
+
+            updateReportCard(filteredTaloes);
+            renderTable(filteredTaloes);
+
+            const duration = ((performance.now() - startedAt) / 1000).toFixed(2);
+            console.log(`Busca corte: ${querySnapshot.size} docs baixados, ${filteredTaloes.length} exibidos, ${duration}s`);
+
+        } catch (error) {
+            console.error("Erro ao buscar talões:", error);
+
+            let errorMessage = 'Erro ao carregar talões.';
+            if (error?.code === 'failed-precondition') {
+                errorMessage = 'O Firestore pediu um índice para combinar estes filtros. Abra o console do navegador, copie o link do erro e crie o índice sugerido pelo Firebase.';
+            }
+
+            taloesTableBody.innerHTML = `<tr><td colspan="18" style="text-align: center; color: red;">${errorMessage}</td></tr>`;
+        } finally {
+            taloesTableBody.classList.remove('is-loading');
+        }
+    }
+
+    // --- FUNÇÃO PARA ATUALIZAR O CARD DE RELATÓRIO (AJUSTE 3) ---
+    function updateReportCard(taloes) {
+        let totalPares = 0;
+        let paresCompletos = 0;
+
+        taloes.forEach(t => {
+            const pares = parseInt(t.pares) || 0;
+            totalPares += pares;
+
+            const isCompleto = window.Roma.cutComplete(t); // Garante que o status final está correto
+
+            if (isCompleto) {
+                paresCompletos += pares;
+            }
+        });
+
+        const paresEmAberto = totalPares - paresCompletos;
+
+        taloesCountDisplay.textContent = taloes.length;
+        totalParesDisplay.textContent = totalPares.toLocaleString('pt-BR');
+        paresEmAbertoDisplay.textContent = paresEmAberto.toLocaleString('pt-BR');
+        paresCompletosDisplay.textContent = paresCompletos.toLocaleString('pt-BR');
+    }
+
+    // --- LISTENERS PARA FILTROS E BOTÕES ---
+    searchButton.addEventListener('click', fetchTaloesWithFilters);
+
+    clearFiltersButton.addEventListener('click', () => {
+        filterDataCorteInicio.value = '';
+        filterDataCorteFim.value = '';
+        filterDataCorteRange.value = '';
+        filterRemessa.value = '';
+        filterTalao.value = '';
+        filterLinha.value = '';
+        filterModelo.value = '';
+        filterCor.value = '';
+        filterTipoCliente.value = '';
+        filterAteliePredesignado.value = '';
+        filterStatusCorte.value = '';
+        corteAbertoCheckbox.checked = true; // NOVO: Volta para o estado inicial marcado
+        
+        // Limpa os dados do card
+        taloesCountDisplay.textContent = '0';
+        totalParesDisplay.textContent = '0';
+        paresEmAbertoDisplay.textContent = '0';
+        paresCompletosDisplay.textContent = '0';
+        
+        allTaloes = [];
+        filteredTaloes = [];
+        taloesTableBody.innerHTML = '<tr><td colspan="18" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>';
+    });
+
+    // --- Listener para Ação em Massa ---
+    applyBulkActionButton.addEventListener('click', async () => {
+      if(!window.Roma.canWrite('corte'))return;
+      const ids=[...selectedTaloes].filter(id=>filteredTaloes.some(t=>t.id===id));
+      const atelierId=bulkAtelieSelect.value;
+      const [etapa,flag]=bulkCheckboxSelect.value.split('_');
+      if(!ids.length){alert('Selecione os talões na primeira coluna.');return;}
+      if(!atelierId&&!etapa){alert('Selecione um ateliê ou um componente.');return;}
+      if(!confirm(`Aplicar esta ação somente aos ${ids.length} talões selecionados? Componentes que não fazem parte do modelo serão ignorados.`))return;
+      applyBulkActionButton.disabled=true;
+      let ok=0,ignored=0,errors=[];
+      for(const id of ids){
+        try{const changed=await saveCutChange(id,{etapa,isChecked:flag==='true',sector:bulkSetorSelect.value,atelierId});if(changed)ok++;else ignored++;}
+        catch(e){errors.push(`${id}: ${e.message}`);}
+        applyBulkActionButton.textContent=`Processando ${ok+ignored+errors.length}/${ids.length}`;
+      }
+      applyBulkActionButton.disabled=false;applyBulkActionButton.textContent='Aplicar aos selecionados';
+      filteredTaloes=filteredTaloes.map(t=>allTaloes.find(a=>a.id===t.id)||t);
+      renderTable(filteredTaloes);updateReportCard(filteredTaloes);
+      alert(`${ok} talão(ões) atualizado(s); ${ignored} sem componente aplicável; ${errors.length} falha(s).`+(errors.length?'\n'+errors.slice(0,5).join('\n'):''));
+    });
+
+    // --- Renderizar Tabela de Talões ---
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function renderTable(taloes) {
+        if (taloes.length === 0) {
+            taloesTableBody.innerHTML = '<tr><td colspan="18" style="text-align: center;">Nenhum talão encontrado com os filtros aplicados.</td></tr>';
+            return;
+        }
+
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const parts = String(dateString).split('-');
+            if (parts.length === 3) {
+                 const [year, month, day] = parts;
+                 return `${day}/${month}/${year}`;
+            }
+            return String(dateString);
+        };
+
+        const getStatusClass = (status) => {
+            if (!status) return '';
+            return String(status).toLowerCase().replace(/ /g, '-');
+        };
+
+        const getAtelieSelect=(talao,sector)=>{
+          const sec=window.Roma.SECTORS[sector];
+          if(!window.Roma.stageApplicable(talao,sector))return '<span title="Este componente não faz parte do modelo">Não se aplica</span>';
+          const uid=talao[sec.ownerField]||'';
+          const options=['<option value="">Sem responsável</option>'];
+          const list=ateliesList.filter(a=>a.setor===sector);
+          if(uid&&!list.some(a=>a.id===uid))options.push(`<option value="${escapeHtml(uid)}" selected>${escapeHtml(talao[sec.nameField]||uid)} (inativo)</option>`);
+          list.forEach(a=>options.push(`<option value="${escapeHtml(a.id)}" ${uid===a.id?'selected':''}>${escapeHtml(a.nome)}</option>`));
+          return `<select class="atelie-dropdown" data-id="${escapeHtml(talao.id)}" data-setor="${sector}" ${window.Roma.canWrite('corte')?'':'disabled'}>${options.join('')}</select>`;
+        };
+        const getComponentInput=(talao,key)=>{
+          if(!window.Roma.requiresComponent(talao,key))return '<span title="Este componente não faz parte do modelo">—</span>';
+          return `<input type="checkbox" data-id="${escapeHtml(talao.id)}" data-etapa="${key}" ${window.Roma.cutItemComplete(talao,key)?'checked':''} ${window.Roma.canWrite('corte')?'':'disabled'}>`;
+        };
+
+        const taloesToRender = taloes.slice(0, MAX_ROWS_RENDER);
+
+        const rowsHtml = taloesToRender.map(talao => {
+            const rowColorClass = corTalaoMapping[talao.tipoCliente] || '';
+            const talaoId = escapeHtml(talao.id);
+            return `
+                <tr id="talao-row-${talaoId}" class="${escapeHtml(rowColorClass)}">
+                    <td><input class="talao-selection" type="checkbox" data-id="${talaoId}" ${selectedTaloes.has(talao.id)?'checked':''} ${window.Roma.canWrite('corte')?'':'disabled'}></td>
+                    <td>${escapeHtml(formatDate(talao.dataCorte))}</td>
+                    <td>${escapeHtml(talao.numeroRemessa)}</td>
+                    <td>${escapeHtml(talao.numeroTalaoSequencial)}</td>
+                    <td>${escapeHtml(talao.linha)}</td>
+                    <td>${escapeHtml(talao.modelo)}</td>
+                    <td>${escapeHtml(talao.corSapato)}</td>
+                    <td>${escapeHtml(talao.pares || 0)}</td>
+                    <td>${escapeHtml(talao.tipoCliente)}</td>
+                    <td>${getAtelieSelect(talao,'costura')}</td><td>${getAtelieSelect(talao,'palmilha')}</td><td>${getAtelieSelect(talao,'sola')}</td>
+                    <td><span class="status-badge ${escapeHtml(getStatusClass(talao.statusCorte))}">${escapeHtml(talao.statusCorte || 'N/A')}</span></td>
+                    <td>${escapeHtml(formatDate(talao.costuraDataInicio))}</td>
+                    <td>${getComponentInput(talao,'cabedal')}</td>
+                    <td>${getComponentInput(talao,'forro')}</td>
+                    <td>${getComponentInput(talao,'tiras')}</td>
+                    <td>${getComponentInput(talao,'aviamento')}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const limitWarning = taloes.length > MAX_ROWS_RENDER
+            ? `<tr><td colspan="18" style="text-align:center; background:#fff3cd; font-weight:bold;">
+                    Mostrando ${MAX_ROWS_RENDER} de ${taloes.length} talões. Refine o filtro para ver menos linhas e deixar a tela mais rápida.
+               </td></tr>`
+            : '';
+
+        taloesTableBody.innerHTML = limitWarning + rowsHtml;
+    }
+
+    async function saveCutChange(id,{etapa='',isChecked=false,sector='costura',atelierId=''}) {
+      window.Roma.requireWrite('corte');
+      const ref=doc(db,'taloes',id);
+      let updated=null;
+      await runTransaction(db,async tx=>{
+        const snap=await tx.get(ref);
+        if(!snap.exists())throw new Error('Talão não encontrado.');
+        const current=snap.data(),patch={};
+        if(atelierId && window.Roma.stageApplicable(current,sector)){
+          const atelier=atelierId==='__clear__'?null:ateliesList.find(a=>a.id===atelierId&&a.setor===sector);
+          if(atelierId!=='__clear__'&&!atelier)throw new Error('Selecione um ateliê ativo do setor.');
+          Object.assign(patch,window.Roma.assignmentPatch(sector,atelier,'corte'));
+        }
+        if(etapa && window.Roma.requiresComponent(current,etapa)){
+          patch[etapa+'Concluido']=isChecked;patch[etapa+'Data']=isChecked?new Date().toISOString().slice(0,10):'';patch[etapa+'Usuario']=isChecked?currentUserName:'';
+          const next={...current,...patch};
+          patch.statusCorte=window.Roma.cutComplete(next)?'Cortado':window.Roma.cutStarted(next)?'Em produção':'Aguardando Material';
+          if(!current.costuraDataInicio&&!current.dataSaidaCostura&&!current.dataEntradaDistribuicao&&!current.dataEntradaTalonagem&&!current.dataEntradaMontagem){
+            patch.statusGeral=patch.statusCorte==='Em produção'?'Cortando':patch.statusCorte;
+          }
+        }
+        if(!Object.keys(patch).length)return;
+        tx.update(ref,patch);updated={id,...current,...patch};
+      });
+      if(updated){const index=allTaloes.findIndex(t=>t.id===id);if(index>=0)allTaloes[index]=updated;}
+      return !!updated;
+    }
+    async function handleCheckboxChange(event){
+      const input=event.target;input.disabled=true;
+      try{await saveCutChange(input.dataset.id,{etapa:input.dataset.etapa,isChecked:input.checked});}
+      catch(e){input.checked=!input.checked;alert(e.message);}
+      finally{filteredTaloes=filteredTaloes.map(t=>allTaloes.find(a=>a.id===t.id)||t);renderTable(filteredTaloes);updateReportCard(filteredTaloes);}
+    }
+    async function handleAtelieChange(event){
+      const select=event.target;select.disabled=true;
+      try{await saveCutChange(select.dataset.id,{sector:select.dataset.setor,atelierId:select.value||'__clear__'});}
+      catch(e){alert(e.message);}
+      finally{filteredTaloes=filteredTaloes.map(t=>allTaloes.find(a=>a.id===t.id)||t);renderTable(filteredTaloes);}
+    }
+</script>
+</body>
+</html>

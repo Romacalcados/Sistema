@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distribuição - Calçados Roma</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .user-info {
+            font-size: 14px;
+            text-align: right;
+        }
+        .user-info span {
+            display: block;
+            font-weight: bold;
+        }
+        nav {
+            background-color: #555;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.8em;
+            display: none;
+        }
+        nav.open {
+            display: block;
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+            display: block;
+        }
+        nav ul li a:hover {
+            background-color: #777;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .scanner-section, .list-section {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .scanner-section {
+            padding: 18px 22px;
+            gap: 12px;
+        }
+        .scanner-section h2, .list-section h2 {
+            margin-top: 0;
+            color: #333;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        .list-section {
+            padding-top: 20px;
+        }
+        .barcode-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .barcode-input-group label {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .barcode-input-group input {
+            padding: 12px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 1.2em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .barcode-input-group input:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 4px rgba(0,123,255,0.25);
+        }
+        .scanner-message {
+            margin-top: 10px;
+            font-size: 0.95em;
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            min-height: 20px;
+        }
+        .scanner-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .scanner-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .scanner-message.info {
+            background-color: #e7f1ff;
+            color: #084298;
+            border: 1px solid #b6d4fe;
+        }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 0.95em;
+        }
+        .status-badge {
+            background: #f2f2f2;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            padding: 8px 12px;
+        }
+        button#logoutButton {
+            background-color: #dc3545;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button#logoutButton:hover {
+            background-color: #c82333;
+        }
+        #toggleMenuButton {
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #scannedListTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        #scannedListTable th, #scannedListTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #scannedListTable th {
+            background-color: #f2f2f2;
+            color: #333;
+            font-weight: bold;
+        }
+        #scannedListTable tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+
+    /* Proteção: impede que o CSS antigo de nav/header esconda o menu padrão */
+    nav.sistema-menu-lista {
+      display: block !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    </style>
+  <script src="navegacao.js"></script>
+</head>
+<body>
+    
+    <div class="main-content">
+        <div class="scanner-section">
+            <h2>Distribuição</h2>
+            <div class="status-row">
+                <div class="status-badge">Modo: <strong>Busca direta no Firestore</strong></div>
+                <div class="status-badge">Status: <strong id="engineStatus">Pronto</strong></div>
+            </div>
+            <div class="barcode-input-group">
+                <label for="barcodeInputDistribuicao">Escaneamento para Distribuição:</label>
+                <input type="text" id="barcodeInputDistribuicao" placeholder="Leia o código de barras aqui" autofocus>
+                <div id="distribuicaoMessage" class="scanner-message"></div>
+            </div>
+        </div>
+
+        <div class="list-section">
+            <h2>Últimos Talões Lidos</h2>
+            <div id="scannedListContainer">
+                <table id="scannedListTable">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Linha</th>
+                            <th>Modelo</th>
+                            <th>Pares</th>
+                            <th>Ateliê</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scannedListBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const firebaseConfig = window.FIREBASE_CONFIG;
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, limit, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const menuNav = document.getElementById('menuNav');
+        const topNav = document.getElementById('topNav');
+        const toggleMenuButton = document.getElementById('toggleMenuButton');
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const userNivelDisplay = document.getElementById('userNivelDisplay');
+        const logoutButton = document.getElementById('logoutButton');
+        const barcodeInputDistribuicao = document.getElementById('barcodeInputDistribuicao');
+        const distribuicaoMessageDiv = document.getElementById('distribuicaoMessage');
+        const scannedListBody = document.getElementById('scannedListBody');
+        const engineStatus = document.getElementById('engineStatus');
+
+        let currentUserName = '';
+        let lastScannedTaloes = [];
+        let isProcessing = false;
+        const LIST_LIMIT = 10;
+
+        const nivelNomes = window.Roma.ROLES;
+
+        const pages = window.SistemaNavegacao.pages;
+
+        
+        function iniciarNavegacaoPadrao(nivelAcesso, nomeUsuario) {
+            if (!window.SistemaNavegacao) return;
+            localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', String(nivelAcesso || ''));
+            localStorage.setItem('calcadosroma-65ac6:userName', nomeUsuario || 'Usuário');
+            window.SistemaNavegacao.init({
+                userLevel: nivelAcesso,
+                userName: nomeUsuario,
+                title: 'Controle de produção Calçados Roma',
+                onLogout: async () => {
+                    try {
+                        await signOut(auth);
+                    } catch (error) {
+                        console.error('Erro ao fazer logout:', error);
+                    } finally {
+                        localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                        localStorage.removeItem('calcadosroma-65ac6:userName');
+                        window.location.href = 'login.html';
+                    }
+                }
+            });
+        }
+
+        function generateMenu(userLevel, userName) {
+            menuNav.innerHTML = '';
+            const userNivelText = nivelNomes[userLevel] || `Nível ${userLevel}`;
+            userNameDisplay.textContent = `Olá, ${userName || 'Usuário'}!`;
+            userNivelDisplay.textContent = `Setor: ${userNivelText}`;
+
+            pages.forEach(page => {
+                if (page.levels.includes(userLevel)) {
+                    const listItem = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.href = page.href;
+                    link.textContent = page.name;
+                    listItem.appendChild(link);
+                    menuNav.appendChild(listItem);
+                }
+            });
+        }
+
+        function renderScannedList() {
+            scannedListBody.innerHTML = '';
+            lastScannedTaloes.forEach(talao => {
+                const row = document.createElement('tr');
+                if (talao._statusTipo === 'error') {
+                    row.style.backgroundColor = '#ffe3e3';
+                }
+                row.innerHTML = `
+                    <td>${talao.codigoBarrasIdentificador || talao._codigoLido || ''}</td>
+                    <td>${talao.linha || '-'}</td>
+                    <td>${talao.modelo || '-'}</td>
+                    <td>${talao.pares || '-'}</td>
+                    <td>${talao.idAtelieResponsavel || '-'}</td>
+                    <td>${talao._statusTipo === 'error' ? `<span style="display:inline-block;background:#dc3545;color:#fff;padding:4px 8px;border-radius:999px;font-weight:700;font-size:12px;">${talao._statusTexto || 'Erro'}</span>` : `<span style="display:inline-block;background:#198754;color:#fff;padding:4px 8px;border-radius:999px;font-weight:700;font-size:12px;">Sucesso</span>`}</td>
+                `;
+                scannedListBody.appendChild(row);
+            });
+        }
+
+        function setMessage(text, type = '') {
+            distribuicaoMessageDiv.textContent = text;
+            distribuicaoMessageDiv.className = type ? `scanner-message ${type}` : 'scanner-message';
+        }
+
+        function pushErrorToList(codigoLido, statusTexto, talaoData = null) {
+            lastScannedTaloes.unshift({
+                ...(talaoData || {}),
+                _codigoLido: codigoLido,
+                _statusTipo: 'error',
+                _statusTexto: statusTexto
+            });
+            if (lastScannedTaloes.length > LIST_LIMIT) {
+                lastScannedTaloes.pop();
+            }
+            renderScannedList();
+        }
+
+        function formatDateToDDMMYYYY(dateString) {
+            if (!dateString) return '';
+            const [year, month, day] = String(dateString).split('-');
+            if (!year || !month || !day) return String(dateString);
+            return `${day}/${month}/${year}`;
+        }
+
+        function normalizeBarcodeCandidates(rawBarcode) {
+            const value = String(rawBarcode || '').trim();
+            if (!value) return [];
+
+            const clean = value.replace(/\s+/g, '');
+            const candidates = new Set([clean]);
+
+            if (!clean.startsWith('1') && clean.length > 1) {
+                candidates.add('1' + clean.substring(1));
+            }
+            if (clean.startsWith('1') && clean.length > 1) {
+                candidates.add(clean.substring(1));
+            }
+            return Array.from(candidates);
+        }
+
+        async function findTalaoByBarcode(rawBarcode) {
+            const candidates = normalizeBarcodeCandidates(rawBarcode);
+            for (const candidate of candidates) {
+                const q = query(
+                    collection(db, 'taloes'),
+                    where('codigoBarrasIdentificador', '==', candidate),
+                    limit(1)
+                );
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const docSnap = snap.docs[0];
+                    return { id: docSnap.id, ...docSnap.data() };
+                }
+            }
+            return null;
+        }
+
+        async function updateTalaoInFirestore(talaoId, updates, talaoData) {
+            window.Roma.requireWrite('montagem');
+            const talaoRef = doc(db, 'taloes', talaoId);
+            await updateDoc(talaoRef, updates);
+            lastScannedTaloes.unshift({ ...talaoData, ...updates, _statusTipo: 'success', _statusTexto: 'Sucesso' });
+            if (lastScannedTaloes.length > LIST_LIMIT) {
+                lastScannedTaloes.pop();
+            }
+            renderScannedList();
+        }
+
+        async function processBarcode(barcode) {
+            if(!window.Roma.canWrite('montagem')){setMessage('Consulta: leituras reservadas à Montagem e ao Admin.','info');return;}
+            if (isProcessing) return;
+            isProcessing = true;
+            engineStatus.textContent = 'Lendo';
+            barcodeInputDistribuicao.disabled = true;
+
+            try {
+                setMessage('Buscando talão...', 'info');
+                const talao = await findTalaoByBarcode(barcode);
+
+                if (!talao) {
+                    const erro = 'Talão não encontrado';
+                    setMessage(`Talão com código ${barcode} não encontrado.`, 'error');
+                    pushErrorToList(barcode, erro);
+                    return;
+                }
+
+                if (talao.dataEntradaDistribuicao) {
+                    const formattedDate = formatDateToDDMMYYYY(talao.dataEntradaDistribuicao);
+                    const erro = `Já lido em ${formattedDate}`;
+                    setMessage(`Erro: Talão já lido em Distribuição. Data: ${formattedDate}`, 'error');
+                    pushErrorToList(barcode, erro, talao);
+                    return;
+                }
+
+                const today = new Date().toISOString().split('T')[0];
+                const updates = {
+                    statusGeral: 'Distribuído',
+                    dataEntradaDistribuicao: today,
+                    usuarioDistribuicao: currentUserName
+                };
+
+                await updateTalaoInFirestore(talao.id, updates, talao);
+                setMessage('Sucesso!', 'success');
+            } catch (error) {
+                console.error('Erro ao processar leitura:', error);
+                setMessage(`Erro: ${error.message}`, 'error');
+                pushErrorToList(barcode, 'Erro de gravação');
+            } finally {
+                isProcessing = false;
+                engineStatus.textContent = 'Pronto';
+                barcodeInputDistribuicao.disabled = false;
+                barcodeInputDistribuicao.value = '';
+                barcodeInputDistribuicao.focus();
+            }
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDocRef = doc(db, 'Usuario', user.email);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();  window.Roma.validateProfile(user,userData); if(!window.Roma.canWrite('montagem')){ document.querySelectorAll('input[id^=barcode],input[name=trilho],#periodoProducao').forEach(el=>el.disabled=true); const info=document.createElement('p');info.textContent='Modo consulta. As leituras são realizadas pela Montagem ou pelo Admin.';info.style.cssText='padding:12px;background:#e7f1ff;color:#084298';(document.querySelector('.container')||document.body).prepend(info); }
+                    const nivelAcesso = userData.nivelAcesso;
+                    currentUserName = userData.Nome;
+
+                    if (!window.SistemaNavegacao.podeAcessar(nivelAcesso, 'distribuicao.html')) {
+                        alert('Você não tem permissão para acessar esta página.');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    iniciarNavegacaoPadrao(nivelAcesso, currentUserName);
+                    engineStatus.textContent = 'Pronto';
+                    setMessage('Leitor pronto para uso.', 'info');
+                    barcodeInputDistribuicao.focus();
+                } else {
+                    alert('Dados do usuário não encontrados. Faça login novamente.');
+                    await signOut(auth);
+                    window.location.href = 'login.html';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+barcodeInputDistribuicao.addEventListener('keydown', async (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const barcode = barcodeInputDistribuicao.value.trim();
+                if (!barcode) {
+                    setMessage('Código de barras vazio.', 'error');
+                    return;
+                }
+                await processBarcode(barcode);
+            }
+        });
+
+        window.onload = function() {
+            barcodeInputDistribuicao.focus();
+        };
+    </script>
+</body>
+</html>

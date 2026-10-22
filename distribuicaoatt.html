@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<!-- distribuicaoatt.html - distribuição por setor - Programação, Financeiro e Admin -->
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+<script src="roma-modelos.js"></script>
+<script src="roma-distribuicao.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Distribuição Ateliês - Calçados Roma</title>
+<style>
+:root{--bg:#f4f4f4;--card:#fff;--ink:#111827;--muted:#5f6673;--bd:#d9dde5;--pri:#0d6efd;--ok:#198754;--danger:#dc3545;--warn:#ffc107;--shadow:0 4px 14px rgba(0,0,0,.08)}
+*{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;color:var(--ink)}body.auth-loading main{display:none!important}button{font-family:inherit}main{width:100%;padding:14px 0 24px;display:flex;flex-direction:column;align-items:center;gap:12px}.card{width:min(95%,1780px);background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:16px 18px}.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}.page-title{font-size:1.45rem;margin:0 0 4px}.page-subtitle{margin:0;color:var(--muted);font-size:.92rem;line-height:1.35}.section-title{margin:0;font-size:1.1rem}.form-group{display:flex;flex-direction:column;gap:5px}.form-group label{font-weight:700;color:#374151;font-size:.82rem}.form-group input,.form-group select{padding:8px 10px;border:1px solid #cfcfcf;border-radius:7px;font-size:.92rem;background:#fff;width:100%}.filter-bar{display:grid;grid-template-columns:180px 180px minmax(210px,1fr) auto auto auto;gap:8px;align-items:end;margin-top:12px}.actions,.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{padding:9px 14px;border:0;border-radius:8px;cursor:pointer;font-size:.92rem;white-space:nowrap}.btn-primary{background:var(--pri);color:#fff}.btn-secondary{background:#e9ecef;color:#222}.btn-success{background:var(--ok);color:#fff}.btn-warning{background:var(--warn);color:#111}.btn-danger{background:var(--danger);color:#fff}.btn-small{padding:6px 9px;font-size:.78rem}.btn:disabled{opacity:.55;cursor:not-allowed}.message{margin-top:10px;padding:10px;border-radius:8px;font-size:.9rem;display:none}.message.show{display:block}.message.info{background:#d1ecf1;color:#0c5460}.message.success{background:#d4edda;color:#155724}.message.error{background:#f8d7da;color:#721c24}.message.warning{background:#fff3cd;color:#664d03}.hidden{display:none!important}.mini-help{font-size:.82rem;color:var(--muted);line-height:1.35}.tag{display:inline-block;border:1px solid #d8dde5;border-radius:999px;padding:3px 8px;background:#fff;margin:2px;font-size:.72rem;line-height:1.15}.tag.good{background:#edf8f1;border-color:#cfead8;color:#14532d;font-weight:800}.tag.bad{background:#ffe3e8;border-color:#f3a8b5;color:#842029;font-weight:800}.tag.info{background:#eaf4ff;border-color:#b6d4fe;color:#084298;font-weight:800}.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px}.summary-item{background:#f8fafc;border:1px solid var(--bd);border-radius:9px;padding:8px 10px;text-align:center;min-height:62px;display:flex;flex-direction:column;justify-content:center}.summary-item strong{font-size:.98rem;margin-bottom:2px}.summary-item small{font-weight:800;text-transform:uppercase;font-size:.64rem;line-height:1.05}.summary-item.ok{background:#edf8f1;border-color:#cfead8}.summary-item.warn{background:#fff6d8;border-color:#ffe69c}.summary-item.danger{background:#ffe3e8;border-color:#f3a8b5;color:#842029}
+.line-summary-panel{margin-top:8px;border-top:1px solid var(--bd);padding-top:8px}
+.line-summary-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.line-summary-title{margin:0;font-size:.92rem}.line-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px}
+.line-summary-card{border:1px solid #d8dde5;border-radius:8px;background:#fff;padding:5px 6px;cursor:grab;box-shadow:0 1px 5px rgba(15,23,42,.04);min-height:auto;display:flex;flex-direction:column;gap:3px;text-align:center;transition:transform .12s ease,border-color .12s ease,background .12s ease}
+.line-summary-card:active{cursor:grabbing}.line-summary-card.drag-over{outline:2px dashed #0d6efd;outline-offset:2px;background:#eaf4ff}.line-summary-card.grouped{background:#fff8e1;border-color:#ffe69c}
+.line-summary-name{font-weight:900;font-size:.78rem;color:#111827;line-height:1}.line-summary-values{display:flex;justify-content:center;align-items:center;gap:13px;background:#f8fafc;border:1px solid #e1e5ea;border-radius:7px;padding:5px 6px;min-width:0}.line-summary-values span{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}.line-summary-values strong{display:inline-block;font-size:.82rem;line-height:1;font-weight:500}.line-summary-values small{font-weight:500;font-size:.70rem;color:#111827;line-height:1;text-transform:none}.line-summary-mini,.line-summary-meta,.line-daily-list,.line-daily-pill{display:none}.line-summary-empty{border:1px dashed #cbd5e1;background:#f8fafc;border-radius:8px;padding:10px;text-align:center;color:#64748b;font-size:.76rem}
+.summary-item.primary{background:#eaf4ff;border-color:#b6d4fe}.summary-item.combo{gap:9px}.summary-item.combo strong{font-size:.96rem;line-height:1.1;margin:0}.summary-item.combo span{font-size:.70rem;font-weight:800;margin-left:4px;color:#111827}.table-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.atelier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:12px;align-items:start}.atelier-card{position:relative;border:1px solid #d8dde5;border-left:7px solid var(--att-accent,#0d6efd);border-radius:12px;background:linear-gradient(180deg,var(--att-soft,#fff),#fff 78%);padding:12px;min-height:230px;transition:box-shadow .15s ease}.atelier-card.drag-over{outline:3px dashed var(--att-accent,#0d6efd);outline-offset:3px;background:#fffef4}.atelier-card.color-0{--att-accent:#0d6efd;--att-soft:#f0f7ff}.atelier-card.color-1{--att-accent:#198754;--att-soft:#eefaf3}.atelier-card.color-2{--att-accent:#fd7e14;--att-soft:#fff5ec}.atelier-card.color-3{--att-accent:#6f42c1;--att-soft:#f5f0ff}.atelier-card.color-4{--att-accent:#20c997;--att-soft:#ecfffa}.atelier-card.color-5{--att-accent:#dc3545;--att-soft:#fff1f3}.atelier-card.color-6{--att-accent:#0dcaf0;--att-soft:#edfbff}.atelier-card.color-7{--att-accent:#ffc107;--att-soft:#fff9df}.atelier-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}.atelier-head h3{margin:0;font-size:1.1rem}.atelier-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:8px 0}.stat-box{border:1px solid #d8dde5;background:#f8fafc;border-radius:9px;padding:7px;text-align:center;min-width:0}.stat-box strong{display:block;font-size:.92rem;white-space:nowrap}.stat-box small{text-transform:uppercase;font-weight:800;font-size:.60rem;color:#374151}.group-box{border:1px solid #d8dde5;border-radius:9px;margin-top:9px;overflow:hidden;background:#fff}.group-head{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#eef2f7;padding:7px 8px;font-weight:900}.group-head .muted{font-size:.76rem;color:#374151;font-weight:700}.model-table{width:100%;border-collapse:collapse;font-size:.78rem;table-layout:fixed}.model-table th,.model-table td{border:1px solid #e1e5ea;padding:5px 5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.model-table th{background:#f7f7f7}.model-table th:nth-child(1),.model-table td:nth-child(1){width:24%}.model-table th:nth-child(2),.model-table td:nth-child(2){width:18%}.model-table th:nth-child(3),.model-table td:nth-child(3){width:15%}.model-table th:nth-child(4),.model-table td:nth-child(4){width:21%}.model-table th:nth-child(5),.model-table td:nth-child(5){width:22%}.model-row{cursor:grab}.model-row:active{cursor:grabbing}.model-row.missing{background:#ffe3e8!important;color:#7f1d1d}.model-link{font-weight:900;color:#0b5ed7}.btn-dividir{border:0;background:#e9ecef;color:#111;border-radius:7px;padding:5px 7px;font-size:.72rem;font-weight:800;cursor:pointer}.btn-dividir:hover{background:#dce2e8}.empty-drop{border:1px dashed #cbd5e1;background:#f8fafc;border-radius:9px;padding:18px;text-align:center;color:#64748b;margin-top:10px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.50);display:none;align-items:center;justify-content:center;padding:16px;z-index:5000}.modal-backdrop.show{display:flex}.modal{background:#fff;width:min(920px,96vw);max-height:92vh;overflow:auto;border-radius:14px;box-shadow:0 22px 60px rgba(0,0,0,.28);padding:0}.modal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;padding:12px 16px;z-index:3}.modal-header h3{margin:0;font-size:1.1rem}.modal-close{border:0;background:#e9ecef;color:#222;border-radius:8px;padding:8px 14px;cursor:pointer}.modal-body{padding:14px 16px}.modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.table-wrap{width:100%;overflow:auto;border:1px solid var(--bd);border-radius:10px;background:#fff;max-height:60vh}table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:760px}th,td{border:1px solid var(--bd);padding:7px 8px;text-align:center;white-space:nowrap}thead th{background:#f2f2f2;position:sticky;top:0;z-index:2}tbody tr:nth-child(even){background:#fafafa}.cell-left{text-align:left}.money{text-align:right}.selected-row{background:#eaf4ff!important}.sistema-menu-lista{background:transparent!important;box-shadow:none!important;font-size:inherit!important}.sistema-menu-lista a{font-weight:500!important}@media(max-width:1100px){.card{width:96%;min-width:0}.filter-bar{grid-template-columns:1fr 1fr}.atelier-grid{grid-template-columns:1fr}.atelier-stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:760px){.filter-bar{grid-template-columns:1fr}.model-table{font-size:.72rem}.model-table th,.model-table td{padding:4px}.modal-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}}
+.line-summary-head #resetLineGroupsButton{padding:5px 10px;font-size:.75rem;border-radius:8px}
+@media(max-width:520px){.line-summary-grid{grid-template-columns:1fr}.line-summary-values{grid-template-columns:1fr 1fr}}
+
+
+/* AJUSTES_COMPACTOS_2026-07-02 */
+.top-action-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.date-filter-row{display:grid;grid-template-columns:160px 160px minmax(220px,520px);gap:8px;align-items:end;margin-top:10px}.print-title{display:none}.atelier-grid{grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:9px}.atelier-card{padding:8px 9px;min-height:0}.atelier-head{margin-bottom:5px}.atelier-head h3{font-size:1rem}.atelier-card .mini-help{font-size:.72rem}.atelier-stats{gap:5px;margin:5px 0;grid-template-columns:repeat(4,1fr)}.stat-box{padding:5px 4px;border-radius:7px}.stat-box strong{font-size:.78rem}.stat-box small{font-size:.53rem}.stat-box.compare-good{background:#e8f7ed;border-color:#b7e2c4;color:#14532d}.stat-box.compare-bad{background:#ffe8ec;border-color:#f3a8b5;color:#842029}.stat-symbol{font-weight:900;margin-right:3px}.category-box{border:1px solid #cfd8e3;border-radius:8px;margin-top:7px;overflow:hidden;background:#fff}.category-head{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#dde8f5;padding:5px 7px;font-size:.86rem;font-weight:900}.category-head .muted{font-size:.70rem;color:#374151}.subcat-box{border-top:1px solid #d8dde5}.subcat-head{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#f1f5f9;padding:4px 7px;font-size:.78rem;font-weight:900}.subcat-head .muted{font-size:.66rem;color:#374151}.group-box{margin-top:0;border:0;border-radius:0}.group-head{display:none}.model-table{font-size:.67rem;line-height:1;table-layout:fixed}.model-table th,.model-table td{padding:3px 4px;height:22px}.model-table th:nth-child(1),.model-table td:nth-child(1){width:33%}.model-table th:nth-child(2),.model-table td:nth-child(2){width:18%}.model-table th:nth-child(3),.model-table td:nth-child(3){width:15%}.model-table th:nth-child(4),.model-table td:nth-child(4){width:20%}.model-table th:nth-child(5),.model-table td:nth-child(5){width:14%}.model-link{font-size:.70rem}.btn-dividir{padding:3px 5px;font-size:.62rem;border-radius:5px}.history-badge{display:inline-block;margin-left:4px;color:#8a5a00;font-weight:900;cursor:help}.drag-hint{font-size:.68rem;color:#64748b;margin-top:4px}.modal-backdrop{z-index:6000}.printButton{display:inline-flex}
+@media(max-width:1200px){.atelier-grid{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}.date-filter-row{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){.top-action-row,.date-filter-row{grid-template-columns:1fr;display:grid}.atelier-grid{grid-template-columns:1fr}.atelier-stats{grid-template-columns:repeat(2,1fr)}}
+@media print{@page{size:A4 landscape;margin:7mm}html,body{background:#fff!important;margin:0!important;padding:0!important}body *{visibility:hidden!important}.sistema-topbar,.sistema-menu-drawer,.sistema-menu-overlay,.card:not(#atelierSection),#messageBox,.no-print{display:none!important}.print-title,#atelierSection,#atelierSection *{visibility:visible!important}.print-title{display:block!important;margin:0 0 8px!important;font-size:13pt!important}.atelierSectionPrintHeader{display:block!important}#atelierSection{display:block!important;position:absolute!important;left:0!important;top:0!important;width:100%!important;box-shadow:none!important;border-radius:0!important;padding:0!important;background:#fff!important}.atelier-grid{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important}.atelier-card{break-inside:avoid!important;page-break-inside:avoid!important;padding:6px!important;border-width:1px!important;border-left-width:5px!important;background:#fff!important}.atelier-head h3{font-size:11pt!important}.atelier-card .mini-help,.tag,.drag-hint,.btn-dividir,.action-col{display:none!important}.atelier-stats{display:none!important}.financial-data,.money,.value-col,.group-head .muted,.category-head .muted,.subcat-head .muted{display:none!important}.model-table{font-size:8pt!important}.model-table th,.model-table td{padding:2px 3px!important;height:auto!important}.model-table th:nth-child(1),.model-table td:nth-child(1){width:45%!important}.model-table th:nth-child(2),.model-table td:nth-child(2){width:28%!important}.model-table th:nth-child(3),.model-table td:nth-child(3){width:27%!important}.model-table th:nth-child(4),.model-table td:nth-child(4),.model-table th:nth-child(5),.model-table td:nth-child(5){display:none!important}.category-head{font-size:9pt!important;padding:3px 5px!important}.subcat-head{font-size:8pt!important;padding:2px 5px!important}}
+
+
+
+/* AJUSTES_SOLICITADOS_2026-07-02 */
+.card{width:min(98%,1900px)}
+.filter-bar{grid-template-columns:150px 150px minmax(180px,420px) auto auto auto auto;gap:6px}
+.top-actions .btn{padding:7px 10px;font-size:.82rem}
+.date-filter-row{grid-template-columns:140px 140px minmax(180px,420px);gap:6px}
+.atelier-grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px}
+.atelier-card{padding:6px 7px;border-radius:10px;border-left-width:6px}
+.atelier-head{margin-bottom:3px}.atelier-head h3{font-size:11px;line-height:1.1}.tag{font-size:10px;padding:2px 6px}
+.atelier-stats{gap:4px;margin:4px 0}.stat-box{padding:4px 3px;border-radius:6px}.stat-box strong{font-size:10px}.stat-box small{font-size:8px;line-height:1.05}
+.category-box{margin-top:5px;border-radius:7px}.category-head{font-size:11px;padding:4px 6px}.category-head .muted{font-size:10px}
+.subcat-box{margin-left:12px;border-left:2px solid #d8dde5}.subcat-head{font-size:10px;padding:3px 5px 3px 12px}.subcat-head .muted{font-size:9px}
+.model-table{font-size:10px}.model-table th,.model-table td{padding:2px 3px;height:18px}.model-link{font-size:10px}.history-badge{font-size:10px;margin-left:3px}.drag-hint{font-size:9px;margin-top:3px}.empty-drop{padding:10px;font-size:10px}
+.model-table th:nth-child(1),.model-table td:nth-child(1){width:44%}.model-table th:nth-child(2),.model-table td:nth-child(2){width:24%}.model-table th:nth-child(3),.model-table td:nth-child(3){width:32%}.model-table th:nth-child(4),.model-table td:nth-child(4){width:32%}
+.print-only-col,.print-pares-dia{display:none!important}
+@media(min-width:1500px){.atelier-grid{grid-template-columns:repeat(4,1fr)}}
+@media print{.print-only-col,.print-pares-dia{display:table-cell!important}.stat-box.print-pares-dia{display:block!important}.atelier-stats{display:grid!important;grid-template-columns:repeat(2,1fr)!important}.atelier-stats .financial-data{display:none!important}.model-table th:nth-child(1),.model-table td:nth-child(1){width:45%!important}.model-table th:nth-child(2),.model-table td:nth-child(2){width:27%!important}.model-table th:nth-child(4),.model-table td:nth-child(4){display:table-cell!important;width:28%!important}.daily-value-col{display:none!important}.atelier-grid{grid-template-columns:repeat(4,1fr)!important}.category-head .financial-data,.subcat-head .financial-data{display:none!important}}
+
+
+/* AJUSTE_LAYOUT_HISTORICO_2026-07-02 */
+.card{width:min(98vw,1880px)!important;max-width:98vw!important}
+#atelierSection{overflow:hidden!important}
+#atelierSection .table-actions{margin-bottom:6px!important}
+.atelier-grid{width:100%!important;display:grid!important;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))!important;gap:8px!important;align-items:start!important;overflow:hidden!important}
+.atelier-card{min-width:0!important;max-width:100%!important;overflow:hidden!important;padding:6px!important}
+.category-box,.subcat-box,.group-box{min-width:0!important;max-width:100%!important;overflow:hidden!important}
+.model-table{width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important;font-size:9.5px!important}
+.model-table th,.model-table td{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;padding:2px 3px!important;height:17px!important}
+.model-link{font-size:9.5px!important}
+.history-badge{font-size:10px!important;margin-left:3px!important;color:#0b5ed7!important}
+.atelier-stats{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important}
+.stat-box{min-width:0!important;overflow:hidden!important;padding:4px 2px!important}
+.stat-box strong{font-size:9.5px!important}
+.stat-box small{font-size:7.5px!important}
+.category-head{font-size:10.5px!important;padding:3px 5px!important}
+.subcat-head{font-size:9.5px!important;padding:3px 5px 3px 10px!important}
+@media(min-width:1500px){.atelier-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:1499px){.atelier-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))!important}}
+@media(max-width:760px){.atelier-grid{grid-template-columns:1fr!important}}
+
+
+/* AJUSTES_DIVISAO_IMPRESSAO_2026-07-02 */
+.split-notes-grid{grid-template-columns:repeat(2,minmax(180px,1fr))!important}
+.note-badge{font-size:10px;margin-left:3px;cursor:help}.diff-line{display:block;font-style:normal;font-size:7.5px;font-weight:800;margin-top:1px;line-height:1}.compare-good .diff-line{color:#14532d}.compare-bad .diff-line{color:#842029}
+.model-table th:nth-child(1),.model-table td:nth-child(1){width:34%!important}.model-table th:nth-child(2),.model-table td:nth-child(2){width:20%!important}.model-table th:nth-child(3),.model-table td:nth-child(3){width:20%!important}.model-table th:nth-child(4),.model-table td:nth-child(4){width:26%!important}
+@media print{
+  @page{size:A4 landscape;margin:4mm!important}
+  html,body{width:297mm!important;height:210mm!important;overflow:hidden!important}
+  #atelierSection{zoom:.64!important;width:156%!important;max-width:156%!important;transform-origin:top left!important}
+  .print-title{font-size:11pt!important;margin:0 0 4px!important}
+  .atelier-grid{grid-template-columns:repeat(4,1fr)!important;gap:3px!important;align-items:start!important}
+  .atelier-card{padding:3px!important;border-radius:5px!important;border-left-width:4px!important;break-inside:avoid!important;page-break-inside:avoid!important}
+  .atelier-head h3{font-size:8pt!important}.tag{display:none!important}
+  .atelier-stats{display:grid!important;grid-template-columns:1fr!important;margin:2px 0!important;gap:2px!important}
+  .atelier-stats .stat-box:not(.print-pares-dia){display:none!important}.stat-box.print-pares-dia{display:block!important;padding:2px!important}
+  .stat-box strong{font-size:7pt!important}.stat-box small{font-size:5pt!important}
+  .category-box{margin-top:2px!important;border-radius:4px!important}.category-head{font-size:6.6pt!important;padding:2px 3px!important}.subcat-box{margin-left:4px!important}.subcat-head{font-size:6pt!important;padding:1px 3px 1px 5px!important}
+  .model-table{font-size:5.6pt!important;line-height:1!important}.model-table th,.model-table td{padding:1px 2px!important;height:auto!important}
+  .financial-data,.daily-value-col,.money{display:none!important}.pares-dia-col{display:table-cell!important}.note-badge,.history-badge{display:none!important}
+}
+
+
+/* AJUSTE_PDF_PAISAGEM_COMPATIVEL_2026-07-02 */
+@media print{
+  @page{size:A4 landscape!important;margin:3.5mm!important}
+  html,body{
+    width:297mm!important;
+    height:210mm!important;
+    margin:0!important;
+    padding:0!important;
+    background:#fff!important;
+    overflow:hidden!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  body *{visibility:hidden!important}
+  .sistema-topbar,.sistema-menu-drawer,.sistema-menu-overlay,.card:not(#atelierSection),#messageBox,.no-print{
+    display:none!important;
+  }
+  #atelierSection,#atelierSection *{visibility:visible!important}
+  #atelierSection{
+    display:block!important;
+    position:absolute!important;
+    left:0!important;
+    top:0!important;
+    width:172%!important;
+    max-width:172%!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    background:#fff!important;
+    overflow:visible!important;
+    zoom:.58!important;
+    transform:none!important;
+  }
+  .print-title{
+    display:block!important;
+    visibility:visible!important;
+    margin:0 0 3mm!important;
+    padding:0!important;
+    font-size:12pt!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+  }
+  #atelierSection .table-actions,#atelierInfo,.drag-hint,.tag,.btn,.history-badge,.note-badge,.financial-data,.money,.daily-value-col{
+    display:none!important;
+  }
+  .atelier-grid{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:2.2mm!important;
+    width:100%!important;
+    align-items:start!important;
+    overflow:visible!important;
+  }
+  .atelier-card{
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+    padding:2.4mm!important;
+    border-width:.35mm!important;
+    border-left-width:1.6mm!important;
+    border-radius:2mm!important;
+    min-height:0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  .atelier-head{margin:0 0 1.2mm!important}
+  .atelier-head h3{font-size:9pt!important;line-height:1!important;margin:0!important}
+  .atelier-stats{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:1mm!important;
+    margin:0 0 1.3mm!important;
+  }
+  .atelier-stats .stat-box:not(.print-pares-dia){display:none!important}
+  .stat-box.print-pares-dia{
+    display:block!important;
+    padding:1mm!important;
+    border-radius:1.5mm!important;
+    border:1px solid #cfd8e3!important;
+    background:#f8fafc!important;
+  }
+  .stat-box.print-pares-dia strong{font-size:7.8pt!important;line-height:1!important}
+  .stat-box.print-pares-dia small{font-size:5.5pt!important;line-height:1!important}
+  .category-box{margin-top:1mm!important;border-radius:1.5mm!important;border:1px solid #cfd8e3!important;overflow:hidden!important}
+  .category-head{font-size:7.1pt!important;line-height:1!important;padding:1mm 1.3mm!important;background:#e7eef7!important}
+  .category-head .muted,.subcat-head .muted{display:none!important}
+  .subcat-box{margin-left:2.5mm!important;border-left:1px solid #d8dde5!important}
+  .subcat-head{font-size:6.4pt!important;line-height:1!important;padding:.8mm 1mm!important;background:#f4f7fb!important}
+  .model-table{font-size:5.8pt!important;line-height:1!important;width:100%!important;min-width:0!important;table-layout:fixed!important}
+  .model-table th,.model-table td{padding:.45mm .7mm!important;height:auto!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .model-table th:nth-child(1),.model-table td:nth-child(1){width:45%!important}
+  .model-table th:nth-child(2),.model-table td:nth-child(2){width:28%!important}
+  .model-table th:nth-child(3),.model-table td:nth-child(3){display:table-cell!important;width:27%!important}
+  .model-table th:nth-child(4),.model-table td:nth-child(4){display:none!important}
+  .model-link{font-size:5.8pt!important;color:#000!important}
+}
+
+/* AJUSTES_ABRIR_SALVAS_OBSERVACOES_2026-07-02 */
+.model-main-cell{white-space:normal!important;text-align:left!important;overflow:visible!important;text-overflow:clip!important}.model-title-line{display:flex;align-items:center;gap:3px;flex-wrap:wrap}.model-note-wrap{margin-top:3px}.model-note-input{width:100%;height:21px;border:1px solid #cbd5e1;border-radius:5px;background:#fffdf4;padding:2px 5px;font-size:.62rem;color:#374151}.model-note-input::placeholder{color:#9ca3af}.model-note-print{display:none;font-size:.62rem;line-height:1.1;margin-top:2px;color:#374151;font-weight:700;white-space:normal}.model-row.has-note{background:#fffdf4}.model-row.has-note td{height:auto!important}.saved-list-table{min-width:780px}.saved-list-table td,.saved-list-table th{white-space:nowrap}.open-saved-info{background:#fff8e1;border:1px solid #ffe69c;color:#664d03;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:.86rem}
+@media print{.model-note-input{display:none!important}.model-note-print{display:block!important}.model-note-wrap{margin-top:.5mm!important}.model-main-cell{white-space:normal!important}.model-title-line{display:block!important}.model-row.has-note td{height:auto!important}.history-badge,.note-badge{display:none!important}}
+
+
+/* AJUSTES_OBSERVACOES_MEDIA_PDF_2026-07-02 */
+.atelier-head-actions{display:flex;align-items:center;gap:5px}.btn-atelier-note{border:1px solid #cbd5e1;background:#fff;border-radius:999px;width:20px;height:20px;line-height:16px;font-size:13px;font-weight:900;cursor:pointer;color:#0f172a}.btn-atelier-note:hover{background:#eaf4ff}.atelier-note-display{border:1px solid #d8dde5;background:#fffdf4;border-radius:6px;padding:3px 5px;margin:2px 0 4px;font-size:10px;line-height:1.2;color:#374151}.model-row:not(.is-split) .model-note-wrap{display:none!important}.model-row.is-split .model-note-input{display:block}.model-table th,.model-table td{vertical-align:middle}.model-note-input{height:18px;font-size:9px}.model-note-print{font-size:7pt}.atelier-grid{width:100%;max-width:100%;overflow:hidden}.atelier-card{max-width:100%;overflow:hidden}.category-box,.subcat-box,.group-box,.model-table{max-width:100%;overflow:hidden}
+@media print{
+  @page{size:A4 landscape!important;margin:4mm!important}
+  html,body{width:297mm!important;min-height:210mm!important;height:auto!important;overflow:visible!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body *{visibility:hidden!important}
+  .sistema-topbar,.sistema-menu-drawer,.sistema-menu-overlay,.card:not(#atelierSection),#messageBox,.no-print{display:none!important}
+  #atelierSection,#atelierSection *{visibility:visible!important}
+  #atelierSection{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;overflow:visible!important;zoom:1!important;transform:none!important}
+  .print-title{display:block!important;font-size:11pt!important;line-height:1.1!important;margin:0 0 2.5mm!important;font-weight:900!important}
+  #atelierSection .table-actions,#atelierInfo,.drag-hint,.tag,.btn,.history-badge,.note-badge,.financial-data,.money,.daily-value-col,.btn-atelier-note{display:none!important}
+  .atelier-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:2.4mm!important;width:100%!important;align-items:start!important;overflow:visible!important}
+  .atelier-card{break-inside:avoid!important;page-break-inside:avoid!important;padding:2mm!important;border-width:.25mm!important;border-left-width:1.3mm!important;border-radius:1.8mm!important;min-height:0!important;background:#fff!important;box-shadow:none!important;overflow:hidden!important}
+  .atelier-head{margin:0 0 1mm!important}.atelier-head h3{font-size:8.5pt!important;line-height:1!important;margin:0!important}
+  .atelier-note-display{font-size:6.5pt!important;padding:.8mm!important;margin:.7mm 0!important;border:1px solid #d8dde5!important;background:#fffdf4!important}
+  .atelier-stats{display:grid!important;grid-template-columns:1fr!important;gap:.7mm!important;margin:0 0 1mm!important}.atelier-stats .stat-box:not(.print-pares-dia){display:none!important}.stat-box.print-pares-dia{display:block!important;padding:.8mm!important;border-radius:1.2mm!important;border:1px solid #cfd8e3!important;background:#f8fafc!important}.stat-box.print-pares-dia strong{font-size:7.2pt!important;line-height:1!important}.stat-box.print-pares-dia small{font-size:5pt!important;line-height:1!important}
+  .category-box{margin-top:.9mm!important;border-radius:1.2mm!important;border:1px solid #cfd8e3!important;overflow:hidden!important}.category-head{font-size:6.8pt!important;line-height:1!important;padding:.8mm 1mm!important;background:#e7eef7!important}.category-head .muted,.subcat-head .muted{display:none!important}.subcat-box{margin-left:1.8mm!important;border-left:1px solid #d8dde5!important}.subcat-head{font-size:6.2pt!important;line-height:1!important;padding:.65mm .9mm!important;background:#f4f7fb!important}
+  .model-table{font-size:6pt!important;line-height:1!important;width:100%!important;min-width:0!important;table-layout:fixed!important}.model-table th,.model-table td{padding:.45mm .6mm!important;height:auto!important;white-space:normal!important;overflow:hidden!important;text-overflow:clip!important}.model-table th:nth-child(1),.model-table td:nth-child(1){width:52%!important}.model-table th:nth-child(2),.model-table td:nth-child(2){width:24%!important}.model-table th:nth-child(3),.model-table td:nth-child(3){display:table-cell!important;width:24%!important}.model-table th:nth-child(4),.model-table td:nth-child(4){display:none!important}.model-link{font-size:6pt!important;color:#000!important}.model-note-input{display:none!important}.model-note-print{display:block!important;font-size:5.8pt!important;line-height:1.1!important;margin-top:.3mm!important;color:#333!important;font-weight:700!important}.model-main-cell{white-space:normal!important;text-align:left!important}
+}
+
+
+
+/* AJUSTES_FINAIS_MODELOS_DIVIDIDOS_OBS_PDF_2026-07-02 */
+.print-only{display:none!important}
+.atelier-head{position:relative;justify-content:center!important;align-items:center!important;min-height:24px}.atelier-head h3{text-align:center!important;width:100%!important;font-size:16px!important;line-height:1.1!important}.atelier-head-actions{position:absolute;right:0;top:0}
+.atelier-note-block{cursor:grab;display:flex;align-items:center;justify-content:space-between;gap:6px}.atelier-note-block:active{cursor:grabbing}.btn-atelier-note-remove{border:0;background:#fee2e2;color:#991b1b;border-radius:999px;width:18px;height:18px;line-height:16px;font-size:12px;font-weight:900;cursor:pointer;flex:0 0 auto}.btn-atelier-note-remove:hover{background:#fecaca}.category-box.note-drop-target{outline:2px dashed #93c5fd;outline-offset:2px}.split-info-text{font-size:.64rem;color:#64748b;margin-left:3px}
+@media print{
+  .print-only{display:block!important}
+  #atelierSection{zoom:.86!important;width:116%!important;max-width:116%!important}
+  .atelier-head h3{font-size:12pt!important;text-align:center!important;width:100%!important}
+  .atelier-head-actions,.btn-atelier-note,.btn-atelier-note-remove{display:none!important}
+  .atelier-stats{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:.8mm!important;margin:0 0 1mm!important}
+  .atelier-stats .stat-box{display:none!important}
+  .atelier-stats .stat-box.print-modelos,.atelier-stats .stat-box.print-total-pares,.atelier-stats .stat-box.print-pares-dia{display:block!important;padding:.75mm!important;border-radius:1.2mm!important;border:1px solid #cfd8e3!important;background:#f8fafc!important}
+  .stat-box.print-modelos strong,.stat-box.print-total-pares strong,.stat-box.print-pares-dia strong{font-size:7pt!important;line-height:1!important}
+  .stat-box.print-modelos small,.stat-box.print-total-pares small,.stat-box.print-pares-dia small{font-size:4.7pt!important;line-height:1!important}
+  .atelier-note-block{display:flex!important;font-size:6.2pt!important;padding:.7mm!important;margin:.5mm 0!important}
+  .model-table{font-size:5.6pt!important}.model-link{font-size:5.6pt!important}
+}
+
+
+
+/* AJUSTE_IMPRESSAO_A4_UMA_FOLHA_2026-07-02 */
+@media print{
+  @page{size:A4 landscape!important;margin:3mm!important}
+  html,body{
+    width:297mm!important;
+    height:210mm!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    background:#fff!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  body *{visibility:hidden!important}
+  .sistema-topbar,.sistema-menu-drawer,.sistema-menu-overlay,.card:not(#atelierSection),#messageBox,.no-print{display:none!important}
+  #atelierSection,#atelierSection *{visibility:visible!important}
+  #atelierSection{
+    position:absolute!important;
+    left:0!important;
+    top:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    background:#fff!important;
+    overflow:visible!important;
+    zoom:.82!important;
+    transform:none!important;
+  }
+  .print-title{
+    display:block!important;
+    visibility:visible!important;
+    font-size:10pt!important;
+    line-height:1.05!important;
+    margin:0 0 2mm!important;
+    font-weight:900!important;
+  }
+  #atelierSection .table-actions,#atelierInfo,.drag-hint,.tag,.btn,.history-badge,.note-badge,.financial-data,.money,.daily-value-col,.btn-atelier-note,.btn-atelier-note-remove,.atelier-head-actions{display:none!important}
+  .atelier-grid{
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:2mm!important;
+    width:100%!important;
+    max-width:100%!important;
+    align-items:start!important;
+    overflow:visible!important;
+  }
+  .atelier-card{
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+    padding:1.5mm!important;
+    border-width:.25mm!important;
+    border-left-width:1.1mm!important;
+    border-radius:1.4mm!important;
+    min-height:0!important;
+    max-width:100%!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  .atelier-head{margin:0 0 .8mm!important;min-height:0!important;display:block!important}
+  .atelier-head h3{
+    font-size:9.5pt!important;
+    line-height:1!important;
+    margin:0!important;
+    text-align:center!important;
+    width:100%!important;
+  }
+  .atelier-stats{
+    display:grid!important;
+    grid-template-columns:repeat(3,1fr)!important;
+    gap:.65mm!important;
+    margin:0 0 .8mm!important;
+  }
+  .atelier-stats .stat-box{display:none!important}
+  .atelier-stats .stat-box.print-modelos,.atelier-stats .stat-box.print-total-pares,.atelier-stats .stat-box.print-pares-dia{
+    display:block!important;
+    padding:.55mm!important;
+    border-radius:1mm!important;
+    border:1px solid #cfd8e3!important;
+    background:#f8fafc!important;
+  }
+  .stat-box.print-modelos strong,.stat-box.print-total-pares strong,.stat-box.print-pares-dia strong{font-size:6.5pt!important;line-height:1!important}
+  .stat-box.print-modelos small,.stat-box.print-total-pares small,.stat-box.print-pares-dia small{font-size:4.3pt!important;line-height:1!important}
+  .atelier-note-display,.atelier-note-block{
+    display:flex!important;
+    font-size:5.8pt!important;
+    line-height:1.05!important;
+    padding:.55mm!important;
+    margin:.35mm 0!important;
+    border:1px solid #d8dde5!important;
+    background:#fffdf4!important;
+  }
+  .category-box{
+    margin-top:.7mm!important;
+    border-radius:1mm!important;
+    border:1px solid #cfd8e3!important;
+    overflow:hidden!important;
+    background:#fff!important;
+  }
+  .category-head{
+    font-size:6.4pt!important;
+    line-height:1!important;
+    padding:.55mm .8mm!important;
+    background:#e7eef7!important;
+  }
+  .category-head .muted,.subcat-head .muted{display:none!important}
+  .subcat-box{margin-left:1.2mm!important;border-left:1px solid #d8dde5!important}
+  .subcat-head{
+    font-size:5.9pt!important;
+    line-height:1!important;
+    padding:.45mm .75mm!important;
+    background:#f4f7fb!important;
+  }
+  .model-table{
+    font-size:5.4pt!important;
+    line-height:1!important;
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+  }
+  .model-table th,.model-table td{
+    padding:.32mm .5mm!important;
+    height:auto!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+  }
+  .model-table th:nth-child(1),.model-table td:nth-child(1){width:54%!important}
+  .model-table th:nth-child(2),.model-table td:nth-child(2){width:23%!important}
+  .model-table th:nth-child(3),.model-table td:nth-child(3){display:table-cell!important;width:23%!important}
+  .model-table th:nth-child(4),.model-table td:nth-child(4){display:none!important}
+  .model-link{font-size:5.4pt!important;color:#000!important}
+  .model-note-input{display:none!important}
+  .model-note-print{display:block!important;font-size:5.1pt!important;line-height:1.05!important;margin-top:.2mm!important;color:#333!important;font-weight:700!important}
+  .model-main-cell{white-space:normal!important;text-align:left!important}
+}
+
+
+/* AJUSTE_IMPRESSAO_TABELA_FORTE_2026-07-02
+   Deixa o PDF em A4 paisagem com cards mais estreitos/altos,
+   bordas escuras e visual de tabela para facilitar a leitura. */
+@media print{
+  @page{size:A4 landscape!important;margin:4mm!important}
+
+  html,body{
+    width:297mm!important;
+    min-height:210mm!important;
+    height:auto!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:visible!important;
+    background:#fff!important;
+    color:#000!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+
+  body *{visibility:hidden!important}
+  .sistema-topbar,.sistema-menu-drawer,.sistema-menu-overlay,
+  .card:not(#atelierSection),#messageBox,.no-print{display:none!important}
+
+  #atelierSection,#atelierSection *{visibility:visible!important;color:#000!important;text-shadow:none!important}
+  #atelierSection{
+    position:absolute!important;
+    left:0!important;
+    top:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    background:#fff!important;
+    overflow:visible!important;
+    zoom:1!important;
+    transform:none!important;
+  }
+
+  .print-title{
+    display:block!important;
+    visibility:visible!important;
+    font-size:12pt!important;
+    line-height:1.05!important;
+    margin:0 0 2.2mm!important;
+    font-weight:900!important;
+    color:#000!important;
+  }
+
+  #atelierSection .table-actions,#atelierInfo,.drag-hint,.tag,.btn,
+  .history-badge,.note-badge,.financial-data,.money,.daily-value-col,
+  .btn-atelier-note,.btn-atelier-note-remove,.atelier-head-actions{
+    display:none!important;
+  }
+
+  .atelier-grid{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:2.2mm!important;
+    width:100%!important;
+    max-width:100%!important;
+    align-items:start!important;
+    overflow:visible!important;
+  }
+
+  .atelier-card{
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+    padding:1.4mm!important;
+    border:0.45mm solid #222!important;
+    border-left:1.4mm solid var(--att-accent,#111)!important;
+    border-radius:1.5mm!important;
+    min-height:0!important;
+    max-width:100%!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+
+  .atelier-head{
+    margin:0 0 1mm!important;
+    min-height:0!important;
+    display:block!important;
+    border-bottom:0.35mm solid #222!important;
+    padding-bottom:.8mm!important;
+  }
+  .atelier-head h3{
+    font-size:11pt!important;
+    line-height:1!important;
+    margin:0!important;
+    text-align:center!important;
+    width:100%!important;
+    font-weight:900!important;
+  }
+
+  .atelier-stats{
+    display:grid!important;
+    grid-template-columns:repeat(3,1fr)!important;
+    gap:.8mm!important;
+    margin:0 0 1.1mm!important;
+  }
+  .atelier-stats .stat-box{display:none!important}
+  .atelier-stats .stat-box.print-modelos,
+  .atelier-stats .stat-box.print-total-pares,
+  .atelier-stats .stat-box.print-pares-dia{
+    display:block!important;
+    padding:.9mm .6mm!important;
+    border-radius:.8mm!important;
+    border:0.35mm solid #333!important;
+    background:#f1f3f5!important;
+  }
+  .stat-box.print-modelos strong,
+  .stat-box.print-total-pares strong,
+  .stat-box.print-pares-dia strong{
+    font-size:7.4pt!important;
+    line-height:1!important;
+    font-weight:900!important;
+  }
+  .stat-box.print-modelos small,
+  .stat-box.print-total-pares small,
+  .stat-box.print-pares-dia small{
+    font-size:4.9pt!important;
+    line-height:1!important;
+    font-weight:900!important;
+  }
+
+  .atelier-note-display,.atelier-note-block{
+    display:flex!important;
+    font-size:6.3pt!important;
+    line-height:1.1!important;
+    padding:.65mm!important;
+    margin:.5mm 0!important;
+    border:0.3mm solid #555!important;
+    background:#fff7d6!important;
+    font-weight:700!important;
+  }
+
+  .category-box{
+    margin-top:1mm!important;
+    border-radius:.8mm!important;
+    border:0.35mm solid #222!important;
+    overflow:hidden!important;
+    background:#fff!important;
+  }
+  .category-head{
+    font-size:7.8pt!important;
+    line-height:1!important;
+    padding:.75mm .95mm!important;
+    background:#d9e2ef!important;
+    border-bottom:0.35mm solid #222!important;
+    font-weight:900!important;
+  }
+  .category-head .muted,.subcat-head .muted{display:none!important}
+
+  .subcat-box{
+    margin:0!important;
+    border:0!important;
+    border-top:0.35mm solid #333!important;
+  }
+  .subcat-head{
+    font-size:7.1pt!important;
+    line-height:1!important;
+    padding:.65mm .95mm!important;
+    background:#edf1f6!important;
+    border-bottom:0.28mm solid #444!important;
+    font-weight:900!important;
+    padding-left:2.4mm!important;
+  }
+
+  .model-table{
+    font-size:6.6pt!important;
+    line-height:1.05!important;
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+    border-collapse:collapse!important;
+    background:#fff!important;
+  }
+  .model-table th,.model-table td{
+    border:0.28mm solid #444!important;
+    padding:.55mm .65mm!important;
+    height:auto!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+    background:#fff!important;
+    color:#000!important;
+  }
+  .model-table th{
+    background:#e5e7eb!important;
+    font-weight:900!important;
+    font-size:6.2pt!important;
+  }
+  .model-table th:nth-child(1),.model-table td:nth-child(1){width:51%!important;text-align:left!important}
+  .model-table th:nth-child(2),.model-table td:nth-child(2){width:24%!important;text-align:center!important}
+  .model-table th:nth-child(3),.model-table td:nth-child(3){display:table-cell!important;width:25%!important;text-align:center!important}
+  .model-table th:nth-child(4),.model-table td:nth-child(4){display:none!important}
+  .model-link{font-size:6.8pt!important;color:#000!important;font-weight:900!important;text-decoration:none!important}
+  .model-note-input{display:none!important}
+  .model-note-print{
+    display:block!important;
+    font-size:6.1pt!important;
+    line-height:1.1!important;
+    margin-top:.25mm!important;
+    color:#000!important;
+    font-weight:800!important;
+    background:#fff7d6!important;
+  }
+  .model-main-cell{white-space:normal!important;text-align:left!important}
+}
+
+
+
+/* AJUSTE_FINAL_IMPRESSAO_UMA_PAGINA_2026-07-02
+   Troca o grid por flex na impressão e aplica zoom proporcional.
+   Isso evita quebrar os cards em 2 páginas e mantém tudo em A4 paisagem. */
+@media print{
+  @page{size:A4 landscape!important;margin:3mm!important}
+  html,body{
+    width:297mm!important;
+    height:210mm!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    background:#fff!important;
+    color:#000!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+  body *{visibility:hidden!important}
+  .sistema-topbar,.sistema-menu-drawer,.sistema-menu-overlay,
+  .card:not(#atelierSection),#messageBox,.no-print{display:none!important}
+  #atelierSection,#atelierSection *{visibility:visible!important;color:#000!important;text-shadow:none!important}
+  #atelierSection{
+    position:absolute!important;
+    left:0!important;
+    top:0!important;
+    width:128%!important;
+    max-width:128%!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    background:#fff!important;
+    overflow:visible!important;
+    zoom:.78!important;
+    transform:none!important;
+  }
+  .print-title{
+    display:block!important;
+    visibility:visible!important;
+    font-size:12pt!important;
+    line-height:1.05!important;
+    margin:0 0 1.5mm!important;
+    font-weight:900!important;
+    color:#000!important;
+  }
+  #atelierSection .table-actions,#atelierInfo,.drag-hint,.tag,.btn,
+  .history-badge,.note-badge,.financial-data,.money,.daily-value-col,
+  .btn-atelier-note,.btn-atelier-note-remove,.atelier-head-actions{
+    display:none!important;
+  }
+  .atelier-grid{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:1.6mm!important;
+    width:100%!important;
+    max-width:100%!important;
+    align-items:flex-start!important;
+    align-content:flex-start!important;
+    overflow:visible!important;
+  }
+  .atelier-card{
+    flex:0 0 calc(25% - 1.25mm)!important;
+    width:calc(25% - 1.25mm)!important;
+    max-width:calc(25% - 1.25mm)!important;
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+    padding:1.05mm!important;
+    border:0.42mm solid #111!important;
+    border-left:1.25mm solid var(--att-accent,#111)!important;
+    border-radius:1.3mm!important;
+    min-height:0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+  .atelier-head{
+    margin:0 0 .65mm!important;
+    min-height:0!important;
+    display:block!important;
+    border-bottom:0.32mm solid #111!important;
+    padding-bottom:.55mm!important;
+  }
+  .atelier-head h3{
+    font-size:10pt!important;
+    line-height:1!important;
+    margin:0!important;
+    text-align:center!important;
+    width:100%!important;
+    font-weight:900!important;
+  }
+  .atelier-stats{
+    display:grid!important;
+    grid-template-columns:repeat(3,1fr)!important;
+    gap:.55mm!important;
+    margin:0 0 .75mm!important;
+  }
+  .atelier-stats .stat-box{display:none!important}
+  .atelier-stats .stat-box.print-modelos,
+  .atelier-stats .stat-box.print-total-pares,
+  .atelier-stats .stat-box.print-pares-dia{
+    display:block!important;
+    padding:.58mm .35mm!important;
+    border-radius:.7mm!important;
+    border:0.3mm solid #222!important;
+    background:#f1f3f5!important;
+  }
+  .stat-box.print-modelos strong,
+  .stat-box.print-total-pares strong,
+  .stat-box.print-pares-dia strong{
+    font-size:6.5pt!important;
+    line-height:1!important;
+    font-weight:900!important;
+  }
+  .stat-box.print-modelos small,
+  .stat-box.print-total-pares small,
+  .stat-box.print-pares-dia small{
+    font-size:4.2pt!important;
+    line-height:1!important;
+    font-weight:900!important;
+  }
+  .atelier-note-display,.atelier-note-block{
+    display:flex!important;
+    font-size:5.5pt!important;
+    line-height:1.05!important;
+    padding:.45mm!important;
+    margin:.35mm 0!important;
+    border:0.25mm solid #555!important;
+    background:#fff7d6!important;
+    font-weight:700!important;
+  }
+  .category-box{
+    margin-top:.65mm!important;
+    border-radius:.7mm!important;
+    border:0.3mm solid #111!important;
+    overflow:hidden!important;
+    background:#fff!important;
+  }
+  .category-head{
+    font-size:6.8pt!important;
+    line-height:1!important;
+    padding:.55mm .7mm!important;
+    background:#d9e2ef!important;
+    border-bottom:0.3mm solid #111!important;
+    font-weight:900!important;
+  }
+  .category-head .muted,.subcat-head .muted{display:none!important}
+  .subcat-box{
+    margin:0!important;
+    border:0!important;
+    border-top:0.3mm solid #222!important;
+  }
+  .subcat-head{
+    font-size:6.1pt!important;
+    line-height:1!important;
+    padding:.45mm .7mm!important;
+    background:#edf1f6!important;
+    border-bottom:0.25mm solid #333!important;
+    font-weight:900!important;
+    padding-left:1.8mm!important;
+  }
+  .model-table{
+    font-size:5.8pt!important;
+    line-height:1!important;
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+    border-collapse:collapse!important;
+    background:#fff!important;
+  }
+  .model-table th,.model-table td{
+    border:0.24mm solid #333!important;
+    padding:.36mm .42mm!important;
+    height:auto!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+    background:#fff!important;
+    color:#000!important;
+  }
+  .model-table th{
+    background:#e5e7eb!important;
+    font-weight:900!important;
+    font-size:5.6pt!important;
+  }
+  .model-table th:nth-child(1),.model-table td:nth-child(1){width:52%!important;text-align:left!important}
+  .model-table th:nth-child(2),.model-table td:nth-child(2){width:23%!important;text-align:center!important}
+  .model-table th:nth-child(3),.model-table td:nth-child(3){display:table-cell!important;width:25%!important;text-align:center!important}
+  .model-table th:nth-child(4),.model-table td:nth-child(4){display:none!important}
+  .model-link{font-size:5.8pt!important;color:#000!important;font-weight:900!important;text-decoration:none!important}
+  .model-note-input{display:none!important}
+  .model-note-print{
+    display:block!important;
+    font-size:5.2pt!important;
+    line-height:1.05!important;
+    margin-top:.15mm!important;
+    color:#000!important;
+    font-weight:800!important;
+    background:#fff7d6!important;
+  }
+  .model-main-cell{white-space:normal!important;text-align:left!important}
+}
+
+
+
+/* AJUSTE_IMPRESSAO_MESMO_TAMANHO_CARDS_NA_FOLHA_2026-07-02
+   Mantém o tamanho legível dos cards e corrige o encaixe lateral em uma folha A4 paisagem. */
+@media print{
+  @page{size:A4 landscape!important;margin:4mm!important}
+
+  html,body{
+    width:297mm!important;
+    height:210mm!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    background:#fff!important;
+    color:#000!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+
+  body *{visibility:hidden!important}
+  .sistema-topbar,.sistema-menu-drawer,.sistema-menu-overlay,
+  .card:not(#atelierSection),#messageBox,.no-print{display:none!important}
+
+  #atelierSection,#atelierSection *{visibility:visible!important;color:#000!important;text-shadow:none!important}
+  #atelierSection{
+    position:absolute!important;
+    left:0!important;
+    top:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    background:#fff!important;
+    overflow:visible!important;
+    zoom:1!important;
+    transform:none!important;
+  }
+
+  .print-title{
+    display:block!important;
+    visibility:visible!important;
+    font-size:12pt!important;
+    line-height:1.05!important;
+    margin:0 0 2mm!important;
+    font-weight:900!important;
+    color:#000!important;
+  }
+
+  #atelierSection .table-actions,#atelierInfo,.drag-hint,.tag,.btn,
+  .history-badge,.note-badge,.financial-data,.money,.daily-value-col,
+  .btn-atelier-note,.btn-atelier-note-remove,.atelier-head-actions{
+    display:none!important;
+  }
+
+  .atelier-grid{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:2mm!important;
+    width:100%!important;
+    max-width:100%!important;
+    align-items:start!important;
+    align-content:start!important;
+    overflow:visible!important;
+  }
+
+  .atelier-card{
+    width:auto!important;
+    max-width:100%!important;
+    min-width:0!important;
+    flex:unset!important;
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+    padding:1.35mm!important;
+    border:0.42mm solid #222!important;
+    border-left:1.35mm solid var(--att-accent,#111)!important;
+    border-radius:1.4mm!important;
+    min-height:0!important;
+    background:#fff!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+  }
+
+  .atelier-head{
+    margin:0 0 .9mm!important;
+    min-height:0!important;
+    display:block!important;
+    border-bottom:0.32mm solid #111!important;
+    padding-bottom:.65mm!important;
+  }
+  .atelier-head h3{
+    font-size:10.5pt!important;
+    line-height:1!important;
+    margin:0!important;
+    text-align:center!important;
+    width:100%!important;
+    font-weight:900!important;
+  }
+
+  .atelier-stats{
+    display:grid!important;
+    grid-template-columns:repeat(3,1fr)!important;
+    gap:.65mm!important;
+    margin:0 0 .9mm!important;
+  }
+  .atelier-stats .stat-box{display:none!important}
+  .atelier-stats .stat-box.print-modelos,
+  .atelier-stats .stat-box.print-total-pares,
+  .atelier-stats .stat-box.print-pares-dia{
+    display:block!important;
+    padding:.70mm .45mm!important;
+    border-radius:.8mm!important;
+    border:0.3mm solid #222!important;
+    background:#f1f3f5!important;
+  }
+  .stat-box.print-modelos strong,
+  .stat-box.print-total-pares strong,
+  .stat-box.print-pares-dia strong{
+    font-size:6.8pt!important;
+    line-height:1!important;
+    font-weight:900!important;
+  }
+  .stat-box.print-modelos small,
+  .stat-box.print-total-pares small,
+  .stat-box.print-pares-dia small{
+    font-size:4.4pt!important;
+    line-height:1!important;
+    font-weight:900!important;
+  }
+
+  .atelier-note-display,.atelier-note-block{
+    display:flex!important;
+    font-size:5.7pt!important;
+    line-height:1.05!important;
+    padding:.45mm!important;
+    margin:.35mm 0!important;
+    border:0.25mm solid #555!important;
+    background:#fff7d6!important;
+    font-weight:700!important;
+  }
+
+  .category-box{
+    margin-top:.8mm!important;
+    border-radius:.8mm!important;
+    border:0.30mm solid #222!important;
+    overflow:hidden!important;
+    background:#fff!important;
+  }
+  .category-head{
+    font-size:7.2pt!important;
+    line-height:1!important;
+    padding:.60mm .75mm!important;
+    background:#d9e2ef!important;
+    border-bottom:0.30mm solid #111!important;
+    font-weight:900!important;
+  }
+  .category-head .muted,.subcat-head .muted{display:none!important}
+
+  .subcat-box{
+    margin:0!important;
+    border:0!important;
+    border-top:0.28mm solid #222!important;
+  }
+  .subcat-head{
+    font-size:6.4pt!important;
+    line-height:1!important;
+    padding:.48mm .75mm!important;
+    background:#edf1f6!important;
+    border-bottom:0.24mm solid #333!important;
+    font-weight:900!important;
+    padding-left:1.8mm!important;
+  }
+
+  .model-table{
+    font-size:6.05pt!important;
+    line-height:1!important;
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+    border-collapse:collapse!important;
+    background:#fff!important;
+  }
+  .model-table th,.model-table td{
+    border:0.24mm solid #333!important;
+    padding:.34mm .42mm!important;
+    height:auto!important;
+    white-space:normal!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+    background:#fff!important;
+    color:#000!important;
+  }
+  .model-table th{
+    background:#e5e7eb!important;
+    font-weight:900!important;
+    font-size:5.8pt!important;
+  }
+  .model-table th:nth-child(1),.model-table td:nth-child(1){width:52%!important;text-align:left!important}
+  .model-table th:nth-child(2),.model-table td:nth-child(2){width:23%!important;text-align:center!important}
+  .model-table th:nth-child(3),.model-table td:nth-child(3){display:table-cell!important;width:25%!important;text-align:center!important}
+  .model-table th:nth-child(4),.model-table td:nth-child(4){display:none!important}
+
+  .model-link{font-size:6.05pt!important;color:#000!important;font-weight:900!important;text-decoration:none!important}
+  .model-note-input{display:none!important}
+  .model-note-print{
+    display:block!important;
+    font-size:5.4pt!important;
+    line-height:1.05!important;
+    margin-top:.15mm!important;
+    color:#000!important;
+    font-weight:800!important;
+    background:#fff7d6!important;
+  }
+  .model-main-cell{white-space:normal!important;text-align:left!important}
+}
+
+
+
+/* AJUSTE TESTE IMPRESSAO: tabela única por ateliê, sem categoria/subcategoria */
+.print-flat-table,.print-card-date{display:none}
+@media print{
+  .print-card-date{display:block!important;font-size:8.5pt!important;font-weight:900!important;text-align:right!important;color:#111!important;white-space:nowrap!important}
+  .atelier-head{display:flex!important;justify-content:space-between!important;align-items:center!important;border-bottom:.35mm solid #111!important;margin:0 0 1mm!important;padding:0 0 .8mm!important}
+  .atelier-head h3{font-size:12pt!important;text-align:left!important;margin:0!important;line-height:1!important;color:#000!important}
+  .category-box,.subcat-box,.group-box{display:none!important}
+  .print-flat-table{display:block!important;margin-top:1mm!important}
+  .print-flat-table table{display:table!important;width:100%!important;border-collapse:collapse!important;table-layout:fixed!important;font-size:7.6pt!important;line-height:1.08!important}
+  .print-flat-table th,.print-flat-table td{border:.32mm solid #111!important;padding:.7mm .9mm!important;background:#fff!important;color:#000!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+  .print-flat-table th{background:#e9ecef!important;font-weight:900!important;text-align:center!important}
+  .print-flat-table th:nth-child(1),.print-flat-table td:nth-child(1){width:56%!important;text-align:left!important;font-weight:800!important}
+  .print-flat-table th:nth-child(2),.print-flat-table td:nth-child(2){width:22%!important;text-align:center!important}
+  .print-flat-table th:nth-child(3),.print-flat-table td:nth-child(3){width:22%!important;text-align:center!important}
+  .print-flat-note{display:block!important;font-size:6.5pt!important;line-height:1.05!important;margin-top:.4mm!important;background:#fff8d8!important;padding:.3mm .5mm!important;border-left:.5mm solid #d97706!important;font-weight:700!important;color:#111!important}
+  .atelier-note-display{border:.25mm solid #111!important;background:#fff8d8!important;color:#000!important;font-size:7.2pt!important;line-height:1.1!important;padding:.8mm 1mm!important;margin:1mm 0!important}
+}
+
+
+/* AJUSTE_FINAL_PRINT_1_FOLHA_2026-07-02 */
+@media print{
+  @page{size:A4 landscape!important;margin:4mm!important}
+  html,body{width:297mm!important;min-height:210mm!important;background:#fff!important;overflow:visible!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body *{visibility:hidden!important}
+  .sistema-topbar,.sistema-menu-drawer,.sistema-menu-overlay,.card:not(#atelierSection),#messageBox,.no-print{display:none!important}
+  #atelierSection,#atelierSection *{visibility:visible!important}
+  #atelierSection{position:absolute!important;left:0!important;top:0!important;width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;overflow:visible!important;zoom:1!important;transform:none!important}
+  .print-title{display:block!important;font-size:10.5pt!important;line-height:1.05!important;margin:0 0 2.2mm!important;font-weight:900!important;color:#000!important}
+  #atelierSection .table-actions,#atelierInfo,.drag-hint,.tag,.btn,.history-badge,.note-badge,.financial-data,.money,.daily-value-col,.btn-atelier-note,.btn-atelier-note-remove{display:none!important}
+  .atelier-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:2.4mm!important;width:100%!important;max-width:100%!important;align-items:start!important;overflow:visible!important}
+  .atelier-card{break-inside:avoid!important;page-break-inside:avoid!important;width:100%!important;max-width:100%!important;min-width:0!important;min-height:0!important;padding:1.5mm!important;border:.25mm solid #111!important;border-left:1.2mm solid var(--att-accent,#111)!important;border-radius:1.4mm!important;background:#fff!important;box-shadow:none!important;overflow:hidden!important}
+  .atelier-head{display:flex!important;justify-content:space-between!important;align-items:flex-end!important;border-bottom:.28mm solid #111!important;margin:0 0 .8mm!important;padding:0 0 .55mm!important;min-height:0!important}
+  .atelier-head h3{font-size:11pt!important;text-align:left!important;margin:0!important;line-height:1!important;color:#000!important;font-weight:900!important}
+  .print-card-date{display:block!important;font-size:7.2pt!important;font-weight:900!important;text-align:right!important;color:#000!important;white-space:nowrap!important}
+  .atelier-stats{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:.7mm!important;margin:0 0 1mm!important}
+  .atelier-stats .stat-box{display:none!important}
+  .atelier-stats .stat-box.print-modelos,.atelier-stats .stat-box.print-total-pares,.atelier-stats .stat-box.print-pares-dia{display:block!important;padding:.65mm!important;border:.25mm solid #111!important;border-radius:1mm!important;background:#f1f3f5!important;color:#000!important}
+  .stat-box.print-modelos strong,.stat-box.print-total-pares strong,.stat-box.print-pares-dia strong{font-size:7pt!important;line-height:1!important;font-weight:900!important}
+  .stat-box.print-modelos small,.stat-box.print-total-pares small,.stat-box.print-pares-dia small{font-size:4.5pt!important;line-height:1!important;font-weight:900!important}
+  .category-box,.subcat-box,.group-box{display:none!important}
+  .print-flat-table{display:block!important;margin-top:.8mm!important;width:100%!important}
+  .print-flat-table table{display:table!important;width:100%!important;max-width:100%!important;border-collapse:collapse!important;table-layout:fixed!important;font-size:7pt!important;line-height:1.05!important}
+  .print-flat-table th,.print-flat-table td{border:.25mm solid #111!important;padding:.45mm .55mm!important;background:#fff!important;color:#000!important;white-space:normal!important;overflow:hidden!important;text-overflow:clip!important}
+  .print-flat-table th{background:#e5e7eb!important;font-weight:900!important;text-align:center!important}
+  .print-flat-table th:nth-child(1),.print-flat-table td:nth-child(1){width:56%!important;text-align:left!important;font-weight:900!important}
+  .print-flat-table th:nth-child(2),.print-flat-table td:nth-child(2){width:22%!important;text-align:center!important}
+  .print-flat-table th:nth-child(3),.print-flat-table td:nth-child(3){width:22%!important;text-align:center!important}
+  .print-flat-note{display:block!important;font-size:5.8pt!important;line-height:1.05!important;margin-top:.2mm!important;background:#fff7d6!important;padding:.15mm .35mm!important;border-left:.45mm solid #d97706!important;font-weight:800!important;color:#000!important}
+  .atelier-note-display{border:.25mm solid #111!important;background:#fff8d8!important;color:#000!important;font-size:6.6pt!important;line-height:1.05!important;padding:.5mm .7mm!important;margin:.7mm 0!important}
+}
+
+
+
+/* CORRECAO_IMPRESSAO_PARES_PARES_DIA_2026-07-02
+   Usa uma grade própria no PDF para garantir que Pares e Pares/dia apareçam. */
+.print-flat-grid-wrap{display:none}
+@media print{
+  .print-flat-grid-wrap{display:block!important;margin-top:.8mm!important;width:100%!important}
+  .print-flat-grid{display:grid!important;grid-template-columns:52% 24% 24%!important;width:100%!important;border-left:.28mm solid #111!important;border-top:.28mm solid #111!important;background:#fff!important}
+  .print-cell{display:block!important;visibility:visible!important;border-right:.28mm solid #111!important;border-bottom:.28mm solid #111!important;padding:.45mm .55mm!important;min-height:3.6mm!important;font-size:7pt!important;line-height:1.05!important;color:#000!important;background:#fff!important;overflow:visible!important;text-overflow:clip!important;white-space:normal!important}
+  .print-head{background:#e5e7eb!important;font-weight:900!important;text-align:center!important;font-size:6.6pt!important}
+  .print-model{text-align:left!important;font-weight:900!important}
+  .print-num{text-align:center!important;font-weight:800!important}
+  .print-flat-note{display:block!important;font-size:5.8pt!important;line-height:1.05!important;margin-top:.2mm!important;background:#fff7d6!important;padding:.15mm .35mm!important;border-left:.45mm solid #d97706!important;font-weight:800!important;color:#000!important}
+}
+
+.price-update-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:8px;margin:10px 0}
+.price-update-summary .summary-item{min-height:68px}
+.price-update-warning{padding:9px 11px;border-radius:8px;background:#fff3cd;color:#664d03;margin:10px 0;font-size:.85rem;line-height:1.4}
+.price-update-table{min-width:720px}
+.price-update-table td:first-child{text-align:left;font-weight:700}
+.price-update-table .price-pending{color:#842029;font-weight:700}
+.price-update-table .price-change{color:#14532d;font-weight:700}
+.autosave-status{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;background:#eef2f7;color:#334155;font-size:.8rem;font-weight:700;white-space:nowrap}
+.autosave-status[data-state="saved"]{background:#e8f7ed;color:#14532d}
+.autosave-status[data-state="pending"],.autosave-status[data-state="saving"]{background:#eaf4ff;color:#084298}
+.autosave-status[data-state="error"]{background:#ffe3e8;color:#842029}
+.capacity-tooltip{position:fixed;z-index:8500;width:min(350px,calc(100vw - 24px));max-height:min(400px,80vh);overflow:auto;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;box-shadow:0 12px 32px rgba(15,23,42,.25);font-size:.79rem;line-height:1.35;pointer-events:none}
+.capacity-tooltip[hidden]{display:none!important}
+.capacity-tooltip strong{display:block;margin-bottom:3px;font-size:.9rem}
+.capacity-tooltip p{margin:2px 0 7px;color:#475569}
+.capacity-tooltip table{min-width:0;font-size:.73rem}
+.capacity-tooltip th,.capacity-tooltip td{padding:5px 6px;white-space:normal}
+.capacity-tooltip td:first-child{text-align:left;font-weight:700}
+.capacity-tooltip .capacity-current{background:#edf8f1}
+.model-link{cursor:help}
+.model-link:focus-visible{outline:2px solid #0d6efd;outline-offset:2px;border-radius:3px}
+@media print{.capacity-tooltip{display:none!important}}
+</style>
+<script src="navegacao.js"></script>
+<style>
+.sector-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.sector-tab{border:1px solid #cad3df;border-radius:9px;padding:10px 22px;background:#fff;color:#334155;font-size:15px;font-weight:800;cursor:pointer}.sector-tab[aria-selected="true"]{background:#145ca4;border-color:#145ca4;color:#fff}.launch-details{font-size:13px;color:#475569;margin:8px 0 0;line-height:1.5}.launching #atelierGrid{pointer-events:none;opacity:.72}
+</style>
+</head>
+<body class="auth-loading">
+<main>
+<section class="card">
+  <div class="page-head">
+    <div>
+      <h2 class="page-title">Distribuição dos Ateliês</h2>
+      <p class="page-subtitle">Selecione uma distribuição para trabalhar com uma única data de corte, ou duas para trabalhar em conjunto. O sistema busca o último ateliê que produziu cada modelo, calcula o valor previsto do serviço selecionado e permite arrastar, trocar ou dividir modelos entre ateliês.</p>
+    </div>
+    <div class="top-actions no-print">
+      <button class="btn btn-secondary" id="selectDistributionsButton" type="button">Selecionar distribuição</button>
+      <button class="btn btn-secondary" id="openSavedButton" type="button">Abrir salvas</button>
+      <button class="btn btn-primary" id="generateButton" type="button">Montar distribuição</button>
+      <button class="btn btn-secondary" id="addAtelierButton" type="button">Atualizar ateliês</button>
+      <button class="btn btn-secondary" id="updatePricesButton" type="button" title="Buscar os preços atuais do serviço dos modelos desta distribuição" disabled>Atualizar preços</button>
+      <span class="autosave-status" id="autoSaveStatus" data-state="idle" role="status" aria-live="polite">Aguardando distribuição</span>
+      <button class="btn btn-secondary btn-small hidden" id="retryAutoSaveButton" type="button">Tentar novamente</button>
+      <button class="btn btn-warning" id="launchButton" type="button">Lançar distribuição</button>
+      <button class="btn btn-secondary" id="printButton" type="button" disabled>Imprimir / PDF</button>
+      <button class="btn btn-secondary" id="clearButton" type="button">Limpar</button>
+    </div>
+  </div>
+  <div class="sector-tabs no-print" role="tablist" aria-label="Setor da distribuição">
+    <button class="sector-tab" id="sector-costura" data-distribution-sector="costura" type="button" role="tab" aria-selected="true">Costura</button>
+    <button class="sector-tab" id="sector-palmilha" data-distribution-sector="palmilha" type="button" role="tab" aria-selected="false">Palmilha</button>
+    <button class="sector-tab" id="sector-sola" data-distribution-sector="sola" type="button" role="tab" aria-selected="false">Sola</button>
+  </div>
+  <p class="launch-details no-print" id="sectorExplanation">O lançamento atribui o ateliê aos talões das datas escolhidas. Modelos divididos ficam para o Corte selecionar talão por talão.</p>
+  <div class="date-filter-row no-print">
+    <div class="form-group"><label for="dateOneInput">Corte 1</label><input type="date" id="dateOneInput" /></div>
+    <div class="form-group"><label for="dateTwoInput">Corte 2 (opcional)</label><input type="date" id="dateTwoInput" /></div>
+    <div class="form-group"><label for="atelierFilterInput">Filtrar ateliê</label><input type="text" id="atelierFilterInput" placeholder="Ex: Michel" autocomplete="off" /></div>
+  </div>
+  <div id="messageBox" class="message"></div>
+</section>
+
+<section class="card hidden" id="summaryCard">
+  <div class="table-actions"><h3 class="section-title">Resumo da programação</h3><span class="mini-help" id="periodInfo"></span></div>
+  <div class="summary-grid" id="summaryGrid"></div>
+  <div class="line-summary-panel" id="lineSummaryPanel">
+    <div class="line-summary-head">
+      <div>
+        <h4 class="line-summary-title">Pares por linha</h4>
+        
+      </div>
+      <button class="btn btn-secondary btn-small no-print" id="resetLineGroupsButton" type="button">Separar linhas</button>
+    </div>
+    <div class="line-summary-grid" id="lineSummaryGrid"></div>
+  </div>
+</section>
+
+<section class="card hidden" id="atelierSection">
+  <h2 class="print-title" id="printTitle">Distribuição dos Ateliês</h2>
+  <div class="table-actions no-print">
+    <div><h3 class="section-title">Distribuição lógica por ateliê</h3><span class="mini-help" id="atelierInfo">Arraste os modelos. Segure SHIFT ao soltar para dividir.</span></div>
+    <span class="tag info">Faturamento diário = valor da programação ÷ 5</span>
+  </div>
+  <div class="atelier-grid" id="atelierGrid"></div>
+</section>
+</main>
+<div id="capacityTooltip" class="capacity-tooltip no-print" role="tooltip" hidden></div>
+
+<div class="modal-backdrop" id="distributionsModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header"><h3>Selecionar distribuições</h3><button class="modal-close" id="closeDistributionsModalButton" type="button">Fechar</button></div>
+    <div class="modal-body">
+      <p class="mini-help">Selecione uma data para montar uma distribuição individual ou duas datas para montar em conjunto.</p>
+      <div class="table-wrap"><table><thead><tr><th>Selecionar</th><th>Data corte</th><th>Total pares</th><th>Modelos</th><th>Arquivo</th></tr></thead><tbody id="distributionsTableBody"></tbody></table></div>
+      <div class="actions" style="margin-top:12px"><button class="btn btn-primary" id="confirmDistributionsButton" type="button">Usar selecionadas</button></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-backdrop" id="savedModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header"><h3>Distribuições de ateliês salvas</h3><button class="modal-close" id="closeSavedModalButton" type="button">Fechar</button></div>
+    <div class="modal-body">
+      <div class="open-saved-info">Clique em <strong>Abrir</strong> para carregar uma distribuição já salva com todas as movimentações, divisões e observações.</div>
+      <div class="table-wrap"><table class="saved-list-table"><thead><tr><th>Distribuição</th><th>Datas de corte</th><th>Total pares</th><th>Valor do serviço</th><th>Atualizado por</th><th>Ação</th></tr></thead><tbody id="savedTableBody"></tbody></table></div>
+      <div class="actions" style="margin-top:10px"><button class="btn btn-secondary btn-small hidden" id="savedLoadMoreButton" type="button">Carregar mais</button><span class="mini-help" id="savedListInfo"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="pricesModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pricesModalTitle">
+    <div class="modal-header"><h3 id="pricesModalTitle">Atualizar preços do serviço</h3><button class="modal-close" id="closePricesModalButton" type="button">Fechar</button></div>
+    <div class="modal-body">
+      <p class="mini-help">Preços atuais do cadastro de modelos para a distribuição aberta. Confira as alterações antes de aplicar. Os pares, ateliês, divisões e observações serão preservados.</p>
+      <div id="pricesSummary" class="price-update-summary"></div>
+      <div id="pricesWarning" class="price-update-warning hidden"></div>
+      <div class="table-wrap"><table class="price-update-table"><thead><tr><th>Modelo / ateliê</th><th>Pares</th><th>Preço atual/par</th><th>Novo preço/par</th><th>Diferença total</th></tr></thead><tbody id="pricesTableBody"></tbody></table></div>
+      <div class="actions" style="margin-top:12px"><button class="btn btn-success" id="applyPricesButton" type="button">Aplicar preços</button><button class="btn btn-secondary" id="cancelPricesButton" type="button">Cancelar</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="splitModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header"><h3 id="splitModalTitle">Dividir modelo</h3><button class="modal-close" id="closeSplitModalButton" type="button">Fechar</button></div>
+    <div class="modal-body">
+      <div class="summary-grid" id="splitSummary"></div>
+      <div class="modal-grid" style="margin-top:12px">
+        <div class="form-group"><label for="splitPairsInput">Pares para transferir</label><input type="number" id="splitPairsInput" min="1" step="1" /></div>
+        <div class="form-group"><label for="splitDestinationSelect">Destino</label><select id="splitDestinationSelect"></select></div>
+        <div class="form-group hidden"><label for="splitNewAtelierInput">Ateliê cadastrado</label><input type="text" id="splitNewAtelierInput" disabled placeholder="Cadastre o usuário com o Admin" /></div>
+      </div>
+      <div class="modal-grid split-notes-grid" style="margin-top:10px">
+        <div class="form-group"><label for="splitOriginNoteInput">Observação no ateliê atual</label><input type="text" id="splitOriginNoteInput" placeholder="Ex: somente cor preta" /></div>
+        <div class="form-group"><label for="splitDestinationNoteInput">Observação no ateliê destino</label><input type="text" id="splitDestinationNoteInput" placeholder="Ex: remessa 34-000000" /></div>
+      </div>
+      <div class="actions" style="margin-top:12px"><button class="btn btn-success" id="confirmSplitButton" type="button">Confirmar divisão</button></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+const firebaseConfig = window.FIREBASE_CONFIG;
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,setDoc,collection,getDocs,getDocsFromServer,query,where,orderBy,limit,startAfter,serverTimestamp,runTransaction}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const FULL_ACCESS_LEVELS=new Set(["07","08","09"]);
+const sectorParams=new URLSearchParams(window.location.search);
+const activeSector=["costura","palmilha","sola"].includes(sectorParams.get("setor"))?sectorParams.get("setor"):"costura";
+const sectorInfo=window.Roma.SECTORS[activeSector];
+let atelierDirectory=[],launching=false;
+
+let currentUser=null,currentUserLevel="",currentUserName="",modelsMap=new Map(),taloesCache=[],lastAtelierMap=new Map(),atelierHistoryMap=new Map(),modelCapacityMap=new Map(),allocation=[],manualAteliers=new Set(),selectedDocs=[],currentSplitId=null,atelierNotes=new Map(),atelierNotePositions=new Map(),lineSummaryGroups=[],undoStack=[],redoStack=[],pendingPrices=null,pricesLoading=false,taloesLoaded=false,autoSaveTimer=null,autoSaveRetryTimer=null,autoSavePromise=null,autoSaveVersion=0,savedVersion=0,activeSavedDocId="",navigationRequest=0,savedListRows=[],savedListCursor=null,savedListLoaded=false,savedListBusy=false,savedListHasMore=false,savedListGeneration=0;
+const savedListCache=new Map(),SAVED_PAGE_SIZE=15;
+const $=id=>document.getElementById(id);
+const els={dateOneInput:$("dateOneInput"),dateTwoInput:$("dateTwoInput"),atelierFilterInput:$("atelierFilterInput"),selectDistributionsButton:$("selectDistributionsButton"),generateButton:$("generateButton"),addAtelierButton:$("addAtelierButton"),updatePricesButton:$("updatePricesButton"),autoSaveStatus:$("autoSaveStatus"),retryAutoSaveButton:$("retryAutoSaveButton"),capacityTooltip:$("capacityTooltip"),printButton:$("printButton"),launchButton:$("launchButton"),clearButton:$("clearButton"),openSavedButton:$("openSavedButton"),savedModalBackdrop:$("savedModalBackdrop"),closeSavedModalButton:$("closeSavedModalButton"),savedTableBody:$("savedTableBody"),savedLoadMoreButton:$("savedLoadMoreButton"),savedListInfo:$("savedListInfo"),pricesModalBackdrop:$("pricesModalBackdrop"),closePricesModalButton:$("closePricesModalButton"),cancelPricesButton:$("cancelPricesButton"),applyPricesButton:$("applyPricesButton"),pricesSummary:$("pricesSummary"),pricesWarning:$("pricesWarning"),pricesTableBody:$("pricesTableBody"),messageBox:$("messageBox"),summaryCard:$("summaryCard"),summaryGrid:$("summaryGrid"),lineSummaryPanel:$("lineSummaryPanel"),lineSummaryGrid:$("lineSummaryGrid"),resetLineGroupsButton:$("resetLineGroupsButton"),periodInfo:$("periodInfo"),atelierSection:$("atelierSection"),atelierGrid:$("atelierGrid"),atelierInfo:$("atelierInfo"),distributionsModalBackdrop:$("distributionsModalBackdrop"),closeDistributionsModalButton:$("closeDistributionsModalButton"),distributionsTableBody:$("distributionsTableBody"),confirmDistributionsButton:$("confirmDistributionsButton"),splitModalBackdrop:$("splitModalBackdrop"),splitModalTitle:$("splitModalTitle"),closeSplitModalButton:$("closeSplitModalButton"),splitSummary:$("splitSummary"),splitPairsInput:$("splitPairsInput"),splitDestinationSelect:$("splitDestinationSelect"),splitNewAtelierInput:$("splitNewAtelierInput"),splitOriginNoteInput:$("splitOriginNoteInput"),splitDestinationNoteInput:$("splitDestinationNoteInput"),confirmSplitButton:$("confirmSplitButton")};
+function redirectUnauthorized(){alert("Seu nível de acesso não permite abrir esta página. Você será redirecionado para o início.");window.location.replace("index.html");}
+onAuthStateChanged(auth,async user=>{if(!user){window.location.href="login.html";return}currentUser=user;try{const userSnap=await getDoc(doc(db,"Usuario",user.email));if(!userSnap.exists()){alert("Dados do usuário não encontrados. Faça login novamente.");await signOut(auth);window.location.href="login.html";return}if(!FULL_ACCESS_LEVELS.has(String(userSnap.data().nivelAcesso||""))){redirectUnauthorized();return;}const userData=window.Roma.validateProfile(user,userSnap.data());currentUserLevel=String(userData.nivelAcesso||"");currentUserName=userData.Nome||user.email||"Usuário";localStorage.setItem("calcadosroma-65ac6:userNivelAcesso",currentUserLevel);localStorage.setItem("calcadosroma-65ac6:userName",currentUserName);if(!FULL_ACCESS_LEVELS.has(currentUserLevel)){redirectUnauthorized();return}document.body.classList.remove("auth-loading");if(window.SistemaNavegacao){if(Array.isArray(window.SistemaNavegacao.pages)&&!window.SistemaNavegacao.pages.some(p=>String(p.href||"").toLowerCase()==="distribuicaoatt.html")){window.SistemaNavegacao.pages.push({group:"Costura",name:"Distribuição Ateliês",href:"distribuicaoatt.html",levels:["07","08","09"]});}window.SistemaNavegacao.init({userLevel:currentUserLevel,userName:currentUserName,title:"Distribuição Ateliês",onLogout:async()=>{await signOut(auth);localStorage.removeItem("calcadosroma-65ac6:userNivelAcesso");localStorage.removeItem("calcadosroma-65ac6:userName");window.location.href="login.html";}})}await loadAteliers();setupSectorTabs();showMessage("info",`Selecione uma ou duas distribuições para ${sectorInfo.label}. Com uma data, a distribuição será individual.`);await restoreSectorDates();}catch(err){console.error(err);alert("Erro ao validar usuário: "+err.message);window.location.replace("index.html")}});
+function showMessage(type,text){els.messageBox.className=text?`message show ${type}`:"message";els.messageBox.textContent=text||""}function onlyDigits(v){return String(v||"").replace(/\D/g,"")}function normalizeText(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}const HOLD_ATELIER="Segurar";function normalizeAtelierName(name){const n=String(name||"").trim();const norm=normalizeText(n);return(!n||norm==="sem atelie definido"||norm==="sem atelier definido"||norm==="sem ateliê definido")?HOLD_ATELIER:n}function displayAtelierName(name){return normalizeAtelierName(name)}function escapeHtml(str){return String(str??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]))}function parseNumber(value){if(value===null||value===undefined)return 0;if(typeof value==="number")return Number.isFinite(value)?value:0;let s=String(value).trim();if(!s||s==="-")return 0;s=s.replace(/R\$|\s/g,"");if(s.includes(",")&&s.includes("."))s=s.replace(/\./g,"").replace(",",".");else if(s.includes(","))s=s.replace(",",".");s=s.replace(/[^0-9.\-]/g,"");const n=parseFloat(s);return Number.isFinite(n)?n:0}function formatMoney(v){return(Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL",minimumFractionDigits:2,maximumFractionDigits:2})}function formatNumber(v){return(Number(v)||0).toLocaleString("pt-BR",{maximumFractionDigits:0})}function formatPairsDay(v){const n=Number(v)||0;return n.toLocaleString("pt-BR",{minimumFractionDigits:Number.isInteger(n)?0:1,maximumFractionDigits:1})}function round2(n){return Math.round((Number(n)||0)*100)/100}function pad2(n){return String(n).padStart(2,"0")}function toISODate(date){return`${date.getFullYear()}-${pad2(date.getMonth()+1)}-${pad2(date.getDate())}`}function isoToBR(iso){if(!iso)return"";const[y,m,d]=String(iso).split("-");return`${d}/${m}/${y}`}function isoToShortBR(iso){if(!iso)return"";const[y,m,d]=String(iso).split("-");return`${d}/${m}`}function isoToDocId(iso){if(!iso)return"";const[y,m,d]=String(iso).split("-");return`${d}-${m}-${y}`}function docIdToISO(docId){if(!docId)return"";const[d,m,y]=String(docId).split("-");return`${y}-${m}-${d}`}function docIdToBR(docId){return docId?String(docId).replaceAll("-","/"):""}function normalizeDate(value){if(!value)return"";try{if(value.toDate)return toISODate(value.toDate())}catch{}if(value instanceof Date&&!isNaN(value))return toISODate(value);const s=String(value).trim();if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);const br=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(br)return`${br[3]}-${br[2]}-${br[1]}`;const brShort=s.match(/^(\d{2})\/(\d{2})$/);if(brShort){const y=new Date().getFullYear();return`${y}-${brShort[2]}-${brShort[1]}`}return""}function modelKey(linha,modelo){return window.RomaModelos.modelKey(linha,modelo)}function fallbackModelKeys(linha,modelo){const l=onlyDigits(linha),m=onlyDigits(modelo);return[modelKey(linha,modelo),`${l}.${m}`,`${l}-${m}`,`${l}_${m}`]}function findModelInMap(map,linha,modelo){for(const key of fallbackModelKeys(linha,modelo)){if(map.has(key))return map.get(key)}return null}function getModel(linha,modelo){return findModelInMap(modelsMap,linha,modelo)}function getCosturaValue(model){return parseNumber(model?.servicos?.[activeSector])}function firstNonEmpty(data,fields){for(const f of fields){const v=data?.[f];if(v!==undefined&&v!==null&&String(v).trim()!=="")return v}return""}function getTalaoDate(data){const fields=activeSector==="costura"?[sectorInfo.end,"dataProducaoCostura","dataBaixaCostura","saidaCostura","dataEntradaDistribuicao"]:[sectorInfo.end];return normalizeDate(firstNonEmpty(data,fields))}function getAtelier(data){const record=atelierDirectory.find(a=>a.id===data[sectorInfo.owner]);return record?atelierLabel(record):String(data[sectorInfo.nameField]||"Sem ateliê").trim()}function getLinha(data){return String(firstNonEmpty(data,["linha","Linha","codLinha"]))}function getModelo(data){return String(firstNonEmpty(data,["modelo","Modelo","codModelo"]))}function getPares(data){return parseNumber(firstNonEmpty(data,["pares","Pares","quantidadePares","qtdPares"]))}
+function getMonday(iso){const d=new Date(`${iso}T12:00:00`);const day=d.getDay();const diff=(day===0?-6:1-day);d.setDate(d.getDate()+diff);return d}function addDays(date,days){const d=new Date(date.getTime());d.setDate(d.getDate()+days);return d}function buildWeeks(referenceISO=toISODate(new Date())){const monday=getMonday(referenceISO);const weeks=[];for(let i=2;i>=0;i--){const start=addDays(monday,-7*i),end=addDays(start,4);const startISO=toISODate(start),endISO=toISODate(end);weeks.push({index:weeks.length+1,startISO,endISO,dates:Array.from({length:5},(_,d)=>toISODate(addDays(start,d)))});}return weeks}
+function buildModelsMap(snap){const map=new Map();snap.docs.forEach(d=>{const data={id:d.id,...d.data()};map.set(d.id,data);if(data.linha&&data.modelo)map.set(modelKey(data.linha,data.modelo),data)});return map}
+async function readOperationalModels(fromServer=false){
+  const read=fromServer?getDocsFromServer:getDocs;
+  const [operational,prices]=await Promise.all([read(collection(db,"modelosOperacionais")),read(collection(db,"precosAtelier"))]);
+  const priceMap=buildModelsMap(prices),map=buildModelsMap(operational);
+  for(const value of new Set(map.values())){const price=priceMap.get(value.id)||priceMap.get(modelKey(value.linha,value.modelo))||{};value.servicos={costura:Number(price.costura)||0,palmilha:Number(price.palmilha)||0,sola:Number(price.sola)||0};}
+  return map;
+}
+async function loadModels(){modelsMap=await readOperationalModels();}
+async function loadTaloes(force=false){if(taloesLoaded&&!force)return taloesCache;const snap=await (force?getDocsFromServer:getDocs)(collection(db,"taloes"));taloesCache=snap.docs.map(d=>({id:d.id,...d.data()}));taloesLoaded=true;return taloesCache}
+function atelierLabel(atelier){const duplicate=atelierDirectory.filter(a=>normalizeText(a.nome)===normalizeText(atelier.nome)).length>1;return duplicate?`${atelier.nome} [${atelier.id}]`:atelier.nome;}
+function atelierForLabel(label){return atelierDirectory.find(a=>atelierLabel(a)===label)||null;}
+async function loadAteliers(){
+  const snap=await getDocsFromServer(query(collection(db,"atelies"),where("setor","==",activeSector)));
+  atelierDirectory=snap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>a.ativo===true&&a.setor===activeSector);
+  allocation.forEach(item=>{const atelier=item.atelierId?atelierDirectory.find(a=>a.id===item.atelierId):atelierForLabel(item.atelier);if(atelier){item.atelierId=atelier.id;item.atelier=atelierLabel(atelier);}});
+}
+function setupSectorTabs(){
+  document.title=`Distribuição de Ateliês — ${sectorInfo.label} | Calçados Roma`;
+  document.querySelector(".page-title").textContent=`Distribuição dos Ateliês — ${sectorInfo.label}`;
+  document.getElementById("pricesModalTitle").textContent=`Atualizar preços — ${sectorInfo.label}`;
+  document.querySelectorAll("[data-distribution-sector]").forEach(button=>{button.setAttribute("aria-selected",String(button.dataset.distributionSector===activeSector));button.addEventListener("click",()=>switchSector(button.dataset.distributionSector));});
+}
+async function switchSector(sector){
+  if(sector===activeSector||launching)return;
+  if(!await flushAutoSave())return;
+  const url=new URL(window.location.href);url.searchParams.set("setor",sector);
+  if(els.dateOneInput.value)url.searchParams.set("d1",els.dateOneInput.value);else url.searchParams.delete("d1");
+  if(els.dateTwoInput.value)url.searchParams.set("d2",els.dateTwoInput.value);else url.searchParams.delete("d2");
+  window.location.href=url.href;
+}
+async function restoreSectorDates(){
+  const dates=[sectorParams.get("d1"),sectorParams.get("d2")].filter(Boolean);
+  if(!dates.length||dates.some(date=>!/^\d{4}-\d{2}-\d{2}$/.test(date))||new Set(dates).size!==dates.length)return;
+  const ids=dates.map(isoToDocId).sort((a,b)=>docIdToISO(a).localeCompare(docIdToISO(b)));
+  els.dateOneInput.value=docIdToISO(ids[0]);els.dateTwoInput.value=ids[1]?docIdToISO(ids[1]):"";
+  const id=`${activeSector}_${ids.join("_")}`,snap=await getDoc(doc(db,"DistribuicaoAtelier",id));
+  if(snap.exists())await loadSavedAllocation(id);else await generate();
+}
+function previousBusinessDayISO(baseISO=toISODate(new Date())){let d=new Date(`${baseISO}T12:00:00`);d.setDate(d.getDate()-1);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()-1);return toISODate(d)}
+function businessDatesUntilYesterday(){const yesterdayISO=previousBusinessDayISO();const weeks=buildWeeks(yesterdayISO);const dates=weeks.flatMap(w=>w.dates).filter(dateISO=>dateISO<=yesterdayISO);return{weeks,dates,startISO:dates[0]||weeks[0].startISO,endISO:yesterdayISO,diasUteis:dates.length||1}}
+function calculateHistory(taloes){
+  const periodo=businessDatesUntilYesterday(),weekDateSet=new Set(periodo.dates),diasUteis=periodo.diasUteis;
+  const hist=new Map(),last=new Map(),capacity=new Map();
+  taloes.forEach(t=>{
+    const dateISO=getTalaoDate(t),linha=getLinha(t),modelo=getModelo(t),pares=getPares(t);
+    if(!dateISO||!linha||!modelo||pares<=0||toISODate(new Date(`${dateISO}T12:00:00`))!==dateISO)return;
+    const atelier=getAtelier(t),key=modelKey(linha,modelo),corteISO=getTalaoCorteDate(t)||dateISO;
+    const current=last.get(key);
+    if(!current||dateISO>current.dateISO)last.set(key,{atelier,dateISO,corteISO});
+    if(normalizeText(atelier)!=="sem atelie"){
+      if(!capacity.has(key))capacity.set(key,new Map());
+      const byAtelier=capacity.get(key);
+      if(!byAtelier.has(atelier))byAtelier.set(atelier,{atelier,days:new Map(),weeks:new Map()});
+      const row=byAtelier.get(atelier),weekISO=toISODate(getMonday(dateISO));
+      row.days.set(dateISO,(row.days.get(dateISO)||0)+pares);
+      row.weeks.set(weekISO,(row.weeks.get(weekISO)||0)+pares);
+    }
+    if(dateISO<periodo.startISO||dateISO>periodo.endISO||!weekDateSet.has(dateISO))return;
+    const valor=round2(pares*getCosturaValue(getModel(linha,modelo)));
+    if(!hist.has(atelier))hist.set(atelier,{atelier,total:0,pares:0,dias:new Set()});
+    const h=hist.get(atelier);h.total=round2(h.total+valor);h.pares+=pares;h.dias.add(dateISO);
+  });
+  hist.forEach(h=>{h.mediaDia=round2(h.total/diasUteis);h.mediaDiaProduzido=round2(h.total/(h.dias.size||1));h.diasUteis=diasUteis});
+  const compact=new Map();
+  capacity.forEach((ateliers,key)=>compact.set(key,[...ateliers.values()].map(a=>{
+    let maxDia=0,diaISO="",maxSemana=0,semanaISO="";
+    a.days.forEach((pares,date)=>{if(pares>maxDia||pares===maxDia&&date>diaISO){maxDia=pares;diaISO=date}});
+    a.weeks.forEach((pares,week)=>{if(pares>maxSemana||pares===maxSemana&&week>semanaISO){maxSemana=pares;semanaISO=week}});
+    return{atelier:a.atelier,maxDia,diaISO,maxSemana,semanaISO};
+  })));
+  lastAtelierMap=last;atelierHistoryMap=hist;modelCapacityMap=compact;
+}
+async function loadDistribution(docId){const snap=await getDoc(doc(db,"Distribuicao",docId));if(!snap.exists())throw new Error(`Distribuição ${docIdToBR(docId)} não encontrada.`);return{docId,data:snap.data()}}
+function distributionItems(data,docId){if(Array.isArray(data.itens)&&data.itens.length){return data.itens.map(i=>({linha:String(i.linha||""),modelo:String(i.modelo||""),pares:Number(i.pares||0),origem:docId}))}const out=[];Object.entries(data.linhas||{}).forEach(([linha,line])=>{Object.entries(line.modelos||{}).forEach(([modelo,pares])=>out.push({linha,modelo,pares:Number(pares||0),origem:docId}))});return out}
+function makeAllocation(combined){allocation=combined.filter(item=>activeSector==="costura"||window.Roma.stageApplicable(getModel(item.linha,item.modelo),activeSector)).map((item,index)=>{const model=getModel(item.linha,item.modelo),price=getCosturaValue(model),last=lastAtelierMap.get(modelKey(item.linha,item.modelo));const found=atelierForLabel(last?.atelier||"");const atelier=found?atelierLabel(found):HOLD_ATELIER;return calcItem({...item,id:`${modelKey(item.linha,item.modelo)}-${index}-${Date.now()}`,key:modelKey(item.linha,item.modelo),atelier,atelierId:found?.id||"",lastDate:last?.dateISO||"",categoria:model?.categoria||"Sem categoria",subcategoria:model?.subcategoria||"Sem subcategoria",servicoUnit:price,semModelo:!model,semPrecoServico:!!model&&price<=0})})}
+function calcItem(item){item.pares=Number(item.pares||0);item.servicoUnit=Number(item.servicoUnit||0);item.valor=round2(item.pares*item.servicoUnit);item.valorDia=round2(item.valor/5);item.paresDia=round2(item.pares/5);return item}
+function allocationPriceSignature(){return JSON.stringify({distribuicoes:selectedDocs,itens:allocation.map(i=>[i.id,i.key,i.pares,i.atelier,i.servicoUnit,!!i.semModelo,!!i.semPrecoServico])})}
+function closePricesModal(){els.pricesModalBackdrop.classList.remove("show");pendingPrices=null}
+function compareCurrentPrices(freshModels){
+  const rows=[];
+  allocation.forEach(item=>{
+    const model=findModelInMap(freshModels,item.linha,item.modelo);
+    const oldPrice=parseNumber(item.servicoUnit);
+    const newPrice=getCosturaValue(model);
+    const issue=!model?"Modelo não cadastrado":newPrice<=0?"Serviço sem preço válido":"";
+    const changed=!issue&&(Math.abs(newPrice-oldPrice)>0.000001||!!item.semModelo||!!item.semPrecoServico);
+    if(!issue&&!changed)return;
+    const newValue=round2(Number(item.pares||0)*newPrice);
+    const oldValue=round2(Number(item.pares||0)*oldPrice);
+    rows.push({id:item.id,key:item.key,linha:item.linha,modelo:item.modelo,atelier:item.atelier,pares:Number(item.pares||0),oldPrice,newPrice,delta:changed?round2(newValue-oldValue):0,issue,changed});
+  });
+  rows.sort((a,b)=>Number(b.changed)-Number(a.changed)||String(a.key).localeCompare(String(b.key),"pt-BR",{numeric:true})||String(a.atelier).localeCompare(String(b.atelier),"pt-BR"));
+  return rows;
+}
+async function previewPriceUpdate(){
+  if(!allocation.length){showMessage("warning","Monte ou abra uma distribuição antes de atualizar os preços.");return}
+  const signature=allocationPriceSignature();
+  pendingPrices=null;
+  pricesLoading=true;
+  els.updatePricesButton.disabled=true;
+  showMessage("info","Consultando os preços atuais do serviço no cadastro de modelos...");
+  try{
+    const freshModels=await readOperationalModels(true);
+    if(signature!==allocationPriceSignature()){showMessage("warning","A distribuição mudou durante a consulta. Clique em Atualizar preços novamente.");return}
+    const rows=compareCurrentPrices(freshModels);
+    const changes=rows.filter(r=>r.changed),issues=rows.filter(r=>r.issue);
+    const changedModels=new Set(changes.map(r=>r.key));
+    const pendingModels=new Set(issues.map(r=>r.key));
+    const totalDelta=round2(changes.reduce((sum,r)=>sum+r.delta,0));
+    pendingPrices={signature,changes,freshModels};
+    els.pricesSummary.innerHTML=`<div class="summary-item primary"><strong>${formatNumber(changedModels.size)}</strong><small>Modelos a revisar</small></div><div class="summary-item"><strong>${formatNumber(changes.reduce((sum,r)=>sum+r.pares,0))}</strong><small>Pares afetados</small></div><div class="summary-item ${totalDelta>=0?"ok":"warn"}"><strong>${totalDelta>=0?"+":""}${formatMoney(totalDelta)}</strong><small>Diferença na programação</small></div><div class="summary-item ${pendingModels.size?"danger":"ok"}"><strong>${formatNumber(pendingModels.size)}</strong><small>Sem preço válido</small></div>`;
+    els.pricesWarning.classList.toggle("hidden",!issues.length);
+    els.pricesWarning.textContent=issues.length?`${formatNumber(pendingModels.size)} modelo(s) sem cadastro ou preço do serviço válido. Esses itens serão mantidos com os valores anteriores; confira o cadastro de modelos.`:"";
+    els.pricesTableBody.innerHTML=rows.length?rows.map(r=>`<tr><td>${escapeHtml(r.linha)}.${escapeHtml(r.modelo)} <small>• ${escapeHtml(r.atelier)}</small></td><td>${formatNumber(r.pares)}</td><td class="money">${formatMoney(r.oldPrice)}</td><td class="${r.issue?"price-pending":"price-change"}">${r.issue?escapeHtml(r.issue):formatMoney(r.newPrice)}</td><td class="money">${r.issue?"—":`${r.delta>=0?"+":""}${formatMoney(r.delta)}`}</td></tr>`).join(""):`<tr><td colspan="5">Todos os modelos desta distribuição já estão com os preços atuais.</td></tr>`;
+    els.applyPricesButton.disabled=!changes.length;
+    els.pricesModalBackdrop.classList.add("show");
+    showMessage("","");
+  }catch(err){console.error(err);showMessage("error","Não foi possível consultar os preços atuais. Nenhum valor foi alterado: "+err.message)}
+  finally{pricesLoading=false;els.updatePricesButton.disabled=!allocation.length}
+}
+function applyPriceUpdate(){
+  if(!pendingPrices||!pendingPrices.changes.length)return;
+  if(pendingPrices.signature!==allocationPriceSignature()){closePricesModal();showMessage("warning","A distribuição mudou desde a consulta. Clique em Atualizar preços novamente.");return}
+  pushUndo();
+  const byId=new Map(pendingPrices.changes.map(row=>[row.id,row]));
+  allocation.forEach(item=>{const row=byId.get(item.id);if(!row)return;item.servicoUnit=row.newPrice;item.semModelo=false;item.semPrecoServico=false;calcItem(item)});
+  modelsMap=pendingPrices.freshModels;
+  if(taloesCache.length)calculateHistory(taloesCache);
+  const modelCount=new Set(pendingPrices.changes.map(row=>row.key)).size;
+  const totalDelta=round2(pendingPrices.changes.reduce((sum,row)=>sum+row.delta,0));
+  closePricesModal();
+  renderAll();
+  showMessage("success",`${formatNumber(modelCount)} modelo(s) revisado(s). Diferença total: ${totalDelta>=0?"+":""}${formatMoney(totalDelta)}. Os novos valores serão salvos automaticamente.`);
+}
+function cloneState(){return JSON.parse(JSON.stringify({allocation,manualAteliers:[...manualAteliers],atelierNotes:[...atelierNotes.entries()],atelierNotePositions:[...atelierNotePositions.entries()],lineSummaryGroups}))}
+function restoreState(state){allocation=(state&&state.allocation)||[];manualAteliers=new Set((state&&state.manualAteliers)||[]);atelierNotes=new Map((state&&state.atelierNotes)||[]);atelierNotePositions=new Map((state&&state.atelierNotePositions)||[]);lineSummaryGroups=Array.isArray(state&&state.lineSummaryGroups)?state.lineSummaryGroups:[];renderAll()}
+function pushUndo(){undoStack.push(cloneState());if(undoStack.length>80)undoStack.shift();redoStack=[];queueAutoSave()}
+function undoMove(){if(!undoStack.length)return;redoStack.push(cloneState());restoreState(undoStack.pop());queueAutoSave();showMessage("info","Movimento desfeito.")}
+function redoMove(){if(!redoStack.length)return;undoStack.push(cloneState());restoreState(redoStack.pop());queueAutoSave();showMessage("info","Movimento refeito.")}
+function compareClass(previsto,hist){if(!hist||!hist.mediaDia)return"";return Number(previsto||0)>=Number(hist.mediaDia||0)?"compare-good":"compare-bad"}
+function compareSymbol(previsto,hist){if(!hist||!hist.mediaDia)return"";return Number(previsto||0)>=Number(hist.mediaDia||0)?"▲":"▼"}
+function compareDiff(previsto,hist){if(!hist||!hist.mediaDia)return 0;return round2(Number(previsto||0)-Number(hist.mediaDia||0))}
+function getTalaoCorteDate(data){return normalizeDate(firstNonEmpty(data,["dataCorte","DataCorte","dataDeCorte","data_corte","corte"]))}
+function historyBadge(item){return modelCapacityMap.has(item.key)?`<span class="history-badge" aria-hidden="true">👥</span>`:""}
+function hideModelCapacity(){els.capacityTooltip.hidden=true}
+function showModelCapacity(item,anchor){
+  if(!item||!anchor)return;
+  const rows=[...(modelCapacityMap.get(item.key)||[])].sort((a,b)=>Number(b.atelier===item.atelier)-Number(a.atelier===item.atelier)||b.maxSemana-a.maxSemana||a.atelier.localeCompare(b.atelier,"pt-BR"));
+  const weekLabel=iso=>{const end=toISODate(addDays(getMonday(iso),6));return`${isoToShortBR(iso)}–${isoToShortBR(end)}`};
+  els.capacityTooltip.innerHTML=`<strong>Modelo ${escapeHtml(item.linha)}.${escapeHtml(item.modelo)}</strong><p>Maior volume registrado deste modelo por ateliê, pelas datas de produção/saída do setor selecionado. Semana de segunda a domingo.</p>${rows.length?`<table><thead><tr><th>Ateliê</th><th>Máx./dia</th><th>Máx./semana</th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.atelier===item.atelier?"capacity-current":""}"><td>${escapeHtml(r.atelier)}${r.atelier===item.atelier?" • atual":""}</td><td>${formatNumber(r.maxDia)}<br><small>${isoToBR(r.diaISO)}</small></td><td>${formatNumber(r.maxSemana)}<br><small>${weekLabel(r.semanaISO)}</small></td></tr>`).join("")}</tbody></table>`:`<p>${taloesLoaded?"Nenhum histórico de produção encontrado para este modelo.":"Carregando histórico de produção..."}</p>`}`;
+  els.capacityTooltip.hidden=false;
+  const rect=anchor.getBoundingClientRect(),tip=els.capacityTooltip;
+  tip.style.left=`${Math.max(8,Math.min(rect.left,window.innerWidth-tip.offsetWidth-10))}px`;
+  tip.style.top=`${Math.max(8,rect.bottom+8+tip.offsetHeight<window.innerHeight?rect.bottom+8:rect.top-tip.offsetHeight-8)}px`;
+}
+function noteBadge(item){return item.observacaoDivisao?`<span class="note-badge" title="${escapeHtml(item.observacaoDivisao)}">📝</span>`:""}
+function isSplitItem(item){return !!(item&&((item.dividido===true)||item.splitGroup||item.observacaoDivisao))}
+function atelierNoteValue(name){const raw=atelierNotes.get(name);if(raw&&typeof raw==="object")return String(raw.texto||raw.text||"");return String(raw||"")}
+function atelierNotePosition(name){return Number(atelierNotePositions.get(name)||0)}
+function setAtelierNotePosition(name,pos){if(!name)return;pushUndo();atelierNotePositions.set(name,Math.max(0,Number(pos)||0));renderAll()}
+function setAtelierNote(name,value){if(!name)return;const old=atelierNoteValue(name);const val=String(value||"").trim();if(old===val)return;pushUndo();if(val)atelierNotes.set(name,val);else{atelierNotes.delete(name);atelierNotePositions.delete(name)}renderAll()}
+function promptAtelierNote(name){const atual=atelierNoteValue(name);const novo=prompt(`Observação do ateliê ${displayAtelierName(name)}:`,atual);if(novo===null)return;setAtelierNote(name,novo)}
+function renderAtelierNoteBlock(name){const note=atelierNoteValue(name);if(!note)return"";return `<div class="atelier-note-display atelier-note-block" draggable="true" data-note-atelier="${escapeHtml(name)}"><span><strong>Obs:</strong> ${escapeHtml(note)}</span><button class="btn-atelier-note-remove no-print" type="button" data-note-remove="${escapeHtml(name)}" title="Remover observação">×</button></div>`}
+function printDistribution(){if(!allocation.length){showMessage("warning","Monte a distribuição antes de imprimir.");return}const docs=activeDistributionDocs();const title=document.getElementById("printTitle");if(title)title.textContent=`Distribuição dos Ateliês — ${sectorInfo.label} • ${docs.length===1?"Corte":"Cortes"} ${docs.map(docIdToBR).join(" e ")}`;window.print()}
+
+async function generate(){
+  const docIds=[isoToDocId(els.dateOneInput.value),isoToDocId(els.dateTwoInput.value)].filter(Boolean).sort((a,b)=>docIdToISO(a).localeCompare(docIdToISO(b)));
+  if(!docIds.length){showMessage("warning","Selecione pelo menos uma data de corte. O Corte 2 é opcional.");return}
+  if(docIds.length===2&&docIds[0]===docIds[1]){showMessage("warning","Para uma distribuição individual, preencha uma única data. Para duas, selecione datas diferentes.");return}
+  const request=++navigationRequest,docId=`${activeSector}_${docIds.join("_")}`;
+  els.generateButton.disabled=true;
+  try{
+    if(!await flushAutoSave()||request!==navigationRequest)return;
+    const existing=await getDoc(doc(db,"DistribuicaoAtelier",docId));
+    if(request!==navigationRequest)return;
+    if(existing.exists()&&!confirm(`Já existe uma distribuição salva para ${docIds.map(docIdToBR).join(" e ")}. Montar novamente vai substituir as movimentações e observações anteriores. Deseja continuar?`)){
+      showMessage("info","A distribuição salva foi mantida. Use Abrir salvas para retomá-la.");return;
+    }
+    showMessage("info","Buscando distribuições, modelos e histórico dos ateliês...");
+    await Promise.all([loadModels(),loadAteliers()]);const taloes=await loadTaloes();
+    if(request!==navigationRequest)return;
+    calculateHistory(taloes);
+    const docs=await Promise.all(docIds.map(loadDistribution));
+    if(request!==navigationRequest)return;
+    selectedDocs=docIds;
+    els.dateOneInput.value=docIdToISO(docIds[0]);els.dateTwoInput.value=docIds[1]?docIdToISO(docIds[1]):"";
+    const map=new Map();
+    docs.forEach(({docId,data})=>distributionItems(data,docId).forEach(i=>{
+      const key=modelKey(i.linha,i.modelo);if(!key||!i.pares)return;
+      if(!map.has(key))map.set(key,{linha:i.linha,modelo:i.modelo,pares:0,origens:[],paresPorOrigem:{}});
+      const item=map.get(key),qtd=Number(i.pares||0);
+      item.pares+=qtd;item.origens.push(docId);item.paresPorOrigem[docId]=Number(item.paresPorOrigem[docId]||0)+qtd;
+    }));
+    makeAllocation(Array.from(map.values()).sort((a,b)=>Number(a.linha)-Number(b.linha)||Number(a.modelo)-Number(b.modelo)));
+    atelierNotes=new Map();atelierNotePositions=new Map();lineSummaryGroups=[];undoStack=[];redoStack=[];
+    if(!allocation.length){resetAutoSave("");renderAll();showMessage("info",`Nenhum modelo destas distribuições está marcado com ${sectorInfo.label}. Confira os componentes no cadastro de Modelos.`);return;}
+    resetAutoSave(docId);renderAll();queueAutoSave();
+    showMessage("success",`Distribuição ${selectedDocs.length===1?"individual":"conjunta"} montada com ${formatNumber(allocation.length)} modelo(s). Salvamento automático ativado.`);
+  }catch(err){console.error(err);showMessage("error","Erro ao montar distribuição: "+err.message)}
+  finally{els.generateButton.disabled=false}
+}
+function renderAll(){renderSummary();renderAteliers();els.updatePricesButton.disabled=!allocation.length||pricesLoading;if(els.printButton)els.printButton.disabled=!allocation.length}
+function getAtelierNames(){const names=new Set([HOLD_ATELIER,...atelierDirectory.map(atelierLabel),...allocation.map(i=>normalizeAtelierName(i.atelier)),...[...manualAteliers].map(normalizeAtelierName)]);return Array.from(names).filter(Boolean).sort((a,b)=>{const ma=Number(atelierHistoryMap.get(a)?.mediaDia||0),mb=Number(atelierHistoryMap.get(b)?.mediaDia||0);if(mb!==ma)return mb-ma;return a.localeCompare(b,"pt-BR",{numeric:true})})}
+function normalizeLinhaKey(v){const s=String(v??"").trim();return s||"Sem linha"}
+function activeDistributionDocs(){const docs=(selectedDocs&&selectedDocs.length?selectedDocs:[isoToDocId(els.dateOneInput.value),isoToDocId(els.dateTwoInput.value)]).filter(Boolean);return Array.from(new Set(docs)).sort((a,b)=>docIdToISO(a).localeCompare(docIdToISO(b)))}
+function cleanOriginPairs(obj){const out={};Object.entries(obj||{}).forEach(([doc,pares])=>{const n=Number(pares||0);if(doc&&n>0)out[doc]=n});return out}
+function getItemOrigins(item){if(Array.isArray(item?.origens))return item.origens.filter(Boolean).map(String);if(typeof item?.origensTexto==="string"&&item.origensTexto.trim())return item.origensTexto.split("|").map(s=>s.trim()).filter(Boolean);if(item?.origensMap&&typeof item.origensMap==="object")return Object.keys(item.origensMap).sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true})).map(k=>String(item.origensMap[k]||"")).filter(Boolean);const origem=cleanOriginPairs(item?.paresPorOrigem);return Object.keys(origem)}
+function originsToObject(item){const out={};getItemOrigins(item).forEach((doc,index)=>{if(doc)out[`d${index}`]=doc});return out}
+function lineGroupsToFirestore(){const base=getLineSummaryBase();return normalizeLineSummaryGroups(base).map((linhas,index)=>({ordem:index,nome:lineGroupName(linhas),linhasTexto:linhas.join("|")}))}
+function lineGroupsFromFirestore(value){if(!Array.isArray(value))return[];return value.map(group=>{if(Array.isArray(group))return group;if(group&&Array.isArray(group.linhas))return group.linhas;if(group&&typeof group.linhasTexto==="string")return group.linhasTexto.split("|");if(group&&group.linhasMap&&typeof group.linhasMap==="object")return Object.keys(group.linhasMap).sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true})).map(k=>group.linhasMap[k]);return[]}).map(group=>group.map(normalizeLinhaKey).filter(Boolean)).filter(group=>group.length)}
+function getLineSummaryBase(){const docs=activeDistributionDocs();const map=new Map();allocation.forEach(item=>{const linha=normalizeLinhaKey(item.linha);if(!map.has(linha)){const porDistribuicao={};docs.forEach(doc=>porDistribuicao[doc]=0);map.set(linha,{linha,pares:0,valor:0,modelos:0,porDistribuicao,semDetalhe:0})}const row=map.get(linha);row.pares+=Number(item.pares||0);row.valor=round2(row.valor+Number(item.valor||0));row.modelos+=1;const origem=cleanOriginPairs(item.paresPorOrigem);const origemKeys=Object.keys(origem);if(origemKeys.length){origemKeys.forEach(doc=>{row.porDistribuicao[doc]=Number(row.porDistribuicao[doc]||0)+Number(origem[doc]||0)})}else if(Array.isArray(item.origens)&&item.origens.length===1){const doc=item.origens[0];row.porDistribuicao[doc]=Number(row.porDistribuicao[doc]||0)+Number(item.pares||0)}else if(docs.length===1){row.porDistribuicao[docs[0]]=Number(row.porDistribuicao[docs[0]]||0)+Number(item.pares||0)}else{row.semDetalhe+=Number(item.pares||0)}});map.forEach(row=>{row.paresDia=round2(row.pares/5);row.valorDia=round2(row.valor/5)});return map}
+function sortLineKeys(lines){return [...lines].sort((a,b)=>{const na=Number(onlyDigits(a)),nb=Number(onlyDigits(b));if(Number.isFinite(na)&&Number.isFinite(nb)&&na!==nb)return na-nb;return String(a).localeCompare(String(b),"pt-BR",{numeric:true})})}
+function normalizeLineSummaryGroups(baseMap){const existing=new Set(baseMap.keys());const used=new Set();const clean=[];(Array.isArray(lineSummaryGroups)?lineSummaryGroups:[]).forEach(group=>{const linhas=(Array.isArray(group)?group:(group&&Array.isArray(group.linhas)?group.linhas:[])).map(normalizeLinhaKey).filter(l=>existing.has(l)&&!used.has(l));const unique=sortLineKeys(Array.from(new Set(linhas)));if(unique.length){unique.forEach(l=>used.add(l));clean.push(unique)}});sortLineKeys(existing).forEach(linha=>{if(!used.has(linha))clean.push([linha])});lineSummaryGroups=clean;return clean}
+function totalsForLineGroup(baseMap,linhas){const docs=activeDistributionDocs();const total={linhas,pares:0,valor:0,modelos:0,porDistribuicao:{},semDetalhe:0};docs.forEach(doc=>total.porDistribuicao[doc]=0);linhas.forEach(linha=>{const row=baseMap.get(linha);if(!row)return;total.pares+=Number(row.pares||0);total.valor=round2(total.valor+Number(row.valor||0));total.modelos+=Number(row.modelos||0);total.semDetalhe+=Number(row.semDetalhe||0);Object.entries(row.porDistribuicao||{}).forEach(([doc,pares])=>{total.porDistribuicao[doc]=Number(total.porDistribuicao[doc]||0)+Number(pares||0)})});total.paresDia=round2(total.pares/5);total.valorDia=round2(total.valor/5);return total}
+function lineGroupName(linhas){return linhas.join(" + ")}
+function renderLineSummary(){if(!els.lineSummaryGrid)return;const base=getLineSummaryBase();const groups=normalizeLineSummaryGroups(base);if(!groups.length){els.lineSummaryGrid.innerHTML=`<div class="line-summary-empty">Sem dados.</div>`;return}els.lineSummaryGrid.innerHTML=groups.map((linhas,index)=>{const t=totalsForLineGroup(base,linhas);return `<div class="line-summary-card ${linhas.length>1?"grouped":""}" draggable="true" data-line-group-index="${index}" title="Arraste este card sobre outro para somar as linhas"><div class="line-summary-name">${escapeHtml(lineGroupName(linhas))}</div><div class="line-summary-values"><span><strong>${formatNumber(t.pares)}</strong><small>Total</small></span><span><strong>${formatNumber(t.paresDia)}</strong><small>Dia</small></span></div></div>`}).join("");bindLineSummaryDragDrop()}
+function mergeLineSummaryGroups(sourceIndex,targetIndex){sourceIndex=Number(sourceIndex);targetIndex=Number(targetIndex);if(!Number.isInteger(sourceIndex)||!Number.isInteger(targetIndex)||sourceIndex===targetIndex)return;const base=getLineSummaryBase();const groups=normalizeLineSummaryGroups(base);if(!groups[sourceIndex]||!groups[targetIndex])return;pushUndo();const merged=sortLineKeys(Array.from(new Set([...groups[targetIndex],...groups[sourceIndex]])));groups[targetIndex]=merged;groups.splice(sourceIndex,1);lineSummaryGroups=groups;renderSummary();showMessage("success",`Linhas agrupadas: ${merged.join(" + ")}.`) }
+function bindLineSummaryDragDrop(){if(!els.lineSummaryGrid)return;els.lineSummaryGrid.querySelectorAll(".line-summary-card").forEach(card=>{card.addEventListener("dragstart",e=>{e.dataTransfer.setData("application/x-line-group-index",card.dataset.lineGroupIndex);e.dataTransfer.setData("text/plain",`line:${card.dataset.lineGroupIndex}`);e.dataTransfer.effectAllowed="move"});card.addEventListener("dragover",e=>{e.preventDefault();card.classList.add("drag-over")});card.addEventListener("dragleave",()=>card.classList.remove("drag-over"));card.addEventListener("drop",e=>{e.preventDefault();card.classList.remove("drag-over");let source=e.dataTransfer.getData("application/x-line-group-index");const txt=e.dataTransfer.getData("text/plain")||"";if(!source&&txt.startsWith("line:"))source=txt.slice(5);mergeLineSummaryGroups(source,card.dataset.lineGroupIndex)})})}
+function resetLineSummaryGroups(){if(!allocation.length)return;pushUndo();lineSummaryGroups=[];renderSummary();showMessage("info","Agrupamento das linhas removido.")}
+function renderSummary(){const totalPares=allocation.reduce((s,i)=>s+i.pares,0),totalValor=round2(allocation.reduce((s,i)=>s+i.valor,0)),semAtelier=allocation.filter(i=>normalizeAtelierName(i.atelier)===HOLD_ATELIER).length,pend=allocation.filter(i=>i.semModelo||i.semPrecoServico).length;els.periodInfo.textContent=selectedDocs.length?`${selectedDocs.length===1?"Distribuição individual":"Distribuição conjunta"} • ${selectedDocs.map(docIdToBR).join(" e ")}`:"";els.summaryGrid.innerHTML=`<div class="summary-item primary combo"><strong>${formatNumber(totalPares)}<span>Total</span></strong><strong>${formatNumber(totalPares/5)}<span>Dia</span></strong></div>${currentUserLevel!=="07"?`<div class="summary-item ok combo"><strong>${formatMoney(totalValor)}<span>Total do serviço</span></strong><strong>${formatMoney(totalValor/5)}<span>Dia</span></strong></div>`:""}<div class="summary-item danger"><strong>${formatNumber(semAtelier)}</strong><small>Segurar</small></div><div class="summary-item danger"><strong>${formatNumber(pend)}</strong><small>Pendências de preço/modelo</small></div><div class="summary-item"><strong>${formatNumber(getAtelierNames().filter(name=>name!==HOLD_ATELIER).length)}</strong><small>Ateliês disponíveis</small></div>`;renderLineSummary();els.summaryCard.classList.remove("hidden")}
+function renderAteliers(){hideModelCapacity();const term=normalizeText(els.atelierFilterInput.value||"");const names=getAtelierNames().filter(n=>!term||normalizeText(n).includes(term));els.atelierInfo.textContent=`${formatNumber(names.length)} card(s). Arraste os modelos entre ateliês ou segure SHIFT ao soltar para dividir.`;if(!names.length){els.atelierGrid.innerHTML=`<div class="empty-drop">Nenhum ateliê encontrado.</div>`}else{els.atelierGrid.innerHTML=names.map((name,index)=>renderAtelierCard(name,index)).join("");bindDragDrop()}els.atelierSection.classList.remove("hidden")}
+function printShortCortes(){
+  const docs=(selectedDocs&&selectedDocs.length?selectedDocs:[isoToDocId(els.dateOneInput.value),isoToDocId(els.dateTwoInput.value)]).filter(Boolean);
+  return docs.sort((a,b)=>docIdToISO(a).localeCompare(docIdToISO(b))).map(d=>isoToShortBR(docIdToISO(d))).join(" e ");
+}
+function renderPrintFlatTable(items){
+  const sorted=[...items].sort((a,b)=>normalizeText(a.categoria).localeCompare(normalizeText(b.categoria))||normalizeText(a.subcategoria).localeCompare(normalizeText(b.subcategoria))||Number(a.linha)-Number(b.linha)||Number(a.modelo)-Number(b.modelo));
+  if(!sorted.length){
+    return `<div class="print-flat-table print-flat-grid-wrap"><div class="print-flat-grid"><div class="print-cell print-head">Modelo</div><div class="print-cell print-head">Pares</div><div class="print-cell print-head">Pares/dia</div><div class="print-cell print-model" style="grid-column:1 / 4;text-align:center!important">Sem modelos</div></div></div>`;
+  }
+  const rows=sorted.map(i=>{
+    const note=String(i.observacaoDivisao||"").trim();
+    const noteHtml=note?`<span class="print-flat-note">Obs: ${escapeHtml(note)}</span>`:"";
+    return `<div class="print-cell print-model"><strong>${escapeHtml(i.linha)}.${escapeHtml(i.modelo)}</strong>${noteHtml}</div><div class="print-cell print-num">${formatNumber(i.pares)}</div><div class="print-cell print-num">${formatNumber(i.paresDia)}</div>`;
+  }).join("");
+  return `<div class="print-flat-table print-flat-grid-wrap"><div class="print-flat-grid"><div class="print-cell print-head">Modelo</div><div class="print-cell print-head">Pares</div><div class="print-cell print-head">Pares/dia</div>${rows}</div></div>`;
+}
+function renderAtelierCard(name,index){const items=allocation.filter(i=>i.atelier===name);const totalPares=items.reduce((sum,i)=>sum+i.pares,0),totalValor=round2(items.reduce((sum,i)=>sum+i.valor,0)),hist=atelierHistoryMap.get(name);const totalModelos=items.length;const previsto=round2(totalValor/5),paresDia=round2(totalPares/5),diff=compareDiff(previsto,hist);const diffText=hist&&hist.mediaDia?`${diff>=0?"+":""}${formatMoney(diff)}`:"—";const groupsHtml=items.length?renderCategoryGroups(items,name):`<div class="empty-drop">Solte modelos aqui.</div>`;const printFlatHtml=renderPrintFlatTable(items);const pend=items.filter(i=>i.semModelo||i.semPrecoServico).length;const cmpClass=compareClass(previsto,hist),cmpSymbol=compareSymbol(previsto,hist);return `<div class="atelier-card color-${index%8}" data-atelier="${escapeHtml(name)}"><div class="atelier-head"><div><h3>${escapeHtml(displayAtelierName(name))}</h3></div><span class="print-card-date">${escapeHtml(printShortCortes())}</span><div class="atelier-head-actions no-print"><button class="btn-atelier-note" type="button" data-atelier-note="${escapeHtml(name)}" title="Adicionar observação do ateliê">+</button>${pend?`<span class="tag bad">${pend} pendência(s)</span>`:`<span class="tag good">OK</span>`}</div></div><div class="atelier-stats"><div class="stat-box print-modelos print-only"><strong>${formatNumber(totalModelos)}</strong><small>Modelos</small></div><div class="stat-box print-total-pares"><strong>${formatNumber(totalPares)}</strong><small>Pares</small></div><div class="stat-box financial-data"><strong>${formatMoney(totalValor)}</strong><small>Faturamento</small></div><div class="stat-box financial-data ${cmpClass}"><strong><span class="stat-symbol">${cmpSymbol}</span>${formatMoney(previsto)}</strong><small>Dia previsto</small><em class="diff-line">Dif. ${diffText}</em></div><div class="stat-box financial-data"><strong>${formatMoney(hist?.mediaDia||0)}</strong><small>Média hist.</small></div><div class="stat-box print-pares-dia"><strong>${formatNumber(paresDia)}</strong><small>Pares/dia</small></div></div>${groupsHtml}${printFlatHtml}<div class="drag-hint no-print">Arraste para trocar • SHIFT + soltar para dividir</div></div>`}
+function renderCategoryGroups(items,atelierName=""){const catMap=new Map();items.sort((a,b)=>normalizeText(a.categoria).localeCompare(normalizeText(b.categoria))||normalizeText(a.subcategoria).localeCompare(normalizeText(b.subcategoria))||Number(a.linha)-Number(b.linha)||Number(a.modelo)-Number(b.modelo)).forEach(i=>{const cat=i.categoria||"Sem categoria",sub=i.subcategoria||"Sem subcategoria";if(!catMap.has(cat))catMap.set(cat,new Map());const subMap=catMap.get(cat);if(!subMap.has(sub))subMap.set(sub,[]);subMap.get(sub).push(i)});const blocks=Array.from(catMap.entries()).map(([cat,subMap],idx)=>{const catItems=Array.from(subMap.values()).flat();const catPares=catItems.reduce((s,i)=>s+i.pares,0),catValor=round2(catItems.reduce((s,i)=>s+i.valor,0));const subs=Array.from(subMap.entries()).map(([sub,subItems])=>renderSubcategory(sub,subItems)).join("");return `<div class="category-box" data-note-drop-atelier="${escapeHtml(atelierName)}" data-note-position="${idx+1}"><div class="category-head"><span>${escapeHtml(cat)}</span><span class="muted">${formatNumber(catPares)} pares <span class="financial-data">• ${formatMoney(catValor)}</span></span></div>${subs}</div>`});const noteBlock=renderAtelierNoteBlock(atelierName);if(noteBlock){const pos=Math.min(Math.max(atelierNotePosition(atelierName),0),blocks.length);blocks.splice(pos,0,noteBlock)}return blocks.join("")}
+function renderSubcategory(label,items){const totalPares=items.reduce((s,i)=>s+i.pares,0),totalValor=round2(items.reduce((s,i)=>s+i.valor,0));return `<div class="subcat-box"><div class="subcat-head"><span>${escapeHtml(label)}</span><span class="muted">${formatNumber(totalPares)} pares <span class="financial-data">• ${formatMoney(totalValor)}</span></span></div>${renderGroup(label,items)}</div>`}
+function groupItems(items){const map=new Map();items.forEach(i=>{const key=`${i.categoria||"Sem categoria"} / ${i.subcategoria||"Sem subcategoria"}`;if(!map.has(key))map.set(key,[]);map.get(key).push(i)});return map}
+function renderGroup(label,items){const rows=items.map(i=>{const hist=historyBadge(i);const note=String(i.observacaoDivisao||"");const showNote=isSplitItem(i);const notePrint=note?`<div class="model-note-print">Obs: ${escapeHtml(note)}</div>`:"";const noteEditor=showNote?`<div class="model-note-wrap no-print"><input class="model-note-input" type="text" data-note-id="${escapeHtml(i.id)}" value="${escapeHtml(note)}" placeholder="Observação da divisão" /></div>`:"";return `<tr class="model-row ${i.semModelo||i.semPrecoServico?"missing":""} ${note?"has-note":""} ${showNote?"is-split":""}" draggable="true" data-item-id="${escapeHtml(i.id)}"><td class="model-main-cell"><div class="model-title-line"><span class="model-link" tabindex="0" data-item-id="${escapeHtml(i.id)}" aria-label="Histórico de produção do modelo ${escapeHtml(i.linha)}.${escapeHtml(i.modelo)}">${escapeHtml(i.linha)}.${escapeHtml(i.modelo)}${hist}</span>${i.semModelo?" ⚠":i.semPrecoServico?" ⚠":""}<button class="btn btn-secondary btn-small btn-dividir no-print" type="button" data-split-id="${escapeHtml(i.id)}" aria-label="Dividir modelo ${escapeHtml(i.linha)}.${escapeHtml(i.modelo)}">Dividir</button></div>${noteEditor}${notePrint}</td><td>${formatNumber(i.pares)}</td><td class="pares-dia-col">${formatNumber(i.paresDia)}</td><td class="money daily-value-col financial-data"><strong>${formatMoney(i.valorDia)}</strong></td></tr>`}).join("");return `<div class="group-box"><table class="model-table"><thead><tr><th>Modelo / observação</th><th>Pares</th><th class="pares-dia-col">Pares/dia</th><th class="daily-value-col financial-data">Valor diário</th></tr></thead><tbody>${rows}</tbody></table></div>`}
+function updateItemNote(id,value){const item=allocation.find(i=>i.id===id);if(!item)return;const val=String(value||"").trim();if((item.observacaoDivisao||"")===val)return;pushUndo();item.observacaoDivisao=val;renderAll()}
+function autoScrollDuringDrag(e){const margin=90,speed=22;if(e.clientY<margin)window.scrollBy(0,-speed);else if(window.innerHeight-e.clientY<margin)window.scrollBy(0,speed)}
+function bindDragDrop(){els.atelierGrid.querySelectorAll(".model-link").forEach(link=>{const show=()=>showModelCapacity(allocation.find(i=>i.id===link.dataset.itemId),link);link.addEventListener("mouseenter",show);link.addEventListener("focus",show);link.addEventListener("click",e=>{e.stopPropagation();show()});link.addEventListener("mouseleave",hideModelCapacity);link.addEventListener("blur",hideModelCapacity)});els.atelierGrid.querySelectorAll(".btn-atelier-note").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();promptAtelierNote(btn.dataset.atelierNote||"")}));els.atelierGrid.querySelectorAll(".btn-atelier-note-remove").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();setAtelierNote(btn.dataset.noteRemove||"","")}));els.atelierGrid.querySelectorAll(".atelier-note-block").forEach(block=>{block.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",`note:${block.dataset.noteAtelier}`);e.dataTransfer.effectAllowed="move"})});els.atelierGrid.querySelectorAll(".category-box").forEach(box=>{box.addEventListener("dragover",e=>{const types=[...e.dataTransfer.types];if(types.includes("text/plain")){e.preventDefault();box.classList.add("note-drop-target")}});box.addEventListener("dragleave",()=>box.classList.remove("note-drop-target"));box.addEventListener("drop",e=>{const data=e.dataTransfer.getData("text/plain");if(data&&data.startsWith("note:")){e.preventDefault();e.stopPropagation();box.classList.remove("note-drop-target");const noteName=data.slice(5);setAtelierNotePosition(noteName,Number(box.dataset.notePosition||0))}})});els.atelierGrid.querySelectorAll(".model-note-input").forEach(input=>{input.addEventListener("click",e=>e.stopPropagation());input.addEventListener("mousedown",e=>e.stopPropagation());input.addEventListener("input",()=>{const item=allocation.find(i=>i.id===input.dataset.noteId);if(!item)return;if(!input.dataset.autosaveEditing){pushUndo();input.dataset.autosaveEditing="1"}else queueAutoSave();item.observacaoDivisao=input.value});input.addEventListener("change",()=>updateItemNote(input.dataset.noteId,input.value));input.addEventListener("blur",()=>updateItemNote(input.dataset.noteId,input.value));});els.atelierGrid.querySelectorAll(".model-row").forEach(row=>{row.addEventListener("dragstart",e=>{if(e.target&&e.target.classList&&e.target.classList.contains("model-note-input")){e.preventDefault();return}e.dataTransfer.setData("text/plain",row.dataset.itemId);e.dataTransfer.effectAllowed="move"})});els.atelierGrid.querySelectorAll(".atelier-card").forEach(card=>{card.addEventListener("dragover",e=>{e.preventDefault();autoScrollDuringDrag(e);card.classList.add("drag-over")});card.addEventListener("dragleave",()=>card.classList.remove("drag-over"));card.addEventListener("drop",e=>{e.preventDefault();card.classList.remove("drag-over");const data=e.dataTransfer.getData("text/plain");if(data&&data.startsWith("note:")){const noteName=data.slice(5);setAtelierNotePosition(noteName,999);return}if(e.shiftKey)openSplitModal(data,card.dataset.atelier);else moveItem(data,card.dataset.atelier)})});els.atelierGrid.querySelectorAll(".btn-dividir").forEach(btn=>btn.addEventListener("click",e=>{e.stopPropagation();openSplitModal(btn.dataset.splitId)}))}
+
+
+function mergeOriginPairs(target,source){const merged=cleanOriginPairs(target?.paresPorOrigem);Object.entries(cleanOriginPairs(source?.paresPorOrigem)).forEach(([doc,pares])=>{merged[doc]=Number(merged[doc]||0)+Number(pares||0)});if(Object.keys(merged).length)target.paresPorOrigem=merged}
+function splitOriginPairs(item,qtd){const total=Number(item?.pares||0),origem=cleanOriginPairs(item?.paresPorOrigem);const entries=Object.entries(origem).filter(([,pares])=>Number(pares)>0);if(!entries.length||total<=0||qtd<=0)return{remaining:null,transfer:null};const parts=entries.map(([doc,pares])=>{const raw=Number(pares||0)*qtd/total;return{doc,pares:Number(pares||0),base:Math.floor(raw),frac:raw-Math.floor(raw)}});let assigned=parts.reduce((s,p)=>s+p.base,0),remainder=Math.round(qtd-assigned);parts.sort((a,b)=>b.frac-a.frac);for(const p of parts){if(remainder<=0)break;if(p.base<p.pares){p.base+=1;remainder-=1}}const transfer={},remaining={};parts.forEach(p=>{const q=Math.max(0,Math.min(p.pares,p.base));if(q>0)transfer[p.doc]=q;if(p.pares-q>0)remaining[p.doc]=p.pares-q});return{remaining,transfer}}
+function mergeItems(target,source){
+  if(!target||!source)return;
+  const sourceIndex=allocation.findIndex(i=>i.id===source.id);
+  mergeOriginPairs(target,source);
+  target.pares=Number(target.pares||0)+Number(source.pares||0);
+  if(!target.splitGroup&&source.splitGroup)target.splitGroup=source.splitGroup;
+  if(source.dividido||target.dividido||source.splitGroup||target.splitGroup)target.dividido=true;
+  const targetNote=String(target.observacaoDivisao||"").trim();
+  const sourceNote=String(source.observacaoDivisao||"").trim();
+  if(sourceNote&&!targetNote)target.observacaoDivisao=sourceNote;
+  else if(sourceNote&&targetNote&&normalizeText(sourceNote)!==normalizeText(targetNote))target.observacaoDivisao=`${targetNote} | ${sourceNote}`;
+  calcItem(target);
+  if(sourceIndex>=0)allocation.splice(sourceIndex,1);
+}
+function refreshSplitFlags(){
+  const groups=new Map();
+  allocation.forEach(item=>{if(!groups.has(item.key))groups.set(item.key,[]);groups.get(item.key).push(item)});
+  groups.forEach(items=>{
+    const hasMultiple=items.length>1;
+    const groupId=items.find(i=>i.splitGroup)?.splitGroup||`${items[0]?.key||"modelo"}-split-${Date.now()}`;
+    items.forEach(item=>{
+      if(hasMultiple){item.dividido=true;item.splitGroup=groupId;}
+      else{item.dividido=false;item.splitGroup="";}
+      calcItem(item);
+    });
+  });
+}
+function moveOrMergeItem(id,dest){
+  const item=allocation.find(i=>i.id===id);
+  const destName=normalizeAtelierName(dest);
+  if(!item||!destName||destName!==HOLD_ATELIER&&!atelierForLabel(destName))return "invalid";
+  if(item.atelier===destName)return "same";
+  const existing=allocation.find(i=>i.id!==item.id&&i.atelier===destName&&i.key===item.key);
+  if(existing){
+    mergeItems(existing,item);
+    manualAteliers.add(destName);
+    refreshSplitFlags();
+    return "merged";
+  }
+  item.atelier=destName;
+  item.atelierId=atelierForLabel(destName)?.id||"";
+  manualAteliers.add(destName);
+  calcItem(item);
+  refreshSplitFlags();
+  return "moved";
+}
+
+function moveItem(id,dest){const item=allocation.find(i=>i.id===id);const destName=normalizeAtelierName(dest);if(!item||!destName||item.atelier===destName)return;pushUndo();const result=moveOrMergeItem(id,destName);renderAll();if(result==="merged")showMessage("success",`${item.linha}.${item.modelo} somado novamente em ${destName}.`);else showMessage("success",`${item.linha}.${item.modelo} movido para ${destName}.`)}
+function openSplitModal(id,preferredDest=""){const item=allocation.find(i=>i.id===id);if(!item)return;currentSplitId=id;els.splitModalTitle.textContent=`Dividir ${item.linha}.${item.modelo}`;els.splitSummary.innerHTML=`<div class="summary-item"><strong>${formatNumber(item.pares)}</strong><small>Pares atuais</small></div><div class="summary-item ok"><strong>${formatMoney(item.valor)}</strong><small>Valor atual</small></div><div class="summary-item"><strong>${escapeHtml(item.atelier)}</strong><small>Ateliê atual</small></div>`;els.splitPairsInput.value="";els.splitPairsInput.max=String(Math.max(0,item.pares-1));els.splitNewAtelierInput.value="";if(els.splitOriginNoteInput)els.splitOriginNoteInput.value=item.observacaoDivisao||"";if(els.splitDestinationNoteInput)els.splitDestinationNoteInput.value="";let destinos=[HOLD_ATELIER,...atelierDirectory.map(atelierLabel)].filter(n=>n!==item.atelier);if(preferredDest&&preferredDest!==item.atelier&&!destinos.includes(preferredDest))destinos.unshift(preferredDest);els.splitDestinationSelect.innerHTML=destinos.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");if(preferredDest&&preferredDest!==item.atelier)els.splitDestinationSelect.value=preferredDest;els.splitModalBackdrop.classList.add("show");setTimeout(()=>els.splitPairsInput.focus(),50)}
+function confirmSplit(){const item=allocation.find(i=>i.id===currentSplitId);if(!item)return;const qtd=Number(els.splitPairsInput.value||0);const dest=normalizeAtelierName((els.splitNewAtelierInput.value.trim()||els.splitDestinationSelect.value||"").trim());const obsOrigem=(els.splitOriginNoteInput?.value||"").trim();const obsDestino=(els.splitDestinationNoteInput?.value||"").trim();if(!dest||dest!==HOLD_ATELIER&&!atelierForLabel(dest)){showMessage("warning","Selecione um ateliê ativo deste setor. O Admin cadastra novos ateliês em Cadastro de Usuários.");return}if(qtd<=0||qtd>=item.pares){showMessage("warning","Informe uma quantidade menor que o total de pares do modelo.");return}pushUndo();const splitGroup=item.splitGroup||`${item.key}-split-${Date.now()}`;const originSplit=splitOriginPairs(item,qtd);item.pares-=qtd;if(originSplit.remaining)item.paresPorOrigem=originSplit.remaining;item.dividido=true;item.splitGroup=splitGroup;item.observacaoDivisao=obsOrigem;calcItem(item);const clone=calcItem({...item,id:`${item.key}-split-${Date.now()}`,pares:qtd,paresPorOrigem:originSplit.transfer||{},atelier:dest,atelierId:atelierForLabel(dest)?.id||"",dividido:true,splitGroup,observacaoDivisao:obsDestino});const existing=allocation.find(i=>i.id!==item.id&&i.atelier===dest&&i.key===item.key);if(existing){mergeItems(existing,clone)}else{allocation.push(clone)}manualAteliers.add(dest);refreshSplitFlags();els.splitModalBackdrop.classList.remove("show");renderAll();showMessage("success",`${item.linha}.${item.modelo} dividido com ${formatNumber(qtd)} pares para ${dest}.`)}
+function updateAutoSaveStatus(state,label){
+  els.autoSaveStatus.dataset.state=state;
+  els.autoSaveStatus.textContent=label;
+  els.retryAutoSaveButton.classList.toggle("hidden",state!=="error");
+}
+function resetAutoSave(docId,saved=false){
+  clearTimeout(autoSaveTimer);clearTimeout(autoSaveRetryTimer);
+  autoSaveTimer=null;autoSaveRetryTimer=null;
+  activeSavedDocId=docId;autoSaveVersion=0;savedVersion=0;
+  updateAutoSaveStatus(saved?"saved":"idle",saved?"Salvo automaticamente":"Preparando distribuição");
+}
+function queueAutoSave(){
+  if(!allocation.length||!activeSavedDocId)return;
+  autoSaveVersion++;
+  updateAutoSaveStatus("pending","Alterações pendentes...");
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>{autoSaveTimer=null;void drainAutoSave()},700);
+}
+function makeAutoSavePayload(){
+  const destinosUnicos=window.RomaDistribuicao.uniqueDestinations(window.RomaDistribuicao.prepare({sector:activeSector,allocation,selectedDocs,directory:atelierDirectory,distributionId:activeSavedDocId}));
+  const totalPares=allocation.reduce((s,i)=>s+i.pares,0),totalValor=round2(allocation.reduce((s,i)=>s+i.valor,0));
+  const itensSalvos=allocation.map(i=>({id:i.id,key:i.key,linha:i.linha,modelo:i.modelo,pares:i.pares,atelier:i.atelier,atelierId:i.atelierId||atelierForLabel(i.atelier)?.id||"",categoria:i.categoria,subcategoria:i.subcategoria,servicoUnit:i.servicoUnit,valor:i.valor,valorDia:i.valorDia,paresDia:i.paresDia,dividido:!!i.dividido,splitGroup:i.splitGroup||"",observacaoDivisao:i.observacaoDivisao||"",origensTexto:getItemOrigins(i).join("|"),origensMap:originsToObject(i),paresPorOrigem:cleanOriginPairs(i.paresPorOrigem),semModelo:!!i.semModelo,semPrecoServico:!!i.semPrecoServico}));
+  return{setor:activeSector,destinosUnicos,distribuicoes:[...selectedDocs],itens:itensSalvos,observacoesAtelier:Object.fromEntries(atelierNotes),observacoesAtelierPosicoes:Object.fromEntries(atelierNotePositions),gruposResumoLinhas:lineGroupsToFirestore(),resumo:{totalPares,totalValor,valorDia:round2(totalValor/5),totalAtelies:getAtelierNames().filter(name=>name!==HOLD_ATELIER).length},atualizadoEm:serverTimestamp(),atualizadoPor:currentUser.email,atualizadoPorNome:currentUserName};
+}
+async function drainAutoSave(){
+  if(autoSavePromise)return autoSavePromise;
+  if(autoSaveVersion<=savedVersion||!allocation.length||!activeSavedDocId)return true;
+  clearTimeout(autoSaveTimer);autoSaveTimer=null;
+  autoSavePromise=(async()=>{
+    while(savedVersion<autoSaveVersion){
+      const version=autoSaveVersion,docId=activeSavedDocId;
+      updateAutoSaveStatus("saving","Salvando automaticamente...");
+      try{const payload=makeAutoSavePayload();await setDoc(doc(db,"DistribuicaoAtelier",docId),payload,{merge:false})}
+      catch(err){
+        console.error(err);
+        updateAutoSaveStatus("error","Falha no salvamento automático");
+        showMessage("error","Não foi possível salvar a distribuição. Tente novamente antes de sair ou abrir outra.");
+        clearTimeout(autoSaveRetryTimer);
+        autoSaveRetryTimer=setTimeout(()=>{autoSaveRetryTimer=null;if(autoSaveVersion>savedVersion)void drainAutoSave()},5000);
+        return false;
+      }
+      savedVersion=version;
+      savedListLoaded=false;
+      savedListCache.delete(docId);
+    }
+    clearTimeout(autoSaveRetryTimer);autoSaveRetryTimer=null;
+    updateAutoSaveStatus("saved",`Salvo automaticamente às ${new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}`);
+    if(els.messageBox.textContent==="Não foi possível salvar a distribuição. Tente novamente antes de sair ou abrir outra.")showMessage("success","Distribuição salva automaticamente.");
+    return true;
+  })();
+  try{return await autoSavePromise}finally{autoSavePromise=null}
+}
+async function flushAutoSave(){
+  clearTimeout(autoSaveTimer);autoSaveTimer=null;
+  while(savedVersion<autoSaveVersion){
+    if(!await drainAutoSave())return false;
+  }
+  return true;
+}
+function renderSavedList(){
+  if(!savedListRows.length){els.savedTableBody.innerHTML=`<tr><td colspan="6">Nenhuma distribuição de ateliês encontrada.</td></tr>`}
+  else{
+    els.savedTableBody.innerHTML=savedListRows.map(r=>{
+      const data=r.data||{},cortes=Array.isArray(data.distribuicoes)?data.distribuicoes.map(docIdToBR).join(" e "):"—";
+      return `<tr><td><strong>${escapeHtml(r.id)}</strong></td><td>${escapeHtml(cortes)}</td><td>${formatNumber(data.resumo?.totalPares||0)}</td><td class="money">${currentUserLevel==="07"?"—":formatMoney(data.resumo?.totalValor||0)}</td><td>${escapeHtml(data.atualizadoPorNome||data.atualizadoPor||"—")}</td><td><button class="btn btn-primary btn-small btn-open-saved" type="button" data-saved-id="${escapeHtml(r.id)}">Abrir</button></td></tr>`;
+    }).join("");
+    els.savedTableBody.querySelectorAll(".btn-open-saved").forEach(btn=>btn.addEventListener("click",()=>loadSavedAllocation(btn.dataset.savedId)));
+  }
+  els.savedLoadMoreButton.classList.toggle("hidden",!savedListHasMore);
+  els.savedListInfo.textContent=savedListRows.length?`${formatNumber(savedListRows.length)} distribuição(ões) exibida(s), mais recentes primeiro.`:"";
+}
+async function loadSavedPage(reset=false){
+  if(savedListBusy)return;
+  if(reset){savedListRows=[];savedListCursor=null;savedListHasMore=false;savedListCache.clear();savedListGeneration++}
+  const request=savedListGeneration;
+  savedListBusy=true;
+  els.savedLoadMoreButton.disabled=true;
+  els.savedListInfo.textContent=reset?"Carregando as mais recentes...":"Carregando mais distribuições...";
+  try{
+    const constraints=[where("setor","==",activeSector),orderBy("atualizadoEm","desc")];
+    if(savedListCursor)constraints.push(startAfter(savedListCursor));
+    constraints.push(limit(SAVED_PAGE_SIZE+1));
+    const snap=await getDocs(query(collection(db,"DistribuicaoAtelier"),...constraints));
+    if(request!==savedListGeneration)return;
+    const page=snap.docs.slice(0,SAVED_PAGE_SIZE);
+    page.forEach(d=>{const data=d.data();savedListRows.push({id:d.id,data});savedListCache.set(d.id,data)});
+    if(page.length)savedListCursor=page[page.length-1];
+    savedListHasMore=snap.docs.length>SAVED_PAGE_SIZE;
+    savedListLoaded=true;
+    renderSavedList();
+  }catch(err){
+    console.error(err);
+    els.savedListInfo.textContent="Erro ao carregar a lista. Tente novamente.";
+    if(reset)els.savedTableBody.innerHTML=`<tr><td colspan="6">Erro ao carregar: ${escapeHtml(err.message)}</td></tr>`;
+    els.savedLoadMoreButton.classList.remove("hidden");
+  }finally{savedListBusy=false;els.savedLoadMoreButton.disabled=false}
+}
+async function openSavedModal(){
+  if(!await flushAutoSave())return;
+  els.savedModalBackdrop.classList.add("show");
+  if(savedListLoaded){renderSavedList();return}
+  els.savedTableBody.innerHTML=`<tr><td colspan="6">Carregando distribuições salvas...</td></tr>`;
+  await loadSavedPage(true);
+}
+async function loadSavedAllocation(docId){
+  if(!docId)return;
+  const request=++navigationRequest;
+  if(!await flushAutoSave()||request!==navigationRequest)return;
+  try{
+    showMessage("info","Abrindo distribuição salva...");
+    let data=savedListCache.get(docId);
+    if(!data){const snap=await getDoc(doc(db,"DistribuicaoAtelier",docId));if(!snap.exists()){showMessage("warning","Distribuição salva não encontrada.");return}data=snap.data()||{}}
+    if(request!==navigationRequest)return;
+    if(data.setor!==activeSector){showMessage("error","Esta distribuição pertence a outro setor. Abra a aba correspondente.");return;}
+    await loadAteliers();
+    selectedDocs=Array.isArray(data.distribuicoes)?data.distribuicoes:[];
+    els.dateOneInput.value=selectedDocs[0]?docIdToISO(selectedDocs[0]):"";
+    els.dateTwoInput.value=selectedDocs[1]?docIdToISO(selectedDocs[1]):"";
+    allocation=Array.isArray(data.itens)?data.itens.map((i,idx)=>calcItem({...i,id:i.id||`${modelKey(i.linha,i.modelo)}-saved-${idx}`,key:i.key||modelKey(i.linha,i.modelo),linha:String(i.linha||""),modelo:String(i.modelo||""),pares:Number(i.pares||0),atelier:normalizeAtelierName(i.atelierId&&atelierDirectory.find(a=>a.id===i.atelierId)?atelierLabel(atelierDirectory.find(a=>a.id===i.atelierId)):i.atelier||HOLD_ATELIER),atelierId:i.atelierId||atelierForLabel(i.atelier)?.id||"",servicoUnit:Number(i.servicoUnit??i.costuraUnit??0),semModelo:!!i.semModelo,semPrecoServico:!!(i.semPrecoServico??i.semCostura),categoria:i.categoria||"Sem categoria",subcategoria:i.subcategoria||"Sem subcategoria",dividido:!!i.dividido,splitGroup:i.splitGroup||"",observacaoDivisao:i.observacaoDivisao||"",origens:getItemOrigins(i),paresPorOrigem:cleanOriginPairs(i.paresPorOrigem)})):[];
+    manualAteliers=new Set(allocation.map(i=>normalizeAtelierName(i.atelier)).filter(Boolean));
+    atelierNotes=new Map(Object.entries(data.observacoesAtelier||{}).map(([k,v])=>[normalizeAtelierName(k),typeof v==="object"?String(v.texto||v.text||""):String(v||"")]));
+    atelierNotePositions=new Map(Object.entries(data.observacoesAtelierPosicoes||{}).map(([k,v])=>[normalizeAtelierName(k),Number(v)||0]));
+    lineSummaryGroups=lineGroupsFromFirestore(data.gruposResumoLinhas);
+    undoStack=[];redoStack=[];
+    resetAutoSave(docId,true);
+    els.savedModalBackdrop.classList.remove("show");
+    renderAll();
+    showMessage("success",`Distribuição salva ${docId} aberta com sucesso.`);
+    if(taloesLoaded&&modelsMap.size)return;
+    setTimeout(async()=>{
+      try{
+        if(!modelsMap.size)await loadModels();
+        const taloes=await loadTaloes();
+        if(request!==navigationRequest)return;
+        calculateHistory(taloes);renderAteliers();
+      }catch(err){console.error(err);if(request===navigationRequest)showMessage("warning","Distribuição aberta, mas não foi possível carregar o histórico dos ateliês: "+err.message)}
+    },0);
+  }catch(err){console.error(err);showMessage("error","Erro ao abrir distribuição salva: "+err.message)}
+}
+async function openDistributionsModal(){els.distributionsModalBackdrop.classList.add("show");els.distributionsTableBody.innerHTML=`<tr><td colspan="5">Carregando...</td></tr>`;try{const snap=await getDocs(collection(db,"Distribuicao"));const docs=snap.docs.map(d=>({id:d.id,data:d.data()})).sort((a,b)=>docIdToISO(b.id).localeCompare(docIdToISO(a.id)));if(!docs.length){els.distributionsTableBody.innerHTML=`<tr><td colspan="5">Nenhuma distribuição salva.</td></tr>`;return}els.distributionsTableBody.innerHTML=docs.map(d=>`<tr><td><input type="checkbox" class="dist-check" value="${escapeHtml(d.id)}"></td><td><strong>${docIdToBR(d.id)}</strong></td><td>${formatNumber(d.data.totalPares||0)}</td><td>${formatNumber(d.data.totalModelos||0)}</td><td class="cell-left">${escapeHtml(d.data.arquivoOrigem||"—")}</td></tr>`).join("");els.distributionsTableBody.querySelectorAll(".dist-check").forEach(ch=>ch.addEventListener("change",()=>{const checked=[...els.distributionsTableBody.querySelectorAll(".dist-check:checked")];if(checked.length>2){ch.checked=false;showMessage("warning","Selecione no máximo duas distribuições.")}}))}catch(err){console.error(err);els.distributionsTableBody.innerHTML=`<tr><td colspan="5">Erro ao carregar distribuições: ${escapeHtml(err.message)}</td></tr>`}}
+function confirmDistributionSelection(){const checked=[...els.distributionsTableBody.querySelectorAll(".dist-check:checked")].map(c=>c.value).sort((a,b)=>docIdToISO(a).localeCompare(docIdToISO(b)));if(checked.length<1||checked.length>2){showMessage("warning","Selecione uma ou duas distribuições.");return}els.dateOneInput.value=docIdToISO(checked[0]);els.dateTwoInput.value=checked[1]?docIdToISO(checked[1]):"";els.distributionsModalBackdrop.classList.remove("show");generate()}
+async function clearAll(){
+  const request=++navigationRequest;
+  if(!await flushAutoSave()||request!==navigationRequest)return;
+  closePricesModal();hideModelCapacity();
+  allocation=[];manualAteliers=new Set();atelierNotes=new Map();atelierNotePositions=new Map();lineSummaryGroups=[];selectedDocs=[];undoStack=[];redoStack=[];
+  els.dateOneInput.value="";els.dateTwoInput.value="";els.atelierFilterInput.value="";
+  els.summaryCard.classList.add("hidden");els.atelierSection.classList.add("hidden");
+  els.updatePricesButton.disabled=true;if(els.printButton)els.printButton.disabled=true;
+  resetAutoSave("");updateAutoSaveStatus("idle","Aguardando distribuição");showMessage("","");
+}
+function launchMessage(counts,done){
+  const parts=[`${done} talão(ões) atribuído(s) em ${sectorInfo.label}`];
+  if(counts.jaLancado)parts.push(`${counts.jaLancado} já estavam lançados`);
+  if(counts.dividido)parts.push(`${counts.dividido} de modelos divididos: o Corte deve selecionar os talões e definir os responsáveis`);
+  if(counts.semAtelie)parts.push(`${counts.semAtelie} aguardam um ateliê ativo`);
+  if(counts.manualPreservado)parts.push(`${counts.manualPreservado} com definição manual preservada`);
+  if(counts.iniciadoPreservado)parts.push(`${counts.iniciadoPreservado} já iniciados preservados`);
+  if(counts.naoSeAplica)parts.push(`${counts.naoSeAplica} sem o componente deste setor`);
+  if(counts.formatoAntigo)parts.push(`${counts.formatoAntigo} com data antiga: o Admin precisa normalizar o cadastro`);
+  return parts.join(". ")+".";
+}
+function setLaunching(value){
+  launching=value;document.body.classList.toggle("launching",value);
+  document.querySelectorAll(".top-actions button,.sector-tab,#confirmSplitButton,#applyPricesButton,#resetLineGroupsButton").forEach(button=>{if(value){button.dataset.beforeLaunchDisabled=String(button.disabled);button.disabled=true;}else{button.disabled=button.dataset.beforeLaunchDisabled==="true";delete button.dataset.beforeLaunchDisabled;}});
+  els.launchButton.textContent=value?"Lançando...":"Lançar distribuição";
+}
+async function launchDistribution(){
+  if(launching)return;
+  window.Roma.requireWrite("planejamento");
+  if(!allocation.length||!activeSavedDocId){showMessage("warning","Monte ou abra a distribuição deste setor antes de lançar.");return;}
+  setLaunching(true);
+  let done=0,counts={};
+  try{
+    await loadAteliers();queueAutoSave();
+    if(!await flushAutoSave())return;
+    showMessage("info",`Verificando os talões de ${sectorInfo.label} e os responsáveis atuais...`);
+    const taloes=await loadTaloes(true);
+    const plan=window.RomaDistribuicao.prepare({sector:activeSector,allocation,selectedDocs,directory:atelierDirectory,distributionId:activeSavedDocId});
+    const preview=window.RomaDistribuicao.preview(plan,taloes);counts={...preview.counts};
+    // A versão e os destinos são relidos na transação para não aplicar uma distribuição alterada em outra sessão.
+    const expectedDestinations=JSON.stringify(Object.entries(window.RomaDistribuicao.uniqueDestinations(plan)).sort());
+    const work=preview.assignments;
+    for(let offset=0;offset<work.length;offset+=10){
+      const group=work.slice(offset,offset+10);
+      const result=await runTransaction(db,async transaction=>{
+        const saved=await transaction.get(doc(db,"DistribuicaoAtelier",plan.distributionId));
+        if(!saved.exists()||saved.data().setor!==activeSector||JSON.stringify(Object.entries(saved.data().destinosUnicos||{}).sort())!==expectedDestinations)throw new Error("A distribuição foi alterada em outra sessão. Reabra a distribuição antes de lançar novamente.");
+        const snapshots=await Promise.all(group.map(item=>transaction.get(doc(db,"taloes",item.id))));
+        const changes=[],skipped={};
+        snapshots.forEach(snapshot=>{
+          if(!snapshot.exists()){skipped.excluido=(skipped.excluido||0)+1;return;}
+          const current=snapshot.data(),decision=window.RomaDistribuicao.decide(plan,current);
+          if(decision.patch)changes.push({ref:snapshot.ref,patch:decision.patch});else skipped[decision.reason]=(skipped[decision.reason]||0)+1;
+        });
+        changes.forEach(change=>transaction.update(change.ref,change.patch));
+        return {done:changes.length,skipped};
+      });
+      done+=result.done;
+      Object.entries(result.skipped).forEach(([key,value])=>{counts[key]=(counts[key]||0)+value;});
+      showMessage("info",`${done} talão(ões) atribuídos em ${sectorInfo.label}. Conferindo o próximo lote...`);
+    }
+    showMessage(done?"success":"warning",launchMessage(counts,done));
+    taloesLoaded=false;
+  }catch(err){console.error(err);showMessage("error",`${done?`${done} talão(ões) já confirmados. `:""}O lançamento foi interrompido: ${err.message}. Corrija a pendência e clique novamente; talões já lançados não serão duplicados.`);}
+  finally{setLaunching(false);}
+}
+
+els.generateButton.addEventListener("click",generate);els.updatePricesButton.addEventListener("click",previewPriceUpdate);els.applyPricesButton.addEventListener("click",applyPriceUpdate);els.closePricesModalButton.addEventListener("click",closePricesModal);els.cancelPricesButton.addEventListener("click",closePricesModal);els.pricesModalBackdrop.addEventListener("click",e=>{if(e.target===els.pricesModalBackdrop)closePricesModal()});if(els.printButton)els.printButton.addEventListener("click",printDistribution);if(els.launchButton)els.launchButton.addEventListener("click",launchDistribution);els.addAtelierButton.addEventListener("click",async()=>{try{await loadAteliers();if(allocation.length){renderAll();queueAutoSave();}showMessage("success",`${atelierDirectory.length} ateliê(s) ativo(s) de ${sectorInfo.label}. Novos ateliês são cadastrados pelo Admin em Cadastro de Usuários.`);}catch(err){showMessage("error","Não foi possível atualizar os ateliês: "+err.message);}});els.clearButton.addEventListener("click",clearAll);if(els.resetLineGroupsButton)els.resetLineGroupsButton.addEventListener("click",resetLineSummaryGroups);els.savedLoadMoreButton.addEventListener("click",()=>loadSavedPage());els.retryAutoSaveButton.addEventListener("click",()=>{void drainAutoSave()});els.atelierFilterInput.addEventListener("input",()=>{if(allocation.length)renderAteliers()});els.selectDistributionsButton.addEventListener("click",openDistributionsModal);if(els.openSavedButton)els.openSavedButton.addEventListener("click",openSavedModal);if(els.closeSavedModalButton)els.closeSavedModalButton.addEventListener("click",()=>els.savedModalBackdrop.classList.remove("show"));if(els.savedModalBackdrop)els.savedModalBackdrop.addEventListener("click",e=>{if(e.target===els.savedModalBackdrop)els.savedModalBackdrop.classList.remove("show")});els.closeDistributionsModalButton.addEventListener("click",()=>els.distributionsModalBackdrop.classList.remove("show"));els.distributionsModalBackdrop.addEventListener("click",e=>{if(e.target===els.distributionsModalBackdrop)els.distributionsModalBackdrop.classList.remove("show")});els.confirmDistributionsButton.addEventListener("click",confirmDistributionSelection);els.closeSplitModalButton.addEventListener("click",()=>els.splitModalBackdrop.classList.remove("show"));els.splitModalBackdrop.addEventListener("click",e=>{if(e.target===els.splitModalBackdrop)els.splitModalBackdrop.classList.remove("show")});els.confirmSplitButton.addEventListener("click",confirmSplit);document.addEventListener("keydown",e=>{if(launching){e.preventDefault();return;}if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==="z"&&!e.shiftKey){e.preventDefault();undoMove();return}if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==="z"&&e.shiftKey){e.preventDefault();redoMove();return}if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==="y"){e.preventDefault();redoMove();return}if(e.key==="Escape"){hideModelCapacity();closePricesModal();els.distributionsModalBackdrop.classList.remove("show");if(els.savedModalBackdrop)els.savedModalBackdrop.classList.remove("show");els.splitModalBackdrop.classList.remove("show")}});
+document.addEventListener("click",e=>{if(!e.target.closest?.(".model-link"))hideModelCapacity()});
+window.addEventListener("beforeunload",e=>{if(autoSaveVersion>savedVersion){e.preventDefault();e.returnValue=""}});
+window.addEventListener("online",()=>{if(autoSaveVersion>savedVersion)void drainAutoSave()});
+</script>
+</body>
+</html>

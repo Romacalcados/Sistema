@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Controle Mobile - Calçados Roma</title>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #526079;
+      --border: #1f2937;
+      --border-soft: #d9dde3;
+      --green: #91d455;
+      --green-strong: #20944b;
+      --red: #ff1515;
+      --red-soft: #fff0f0;
+      --blue: #0d6efd;
+      --shadow: 0 8px 24px rgba(15, 23, 42, .08);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 13px;
+      font-weight: 900;
+      cursor: pointer;
+      background: var(--blue);
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    button.secondary { background: #6c757d; }
+    button.light { background: #e9ecef; color: #111827; }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      font-size: 16px;
+      background: #fff;
+      outline: none;
+    }
+
+    .page {
+      width: min(560px, 100%);
+      margin: 0 auto;
+      padding: 10px;
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
+    .mobile-title {
+      background: #fff;
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .mobile-title h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .mobile-title small {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.3;
+      display: block;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(238, 242, 247, .94);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 10px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .status-pill {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green-strong);
+      flex: 0 0 auto;
+    }
+
+    .top-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .top-card {
+      background: #fff;
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      min-height: 84px;
+    }
+
+    .top-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 7px;
+    }
+
+    .top-card strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.04em;
+    }
+
+    .top-card small {
+      display: block;
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .section-card {
+      background: #fff;
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 21px;
+      line-height: 1.1;
+    }
+
+    .section-head small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.25;
+    }
+
+    .turno-block + .turno-block { margin-top: 16px; }
+
+    .turno-title {
+      font-size: 22px;
+      font-weight: 950;
+      margin: 2px 0 8px;
+    }
+
+    .period-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+      margin-bottom: 10px;
+    }
+
+    .period-head {
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+      padding: 7px 8px 6px;
+    }
+
+    .period-head strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .period-head small {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 4px;
+      line-height: 1.25;
+    }
+
+    .trilho-row {
+      display: grid;
+      grid-template-columns: 1fr 76px 104px;
+      align-items: stretch;
+      min-height: 54px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .trilho-row:last-child { border-bottom: 0; }
+
+    .trilho-name,
+    .trilho-meta,
+    .trilho-prod {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: #fff;
+    }
+
+    .trilho-name,
+    .trilho-meta { border-right: 1px solid var(--border); }
+
+    .trilho-name strong {
+      font-size: 18px;
+      line-height: 1.05;
+      font-weight: 950;
+    }
+
+    .trilho-name small,
+    .trilho-meta small,
+    .trilho-prod small {
+      font-size: 10px;
+      color: rgba(0,0,0,.72);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-top: 4px;
+    }
+
+    .trilho-meta {
+      align-items: flex-end;
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .trilho-prod {
+      align-items: flex-end;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 950;
+      color: #000;
+    }
+
+    .ok-bg { background: var(--green) !important; }
+    .bad-bg { background: var(--red) !important; }
+
+    .turno-total {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 10px 0 0;
+      color: #000;
+      text-align: center;
+    }
+
+    .turno-total span {
+      display: block;
+      border-bottom: 1px solid var(--border);
+      padding: 8px;
+      font-size: 18px;
+      font-weight: 950;
+    }
+
+    .turno-total strong {
+      display: block;
+      padding: 10px 8px;
+      font-size: 34px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .summary-trilho {
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      background: #fbfdff;
+      overflow: hidden;
+    }
+
+    .summary-trilho-head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .summary-trilho-head strong {
+      font-size: 19px;
+      font-weight: 950;
+    }
+
+    .summary-trilho-head small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .summary-values {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .summary-value-box {
+      padding: 11px 12px;
+      background: #fff;
+    }
+
+    .summary-value-box:first-child { border-right: 1px solid var(--border-soft); }
+
+    .summary-value-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      margin-bottom: 7px;
+    }
+
+    .summary-value-box strong {
+      display: block;
+      font-size: 25px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.04em;
+    }
+
+    .summary-value-box small {
+      display: block;
+      color: rgba(0,0,0,.72);
+      font-size: 10px;
+      font-weight: 900;
+      margin-top: 6px;
+    }
+
+    .factory-summary {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .factory-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .factory-row:last-child { border-bottom: 0; }
+
+    .factory-label {
+      padding: 12px;
+      background: #f8fafc;
+      font-size: 17px;
+      font-weight: 950;
+      border-right: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+    }
+
+    .factory-number {
+      padding: 12px;
+      text-align: right;
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.04em;
+      color: #000;
+    }
+
+    .click-detail {
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: rgba(13,110,253,.2);
+    }
+
+    .click-detail:active {
+      transform: scale(.985);
+      filter: brightness(.96);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .66);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 8px;
+      z-index: 5000;
+    }
+
+    .modal-overlay[hidden] { display: none !important; }
+
+    .modelos-modal {
+      width: min(560px, 100%);
+      max-height: 88vh;
+      background: #fff;
+      border-radius: 18px 18px 14px 14px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.35);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(15, 23, 42, .18);
+    }
+
+    .modelos-modal-head {
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 10px;
+      background: #f8fafc;
+    }
+
+    .modelos-modal-head h3 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      line-height: 1.12;
+    }
+
+    .modelos-modal-head small {
+      display: block;
+      color: var(--muted);
+      line-height: 1.3;
+      font-size: 12px;
+    }
+
+    .modelos-modal-close {
+      background: #e5e7eb;
+      color: #111827;
+      border-radius: 999px;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      font-size: 22px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .modelos-modal-body {
+      padding: 12px;
+      overflow: auto;
+    }
+
+    .modelos-modal-info {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .info-box {
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 9px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .info-box strong {
+      display: block;
+      color: var(--text);
+      font-size: 18px;
+      margin-top: 4px;
+      letter-spacing: -.03em;
+      text-transform: none;
+    }
+
+    .modelos-table-wrap {
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    .modelos-table {
+      width: 100%;
+      max-width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      background: #fff;
+      table-layout: fixed;
+    }
+
+    .modelos-table th,
+    .modelos-table td {
+      border: 1px solid var(--border);
+      padding: 7px 6px;
+      font-size: 13px;
+      background: #fff;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .modelos-table th {
+      background: #f8f9fa;
+      font-weight: 950;
+      text-align: left;
+    }
+
+    .modelos-table .col-index { width: 34px; text-align: right; }
+    .modelos-table .col-trilho { width: 68px; }
+    .modelos-table .col-pares { width: 72px; text-align: right; }
+    .modelos-table .col-taloes { width: 58px; text-align: right; }
+    .modelos-table .modal-num { text-align: right; font-weight: 950; }
+    .modelos-table tfoot td { background: #f8fafc; font-weight: 950; }
+
+    .empty-modelos {
+      border: 1px dashed var(--border-soft);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+      background: #fbfdff;
+      font-weight: 800;
+    }
+
+
+    /* Versão mais compacta para celular: uma tela para manhã, uma para tarde e resumo ao final */
+    .mobile-title {
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 14px;
+    }
+
+    .mobile-title h1 { font-size: 20px; margin-bottom: 2px; }
+    .mobile-title small { font-size: 11px; }
+
+    .toolbar {
+      padding: 8px;
+      margin-bottom: 8px;
+      border-radius: 14px;
+      gap: 6px;
+    }
+
+    .toolbar input[type="date"] { padding: 9px 10px; font-size: 15px; }
+    .toolbar button { padding: 9px 10px; border-radius: 10px; font-size: 13px; }
+    .status-pill { font-size: 11px; }
+
+    .section-card {
+      padding: 9px;
+      margin-bottom: 10px;
+      border-radius: 14px;
+    }
+
+    .mobile-screen {
+      min-height: calc(100dvh - 86px);
+      scroll-margin-top: 8px;
+    }
+
+    .section-head {
+      margin-bottom: 7px;
+      align-items: center;
+    }
+
+    .section-head h2 { font-size: 20px; }
+    .section-head small { font-size: 11px; margin-top: 2px; }
+
+    .screen-total-pill {
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      overflow: hidden;
+      min-width: 116px;
+      color: #000;
+      text-align: right;
+    }
+
+    .screen-total-pill span {
+      display: block;
+      padding: 3px 6px;
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.5);
+    }
+
+    .screen-total-pill strong {
+      display: block;
+      padding: 5px 7px;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .period-card {
+      border-radius: 10px;
+      margin-bottom: 6px;
+    }
+
+    .period-head {
+      padding: 3px 6px;
+    }
+
+    .period-head strong {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .period-head small { display: none; }
+
+    .trilho-row {
+      grid-template-columns: 1fr 58px 78px;
+      min-height: 30px;
+    }
+
+    .trilho-name,
+    .trilho-meta,
+    .trilho-prod {
+      padding: 3px 5px;
+    }
+
+    .trilho-name strong {
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .trilho-name small { display: none; }
+
+    .trilho-meta {
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .trilho-prod {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .trilho-meta small,
+    .trilho-prod small {
+      font-size: 8px;
+      margin-top: 2px;
+      line-height: 1;
+    }
+
+    .turno-total {
+      border-radius: 11px;
+      margin-top: 7px;
+    }
+
+    .turno-total span {
+      padding: 5px 7px;
+      font-size: 14px;
+    }
+
+    .turno-total strong {
+      padding: 6px 7px;
+      font-size: 25px;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      border: 1px solid var(--border);
+      padding: 7px 6px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .summary-table th {
+      text-align: left;
+      background: #f8fafc;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      color: var(--muted);
+    }
+
+    .summary-table .num-cell {
+      text-align: right;
+      font-size: 19px;
+      line-height: 1;
+      font-weight: 950;
+      color: #000;
+      min-width: 86px;
+    }
+
+    .summary-table .name-cell {
+      font-weight: 950;
+      font-size: 15px;
+    }
+
+    .summary-table small {
+      display: block;
+      margin-top: 3px;
+      font-size: 8px;
+      font-weight: 950;
+      color: rgba(0,0,0,.72);
+    }
+
+    .factory-summary {
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+
+    .factory-row {
+      grid-template-columns: 1.15fr .85fr;
+    }
+
+    .factory-label {
+      padding: 8px;
+      font-size: 14px;
+      line-height: 1.15;
+    }
+
+    .factory-number {
+      padding: 8px;
+      font-size: 24px;
+    }
+
+
+    @media (max-width: 430px) {
+      .modal-overlay { padding: 7px; }
+      .modelos-modal { width: 100%; max-height: 86vh; }
+      .modelos-modal-head { padding: 12px 12px 8px; }
+      .modelos-modal-head h3 { font-size: 18px; }
+      .modelos-modal-body { padding: 9px; }
+      .info-box { padding: 8px; font-size: 9px; }
+      .info-box strong { font-size: 16px; }
+      .modelos-table th,
+      .modelos-table td { padding: 6px 5px; font-size: 12px; }
+      .modelos-table .col-index { width: 30px; }
+      .modelos-table .col-trilho { width: 62px; }
+      .modelos-table .col-pares { width: 64px; }
+      .modelos-table .col-taloes { width: 50px; }
+    }
+
+    @media (max-width: 380px) {
+      .page { padding: 8px; }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .toolbar input { grid-column: 1 / -1; }
+      .trilho-row { grid-template-columns: 1fr 56px 76px; }
+      .trilho-name strong { font-size: 13px; }
+      .trilho-prod { font-size: 15px; }
+      .summary-values { grid-template-columns: 1fr; }
+      .summary-value-box:first-child { border-right: 0; border-bottom: 1px solid var(--border-soft); }
+      .modelos-modal-info { grid-template-columns: 1fr; }
+    }
+
+    .sistema-menu-lista {
+      max-height: none !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: none !important;
+      position: static !important;
+      top: auto !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      display: block !important;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="mobile-title">
+      <h1>Controle de produção</h1>
+      <small>Versão para celular: produção do dia, hora em hora, e resumo final por trilho.</small>
+    </section>
+
+    <section class="toolbar">
+      <div class="status-pill"><span class="dot"></span><span id="syncStatus">Aguardando carregamento...</span></div>
+      <input type="date" id="selectedDate" aria-label="Data" />
+      <button class="light" id="todayButton">Hoje</button>
+      <button class="secondary" id="reloadButton">Atualizar</button>
+    </section>
+
+    <div id="hourGrid"></div>
+
+    <section class="section-card mobile-screen" id="telaResumo">
+      <div class="section-head">
+        <div>
+          <h2>Resumo do dia</h2>
+          <small>Produção diária e média do mês por trilho.</small>
+        </div>
+      </div>
+      <div class="summary-list" id="dailySummary"></div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="modelosModal" hidden>
+    <div class="modelos-modal" role="dialog" aria-modal="true" aria-labelledby="modelosModalTitle">
+      <div class="modelos-modal-head">
+        <div>
+          <h3 id="modelosModalTitle">Modelos produzidos</h3>
+          <small id="modelosModalSubtitle"></small>
+        </div>
+        <button type="button" class="modelos-modal-close" id="closeModelosModal" aria-label="Fechar modal">×</button>
+      </div>
+      <div class="modelos-modal-body">
+        <div class="modelos-modal-info" id="modelosModalInfo"></div>
+        <div class="modelos-table-wrap" id="modelosModalContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="navegacao.js"></script>
+  <script type="module">
+    const firebaseConfig = window.FIREBASE_CONFIG;
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      getDocs,
+      collection,
+      onSnapshot,
+      query,
+      where
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const selectedDateInput = document.getElementById('selectedDate');
+    const todayButton = document.getElementById('todayButton');
+    const reloadButton = document.getElementById('reloadButton');
+    const syncStatus = document.getElementById('syncStatus');
+    const hourGrid = document.getElementById('hourGrid');
+    const dailySummary = document.getElementById('dailySummary');
+
+    const modelosModal = document.getElementById('modelosModal');
+    const modelosModalTitle = document.getElementById('modelosModalTitle');
+    const modelosModalSubtitle = document.getElementById('modelosModalSubtitle');
+    const modelosModalInfo = document.getElementById('modelosModalInfo');
+    const modelosModalContent = document.getElementById('modelosModalContent');
+    const closeModelosModal = document.getElementById('closeModelosModal');
+
+    const DEFAULT_TRILHOS = [
+      { key: 'trilho01', id: 'Trilho - 01', codigo: '01', supervisor: 'Vilmar', metaDia: 3700, pessoas: 0, necessidade: 30 },
+      { key: 'trilho02', id: 'Trilho - 02', codigo: '02', supervisor: 'Ueslei', metaDia: 3500, pessoas: 0, necessidade: 31 },
+      { key: 'trilho03', id: 'Trilho - 03', codigo: '03', supervisor: 'Nelson', metaDia: 2000, pessoas: 0, necessidade: 31 },
+      { key: 'trilho04', id: 'Trilho - 04', codigo: '04', supervisor: 'Andre', metaDia: 3200, pessoas: 0, necessidade: 34 }
+    ];
+
+    const PERIODOS = [
+      { label: '08:00', producaoRef: '07:00 às 08:00', leituraInicio: '08:00', leituraFim: '09:00', fator: 1, turno: 'manha' },
+      { label: '09:00', producaoRef: '08:00 às 09:00', leituraInicio: '09:00', leituraFim: '10:00', fator: 1, turno: 'manha' },
+      { label: '10:00', producaoRef: '09:00 às 10:00', leituraInicio: '10:00', leituraFim: '11:00', fator: 1, turno: 'manha' },
+      { label: '11:18', producaoRef: '10:00 às 11:00', leituraInicio: '11:00', leituraFim: '13:00', fator: 1, turno: 'manha' },
+      { label: '14:00', producaoRef: '13:00 às 14:00', leituraInicio: '14:00', leituraFim: '15:00', fator: 1, turno: 'tarde' },
+      { label: '15:00', producaoRef: '14:00 às 15:00', leituraInicio: '15:00', leituraFim: '16:00', fator: 1, turno: 'tarde' },
+      { label: '16:00', producaoRef: '15:00 às 16:00', leituraInicio: '16:00', leituraFim: '17:00', fator: 2.8, turno: 'tarde' }
+    ];
+
+    const METAS_COLLECTION = 'metas';
+    let currentUserEmail = '';
+    let currentUserName = '';
+    let currentUserLevel = '';
+    let trilhosConfig = clone(DEFAULT_TRILHOS);
+    let taloesDia = [];
+    let taloesMes = [];
+    let monthlyResumo = new Map();
+    let metasHistory = [];
+    let mediasMes = { totalFabrica: 0 };
+    let lastResumo = null;
+    let unsubscribeTaloesDia = null;
+    let unsubscribeTaloesMes = null;
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function cleanNumber(value) {
+      const n = Number(value || 0);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function fmt(value) {
+      return cleanNumber(value).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    }
+
+    function todayISO() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDateBR(dateISO) {
+      if (!dateISO || !dateISO.includes('-')) return dateISO || '';
+      const [y, m, d] = dateISO.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function normalizeDateISO(value) {
+      if (!value) return '';
+      if (typeof value === 'string') return value.slice(0, 10);
+      const date = toDate(value);
+      if (!date) return '';
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function monthStartISO(dateISO) {
+      const [y, m] = dateISO.split('-');
+      return `${y}-${m}-01`;
+    }
+
+    function monthEndISO(dateISO) {
+      const [y, m] = dateISO.split('-').map(Number);
+      const last = new Date(y, m, 0).getDate();
+      return `${y}-${String(m).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+    }
+
+    function daysInMonth(dateISO) {
+      const [y, m] = dateISO.split('-').map(Number);
+      return new Date(y, m, 0).getDate();
+    }
+
+    function toDate(value) {
+      if (!value) return null;
+      if (typeof value.toDate === 'function') return value.toDate();
+      if (value.seconds) return new Date(value.seconds * 1000);
+      if (value instanceof Date) return value;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function makeLocalDate(dateISO, time) {
+      return new Date(`${dateISO}T${time}:00`);
+    }
+
+    function normalizeTrilhoKey(value) {
+      const text = String(value || '').toLowerCase();
+      if (!text) return '';
+      const match = text.match(/0?([1-4])/);
+      if (!match) return '';
+      return `trilho0${match[1]}`;
+    }
+
+    function metaHorario(metaDia, fator = 1) {
+      return Math.round((cleanNumber(metaDia) / 8.8) * cleanNumber(fator));
+    }
+
+    function minutesOf(time) {
+      const [h, m] = String(time || '00:00').split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    }
+
+    function dateStatus(dateISO) {
+      const today = todayISO();
+      if (dateISO < today) return 'past';
+      if (dateISO > today) return 'future';
+      return 'today';
+    }
+
+    function fatorEsperadoAteAgora(dateISO) {
+      const status = dateStatus(dateISO);
+      const totalFator = PERIODOS.reduce((sum, p) => sum + cleanNumber(p.fator), 0);
+      if (status === 'past') return totalFator;
+      if (status === 'future') return totalFator;
+
+      const now = new Date();
+      const minNow = now.getHours() * 60 + now.getMinutes();
+      const fator = PERIODOS.reduce((sum, p) => {
+        return minNow >= minutesOf(p.leituraFim) ? sum + cleanNumber(p.fator) : sum;
+      }, 0);
+      return Math.min(totalFator, fator);
+    }
+
+    function metaEsperadaAteAgora(metaDia, dateISO) {
+      const fator = fatorEsperadoAteAgora(dateISO);
+      return Math.round((cleanNumber(metaDia) / 8.8) * fator);
+    }
+
+    function metaTotalDiaConfig(configList = trilhosConfig) {
+      return configList.reduce((sum, t) => sum + cleanNumber(t.metaDia), 0);
+    }
+
+    function metasFromSavedOrDefault(savedTrilhos) {
+      const source = Array.isArray(savedTrilhos) && savedTrilhos.length ? savedTrilhos : DEFAULT_TRILHOS;
+      return DEFAULT_TRILHOS.map(def => ({
+        ...def,
+        ...(source.find(t => t.key === def.key) || {})
+      }));
+    }
+
+    function getConfigByKey(key) {
+      return trilhosConfig.find(t => t.key === key) || DEFAULT_TRILHOS.find(t => t.key === key);
+    }
+
+    function iniciarNavegacao(userLevel, userName) {
+      if (!window.SistemaNavegacao) return;
+
+      window.SistemaNavegacao.init({
+        userLevel: String(userLevel || ''),
+        userName: userName || 'Usuário',
+        title: 'Controle de produção Mobile',
+        onLogout: async () => {
+          try {
+            await signOut(auth);
+          } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+          } finally {
+            localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+            localStorage.removeItem('calcadosroma-65ac6:userName');
+            window.location.href = 'login.html';
+          }
+        }
+      });
+    }
+
+    function normalizeMetaDoc(id, data) {
+      const trilhos = Array.isArray(data?.trilhos) && data.trilhos.length ? metasFromSavedOrDefault(data.trilhos) : clone(DEFAULT_TRILHOS);
+      const criadoEmDate = toDate(data?.criadoEm) || toDate(data?.atualizadoEm);
+      const criadoEmMs = cleanNumber(data?.criadoEmMs) || (criadoEmDate ? criadoEmDate.getTime() : 0);
+      const vigenciaISO = data?.vigenciaISO || data?.data || (criadoEmDate ? `${criadoEmDate.getFullYear()}-${String(criadoEmDate.getMonth() + 1).padStart(2, '0')}-${String(criadoEmDate.getDate()).padStart(2, '0')}` : todayISO());
+      return { id, trilhos, criadoEmMs, vigenciaISO, raw: data || {} };
+    }
+
+    async function loadMetasHistory() {
+      const docs = [];
+      try {
+        const snap = await getDocs(collection(db, METAS_COLLECTION));
+        snap.forEach(d => {
+          const data = d.data();
+          if (Array.isArray(data?.trilhos) && data.trilhos.length) {
+            docs.push(normalizeMetaDoc(d.id, data));
+          }
+        });
+      } catch (error) {
+        console.warn('Não foi possível listar metas no Firebase:', error);
+      }
+
+      if (!docs.length) {
+        try {
+          const atualSnap = await getDoc(doc(db, METAS_COLLECTION, 'atual'));
+          if (atualSnap.exists()) docs.push(normalizeMetaDoc('atual', atualSnap.data()));
+        } catch (error) {
+          console.warn('Não foi possível ler metas/atual:', error);
+        }
+      }
+
+      docs.sort((a, b) => {
+        const dataCompare = String(a.vigenciaISO || '').localeCompare(String(b.vigenciaISO || ''));
+        if (dataCompare !== 0) return dataCompare;
+        return cleanNumber(a.criadoEmMs) - cleanNumber(b.criadoEmMs);
+      });
+      metasHistory = docs;
+      return docs;
+    }
+
+    async function loadConfigOnce() {
+      const metas = await loadMetasHistory();
+      if (metas.length) {
+        const latest = metas[metas.length - 1];
+        trilhosConfig = metasFromSavedOrDefault(latest.trilhos);
+      } else {
+        trilhosConfig = clone(DEFAULT_TRILHOS);
+      }
+      renderDashboard();
+      renderMonthlyFromMonthTaloes();
+    }
+
+    function emptyResumo(dateISO, configList = trilhosConfig) {
+      const resumo = {
+        data: dateISO,
+        dataBR: formatDateBR(dateISO),
+        totalFabrica: 0,
+        totalManha: 0,
+        totalTarde: 0,
+        qtdTaloes: 0,
+        semHorario: 0,
+        trilhos: {},
+        periodos: {}
+      };
+
+      configList.forEach(t => {
+        resumo.trilhos[t.key] = {
+          key: t.key,
+          id: t.id,
+          codigo: t.codigo,
+          supervisor: t.supervisor,
+          metaDia: cleanNumber(t.metaDia),
+          pessoas: cleanNumber(t.pessoas),
+          necessidade: cleanNumber(t.necessidade),
+          total: 0,
+          periodos: {}
+        };
+        PERIODOS.forEach(p => {
+          resumo.trilhos[t.key].periodos[p.label] = {
+            producao: 0,
+            meta: metaHorario(t.metaDia, p.fator),
+            turno: p.turno,
+            fator: p.fator,
+            leituraInicio: p.leituraInicio,
+            leituraFim: p.leituraFim,
+            producaoRef: p.producaoRef
+          };
+        });
+      });
+
+      PERIODOS.forEach(p => {
+        resumo.periodos[p.label] = {
+          label: p.label,
+          producaoRef: p.producaoRef,
+          leituraInicio: p.leituraInicio,
+          leituraFim: p.leituraFim,
+          fator: p.fator,
+          turno: p.turno,
+          total: 0
+        };
+      });
+
+      return resumo;
+    }
+
+    function applyTaloesToResumo(taloes, dateISO, configList = trilhosConfig) {
+      const resumo = emptyResumo(dateISO, configList);
+
+      taloes.forEach(talao => {
+        const key = normalizeTrilhoKey(talao.trilhoProduzido);
+        if (!key || !resumo.trilhos[key]) return;
+
+        const pares = cleanNumber(talao.pares);
+        resumo.trilhos[key].total += pares;
+        resumo.totalFabrica += pares;
+        resumo.qtdTaloes += 1;
+
+        const dataProducao = toDate(talao.dataProducao);
+        if (!dataProducao) {
+          resumo.semHorario += pares;
+          return;
+        }
+
+        const periodoEncontrado = PERIODOS.find(p => {
+          const inicio = makeLocalDate(dateISO, p.leituraInicio);
+          const fim = makeLocalDate(dateISO, p.leituraFim);
+          return dataProducao >= inicio && dataProducao < fim;
+        });
+
+        if (!periodoEncontrado) {
+          resumo.semHorario += pares;
+          return;
+        }
+
+        resumo.trilhos[key].periodos[periodoEncontrado.label].producao += pares;
+        resumo.periodos[periodoEncontrado.label].total += pares;
+
+        if (periodoEncontrado.turno === 'manha') resumo.totalManha += pares;
+        if (periodoEncontrado.turno === 'tarde') resumo.totalTarde += pares;
+      });
+
+      return resumo;
+    }
+
+    function computeResumo() {
+      return applyTaloesToResumo(taloesDia, selectedDateInput.value || todayISO());
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function cleanText(value) {
+      return String(value ?? '').trim();
+    }
+
+    function getLinhaModeloLabel(talao) {
+      const linha = cleanText(talao.linha || talao.Linha || talao.codLinha || talao.codigoLinha || talao.linhaModelo);
+      const modelo = cleanText(talao.modelo || talao.Modelo || talao.referencia || talao.modeloReferencia || talao.nomeModelo);
+
+      if (linha && modelo) {
+        const modeloLower = modelo.toLowerCase();
+        const linhaLower = linha.toLowerCase();
+        if (modeloLower.startsWith(`${linhaLower}.`) || modeloLower.startsWith(`${linhaLower}-`) || modeloLower === linhaLower) {
+          return modelo;
+        }
+        return `${linha}.${modelo}`;
+      }
+
+      return modelo || linha || 'Sem modelo informado';
+    }
+
+    function findPeriodoFromTalao(talao, dateISO) {
+      const dataProducao = toDate(talao.dataProducao);
+      if (!dataProducao) return null;
+      return PERIODOS.find(p => {
+        const inicio = makeLocalDate(dateISO, p.leituraInicio);
+        const fim = makeLocalDate(dateISO, p.leituraFim);
+        return dataProducao >= inicio && dataProducao < fim;
+      }) || null;
+    }
+
+    function talaoPertenceAoTrilho(talao, trilhoKey) {
+      if (!trilhoKey) return true;
+      return normalizeTrilhoKey(talao.trilhoProduzido) === trilhoKey;
+    }
+
+    function getTrilhoLabel(trilhoKey) {
+      if (!trilhoKey) return 'Todos os trilhos';
+      const cfg = getConfigByKey(trilhoKey);
+      return cfg?.supervisor || trilhoKey;
+    }
+
+    function getTaloesForDetail(dataset) {
+      const tipo = dataset.detailType;
+      const trilhoKey = dataset.trilhoKey || '';
+      const turno = dataset.turno || '';
+      const periodoLabel = dataset.periodLabel || '';
+      const dateISO = selectedDateInput.value || todayISO();
+
+      if (tipo === 'media') {
+        return taloesMes.filter(talao => talaoPertenceAoTrilho(talao, trilhoKey));
+      }
+
+      return taloesDia.filter(talao => {
+        if (!talaoPertenceAoTrilho(talao, trilhoKey)) return false;
+
+        if (tipo === 'hora') {
+          const periodo = findPeriodoFromTalao(talao, dateISO);
+          return periodo?.label === periodoLabel;
+        }
+
+        if (tipo === 'turno') {
+          const periodo = findPeriodoFromTalao(talao, dateISO);
+          return periodo?.turno === turno;
+        }
+
+        return true;
+      });
+    }
+
+    function normalizeModeloKey(modelo) {
+      return String(modelo || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toUpperCase();
+    }
+
+    function groupModelos(taloes) {
+      const map = new Map();
+
+      taloes.forEach(talao => {
+        const modelo = getLinhaModeloLabel(talao);
+        const modeloKey = normalizeModeloKey(modelo) || 'SEM MODELO INFORMADO';
+        const trilhoKey = normalizeTrilhoKey(talao.trilhoProduzido);
+        const trilhoNome = trilhoKey ? getTrilhoLabel(trilhoKey) : 'Sem trilho';
+
+        if (!map.has(modeloKey)) {
+          map.set(modeloKey, { modelo, trilhos: new Set(), pares: 0, taloes: 0 });
+        }
+
+        const item = map.get(modeloKey);
+        if (!item.modelo || item.modelo === 'Sem modelo informado') item.modelo = modelo;
+        item.trilhos.add(trilhoNome);
+        item.pares += cleanNumber(talao.pares);
+        item.taloes += 1;
+      });
+
+      return [...map.values()].map(item => ({
+        modelo: item.modelo,
+        trilhoNome: [...item.trilhos].join(' / '),
+        pares: item.pares,
+        taloes: item.taloes
+      })).sort((a, b) => {
+        const diff = cleanNumber(b.pares) - cleanNumber(a.pares);
+        if (diff !== 0) return diff;
+        return String(a.modelo).localeCompare(String(b.modelo), 'pt-BR');
+      });
+    }
+
+    function getDetailTitleAndSubtitle(dataset) {
+      const tipo = dataset.detailType;
+      const trilhoKey = dataset.trilhoKey || '';
+      const dateISO = selectedDateInput.value || todayISO();
+      const trilhoNome = getTrilhoLabel(trilhoKey);
+      const prefixTrilho = trilhoKey ? ` - ${trilhoNome}` : '';
+
+      if (tipo === 'hora') {
+        const periodo = PERIODOS.find(p => p.label === dataset.periodLabel);
+        return {
+          title: `Produção ${periodo?.label || ''}${prefixTrilho}`,
+          subtitle: `Data ${formatDateBR(dateISO)} • Modelos produzidos neste horário`
+        };
+      }
+
+      if (tipo === 'turno') {
+        const turnoNome = dataset.turno === 'manha' ? 'Manhã' : 'Tarde';
+        return {
+          title: `Produção total da ${turnoNome.toLowerCase()}${prefixTrilho}`,
+          subtitle: `Data ${formatDateBR(dateISO)} • Modelos produzidos no turno selecionado`
+        };
+      }
+
+      if (tipo === 'media') {
+        const diasComProducao = [...monthlyResumo.values()].filter(r => cleanNumber(r.totalFabrica) > 0).length;
+        const media = trilhoKey ? (mediasMes[trilhoKey] || 0) : (mediasMes.totalFabrica || 0);
+        return {
+          title: `Média do mês${prefixTrilho}`,
+          subtitle: `Mês de ${dateISO.slice(5, 7)}/${dateISO.slice(0, 4)} • Modelos únicos produzidos no mês. Média: ${fmt(media)} pares/dia em ${fmt(diasComProducao)} dia(s) com produção.`
+        };
+      }
+
+      return {
+        title: `Produção diária${prefixTrilho}`,
+        subtitle: `Data ${formatDateBR(dateISO)} • Modelos únicos produzidos no dia selecionado`
+      };
+    }
+
+    function openModelosModalFromElement(element) {
+      const dataset = element.dataset || {};
+      const taloes = getTaloesForDetail(dataset);
+      const mostrarTrilho = !dataset.trilhoKey;
+      const rows = groupModelos(taloes);
+      const totalPares = rows.reduce((sum, item) => sum + cleanNumber(item.pares), 0);
+      const totalTaloes = rows.reduce((sum, item) => sum + cleanNumber(item.taloes), 0);
+      const { title, subtitle } = getDetailTitleAndSubtitle(dataset);
+
+      modelosModalTitle.textContent = title;
+      modelosModalSubtitle.textContent = subtitle;
+      modelosModalInfo.innerHTML = `
+        <div class="info-box">Total de pares<strong>${fmt(totalPares)}</strong></div>
+        <div class="info-box">Modelos únicos<strong>${fmt(rows.length)}</strong></div>
+        <div class="info-box">Talões<strong>${fmt(totalTaloes)}</strong></div>
+      `;
+
+      if (!rows.length) {
+        modelosModalContent.innerHTML = '<div class="empty-modelos">Nenhum modelo encontrado para este filtro.</div>';
+      } else {
+        const trilhoHeader = mostrarTrilho ? '<th class="col-trilho">Trilho</th>' : '';
+        const trilhoFooter = mostrarTrilho ? '<td></td>' : '';
+        const body = rows.map((item, index) => `
+          <tr>
+            <td class="modal-num">${index + 1}</td>
+            <td>${escapeHtml(item.modelo)}</td>
+            ${mostrarTrilho ? `<td>${escapeHtml(item.trilhoNome)}</td>` : ''}
+            <td class="modal-num">${fmt(item.pares)}</td>
+            <td class="modal-num">${fmt(item.taloes)}</td>
+          </tr>
+        `).join('');
+
+        modelosModalContent.innerHTML = `
+          <table class="modelos-table">
+            <thead>
+              <tr>
+                <th class="col-index">#</th>
+                <th>Modelo</th>
+                ${trilhoHeader}
+                <th class="col-pares">Pares</th>
+                <th class="col-taloes">Talões</th>
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+            <tfoot>
+              <tr>
+                <td></td>
+                <td>Total</td>
+                ${trilhoFooter}
+                <td class="modal-num">${fmt(totalPares)}</td>
+                <td class="modal-num">${fmt(totalTaloes)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        `;
+      }
+
+      modelosModal.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModelosModalHandler() {
+      modelosModal.hidden = true;
+      document.body.style.overflow = '';
+    }
+
+    function renderDashboard() {
+      if (!selectedDateInput.value) return;
+      const resumo = computeResumo();
+      lastResumo = resumo;
+
+      renderHourCards(resumo);
+      renderDailySummary(resumo);
+    }
+
+    function renderHourCards(resumo) {
+      const renderPeriodo = (p) => {
+        const rows = trilhosConfig.map(t => {
+          const item = resumo.trilhos[t.key];
+          const periodo = item.periodos[p.label];
+          const prod = cleanNumber(periodo.producao);
+          const meta = cleanNumber(periodo.meta);
+          const falta = Math.max(0, meta - prod);
+          const ok = prod >= meta && meta > 0;
+          const cellClass = ok ? 'ok-bg' : 'bad-bg';
+
+          return `
+            <div class="trilho-row">
+              <div class="trilho-name">
+                <strong>${escapeHtml(item.supervisor)}</strong>
+              </div>
+              <div class="trilho-meta">
+                ${fmt(meta)}
+                <small>Meta</small>
+              </div>
+              <div class="trilho-prod ${cellClass} click-detail" data-detail-type="hora" data-trilho-key="${t.key}" data-period-label="${p.label}" title="Toque para ver modelos">
+                ${fmt(prod)}
+                <small>${falta > 0 ? 'Falta ' + fmt(falta) : 'OK'}</small>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="period-card">
+            <div class="period-head"><strong>${p.label}</strong></div>
+            ${rows}
+          </div>
+        `;
+      };
+
+      const manha = PERIODOS.filter(p => p.turno === 'manha').map(renderPeriodo).join('');
+      const tarde = PERIODOS.filter(p => p.turno === 'tarde').map(renderPeriodo).join('');
+      const metaManha = trilhosConfig.reduce((sum, t) => sum + PERIODOS.filter(p => p.turno === 'manha').reduce((s, p) => s + metaHorario(t.metaDia, p.fator), 0), 0);
+      const metaTarde = trilhosConfig.reduce((sum, t) => sum + PERIODOS.filter(p => p.turno === 'tarde').reduce((s, p) => s + metaHorario(t.metaDia, p.fator), 0), 0);
+      const manhaCls = resumo.totalManha >= metaManha && metaManha > 0 ? 'ok-bg' : 'bad-bg';
+      const tardeCls = resumo.totalTarde >= metaTarde && metaTarde > 0 ? 'ok-bg' : 'bad-bg';
+
+      hourGrid.innerHTML = `
+        <section class="section-card mobile-screen" id="telaManha">
+          <div class="section-head">
+            <div>
+              <h2>Manhã</h2>
+              <small>Toque em uma produção para abrir os modelos.</small>
+            </div>
+            <div class="screen-total-pill ${manhaCls} click-detail" data-detail-type="turno" data-turno="manha" title="Toque para ver modelos da manhã">
+              <span>Total</span>
+              <strong>${fmt(resumo.totalManha)}</strong>
+            </div>
+          </div>
+          ${manha}
+        </section>
+
+        <section class="section-card mobile-screen" id="telaTarde">
+          <div class="section-head">
+            <div>
+              <h2>Tarde</h2>
+              <small>Toque em uma produção para abrir os modelos.</small>
+            </div>
+            <div class="screen-total-pill ${tardeCls} click-detail" data-detail-type="turno" data-turno="tarde" title="Toque para ver modelos da tarde">
+              <span>Total</span>
+              <strong>${fmt(resumo.totalTarde)}</strong>
+            </div>
+          </div>
+          ${tarde}
+        </section>
+      `;
+    }
+
+    function renderDailySummary(resumo) {
+      const diasComProducao = [...monthlyResumo.values()].filter(r => cleanNumber(r.totalFabrica) > 0).length;
+      const trilhoRows = trilhosConfig.map(t => {
+        const item = resumo.trilhos[t.key];
+        const producao = cleanNumber(item.total);
+        const media = cleanNumber(mediasMes[t.key] || 0);
+        const metaEsperada = metaEsperadaAteAgora(item.metaDia, resumo.data);
+        const faltaDia = Math.max(0, item.metaDia - producao);
+        const prodOk = metaEsperada <= 0 ? producao > 0 : producao >= metaEsperada;
+        const mediaOk = media >= item.metaDia;
+
+        return `
+          <tr>
+            <td class="name-cell">${escapeHtml(item.supervisor)}</td>
+            <td class="num-cell ${prodOk ? 'ok-bg' : 'bad-bg'} click-detail" data-detail-type="dia" data-trilho-key="${t.key}" title="Toque para ver modelos do dia">
+              ${fmt(producao)}
+              <small>${faltaDia > 0 ? 'Falta ' + fmt(faltaDia) : 'Meta batida'}</small>
+            </td>
+            <td class="num-cell ${mediaOk ? 'ok-bg' : 'bad-bg'} click-detail" data-detail-type="media" data-trilho-key="${t.key}" title="Toque para ver modelos do mês">
+              ${fmt(media)}
+              <small>${diasComProducao ? fmt(diasComProducao) + ' dia(s)' : 'Sem mês'}</small>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      const metaFabricaEsperada = trilhosConfig.reduce((sum, t) => sum + metaEsperadaAteAgora(resumo.trilhos[t.key].metaDia, resumo.data), 0);
+      const totalFabricaOk = metaFabricaEsperada <= 0 ? resumo.totalFabrica > 0 : resumo.totalFabrica >= metaFabricaEsperada;
+      const mediaFabricaOk = (mediasMes.totalFabrica || 0) >= metaTotalDiaConfig(trilhosConfig);
+
+      dailySummary.innerHTML = `
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Supervisor</th>
+              <th style="text-align:right;">Produção diária</th>
+              <th style="text-align:right;">Média mês</th>
+            </tr>
+          </thead>
+          <tbody>${trilhoRows}</tbody>
+        </table>
+
+        <div class="factory-summary">
+          <div class="factory-row">
+            <div class="factory-label">Produção total da fábrica</div>
+            <div class="factory-number ${totalFabricaOk ? 'ok-bg' : 'bad-bg'} click-detail" data-detail-type="dia" title="Toque para ver todos os modelos do dia">${fmt(resumo.totalFabrica)}</div>
+          </div>
+          <div class="factory-row">
+            <div class="factory-label">Média do mês atual<br><small>${diasComProducao ? fmt(diasComProducao) + ' dia(s) com produção' : 'Sem produção no mês'}</small></div>
+            <div class="factory-number ${mediaFabricaOk ? 'ok-bg' : 'bad-bg'} click-detail" data-detail-type="media" title="Toque para ver todos os modelos do mês">${fmt(mediasMes.totalFabrica || 0)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function listenTaloesDia() {
+      if (unsubscribeTaloesDia) unsubscribeTaloesDia();
+      const dateISO = selectedDateInput.value;
+      if (!dateISO) return;
+
+      syncStatus.textContent = 'Carregando produção do dia...';
+      const qDia = query(collection(db, 'taloes'), where('dataEntradaMontagem', '==', dateISO));
+      unsubscribeTaloesDia = onSnapshot(qDia, (snapshot) => {
+        taloesDia = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        syncStatus.textContent = `Tempo real ativo • ${snapshot.size} talões no dia`;
+        renderDashboard();
+      }, (error) => {
+        console.error('Erro ao buscar talões do dia:', error);
+        syncStatus.textContent = 'Erro ao buscar produção do dia';
+      });
+    }
+
+    function listenTaloesMes() {
+      if (unsubscribeTaloesMes) unsubscribeTaloesMes();
+      const dateISO = selectedDateInput.value;
+      if (!dateISO) return;
+      const start = monthStartISO(dateISO);
+      const end = monthEndISO(dateISO);
+      const qMes = query(collection(db, 'taloes'), where('dataEntradaMontagem', '>=', start), where('dataEntradaMontagem', '<=', end));
+
+      unsubscribeTaloesMes = onSnapshot(qMes, (snapshot) => {
+        taloesMes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderMonthlyFromMonthTaloes();
+      }, (error) => {
+        console.error('Erro ao buscar talões do mês:', error);
+        syncStatus.textContent = 'Erro ao buscar produção do mês';
+      });
+    }
+
+    function renderMonthlyFromMonthTaloes() {
+      if (!selectedDateInput.value) return;
+      const dateISO = selectedDateInput.value;
+      const [year, month] = dateISO.split('-');
+      const lastDay = daysInMonth(dateISO);
+      const map = new Map();
+
+      for (let day = 1; day <= lastDay; day++) {
+        const iso = `${year}-${month}-${String(day).padStart(2, '0')}`;
+        map.set(iso, emptyResumo(iso));
+      }
+
+      const grouped = new Map();
+      taloesMes.forEach(talao => {
+        const d = normalizeDateISO(talao.dataEntradaMontagem);
+        if (!d || d < `${year}-${month}-01` || d > `${year}-${month}-${String(lastDay).padStart(2, '0')}`) return;
+        if (!grouped.has(d)) grouped.set(d, []);
+        grouped.get(d).push(talao);
+      });
+
+      grouped.forEach((list, dayISO) => {
+        map.set(dayISO, applyTaloesToResumo(list, dayISO));
+      });
+
+      monthlyResumo = map;
+      computeMediasFromMonthMap();
+      if (lastResumo) renderDashboard();
+    }
+
+    function computeMediasFromMonthMap() {
+      const validDays = [...monthlyResumo.values()].filter(r => cleanNumber(r.totalFabrica) > 0);
+      const count = validDays.length;
+      const media = { totalFabrica: 0 };
+      trilhosConfig.forEach(t => media[t.key] = 0);
+
+      validDays.forEach(r => {
+        media.totalFabrica += cleanNumber(r.totalFabrica);
+        trilhosConfig.forEach(t => media[t.key] += cleanNumber(r.trilhos?.[t.key]?.total));
+      });
+
+      if (count > 0) {
+        media.totalFabrica = Math.round(media.totalFabrica / count);
+        trilhosConfig.forEach(t => media[t.key] = Math.round(media[t.key] / count));
+      }
+      mediasMes = media;
+    }
+
+    function changeDate(dateISO) {
+      selectedDateInput.value = dateISO;
+      listenTaloesDia();
+      listenTaloesMes();
+    }
+
+    async function boot(user) {
+      currentUserEmail = user.email;
+      const userDocRef = doc(db, 'Usuario', user.email);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        alert('Dados do usuário não encontrados. Faça login novamente.');
+        await signOut(auth);
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+      currentUserLevel = String(userData.nivelAcesso || '');
+      currentUserName = userData.Nome || '';
+
+      if (!['07', '08', '09'].includes(currentUserLevel)) {
+        alert('Você não tem permissão para acessar esta página.');
+        await signOut(auth);
+        window.location.href = 'index.html';
+        return;
+      }
+
+      localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', currentUserLevel);
+      localStorage.setItem('calcadosroma-65ac6:userName', currentUserName || '');
+      iniciarNavegacao(currentUserLevel, currentUserName);
+      selectedDateInput.value = todayISO();
+      await loadConfigOnce();
+      listenTaloesDia();
+      listenTaloesMes();
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      try {
+        await boot(user);
+      } catch (error) {
+        console.error('Erro ao iniciar controle mobile:', error);
+        syncStatus.textContent = 'Erro ao iniciar página';
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-detail-type]');
+      if (!target || target.closest('#modelosModal')) return;
+      openModelosModalFromElement(target);
+    });
+
+    closeModelosModal.addEventListener('click', closeModelosModalHandler);
+    modelosModal.addEventListener('click', (event) => {
+      if (event.target === modelosModal) closeModelosModalHandler();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !modelosModal.hidden) closeModelosModalHandler();
+    });
+
+    selectedDateInput.addEventListener('change', () => changeDate(selectedDateInput.value));
+    todayButton.addEventListener('click', () => changeDate(todayISO()));
+    reloadButton.addEventListener('click', () => changeDate(selectedDateInput.value || todayISO()));
+  </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// A base recebida não usa a API do Cloud Storage.
+// PDFs são lidos/gerados no navegador, sem upload para este serviço.
+// Manter fechado até existir uma funcionalidade com caminho e permissões definidos.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

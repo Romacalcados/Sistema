@@ -1,0 +1,432 @@
+rules_version = '2';
+
+// Calçados Roma — nove perfis, versão 2.
+// Primeiro Admin pelo console: Usuario/{email}, UID do Auth, nivelAcesso '09',
+// ativo true e permissoesVersao 2. Nunca autorizar por nome ou localStorage.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedInWithEmail() {
+      return request.auth != null && request.auth.token.email is string;
+    }
+    function profilePath() {
+      return /databases/$(database)/documents/Usuario/$(request.auth.token.email);
+    }
+    function profile() { return get(profilePath()).data; }
+    function activeUser() {
+      return signedInWithEmail() && exists(profilePath())
+        && profile().get('uid', '') == request.auth.uid
+        && profile().get('ativo', false) == true
+        && profile().get('permissoesVersao', 0) == 2
+        && profile().nivelAcesso in ['01','02','03','04','05','06','07','08','09'];
+    }
+    function hasLevel(levels) { return activeUser() && profile().nivelAcesso in levels; }
+    function isAdmin() { return hasLevel(['09']); }
+    function changesOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+    function changedAny(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+    function validProfile(email) {
+      let d = request.resource.data;
+      return d.Nome is string && d.Nome.size() > 0
+        && d.Email == email && email == email.lower()
+        && d.uid is string && d.uid.size() > 0
+        && d.nivelAcesso in ['01','02','03','04','05','06','07','08','09']
+        && d.ativo is bool && d.permissoesVersao == 2
+        && !d.keys().hasAny(['senha','password','Senha','Password']);
+    }
+    function validComponents(c) {
+      return c is map
+        && c.keys().hasAll(['cabedal','forro','tiras','aviamentos','palmilha','sola'])
+        && c.keys().hasOnly(['cabedal','forro','tiras','aviamentos','palmilha','sola'])
+        && c.cabedal is bool && c.forro is bool && c.tiras is bool
+        && c.aviamentos is bool && c.palmilha is bool && c.sola is bool;
+    }
+    function requiresComponent(d, key, legacyDefault) {
+      return d.get('componentes', {}).get(key, legacyDefault) == true;
+    }
+    function stageApplicable(d, sector) {
+      return sector == 'costura' || requiresComponent(d, sector, false);
+    }
+    function matchesModelComponents(d) {
+      let model = get(/databases/$(database)/documents/modelosOperacionais/$(d.modeloId)).data;
+      return d.modeloId is string && d.modeloId.size() > 0
+        && model.ativo == true && d.componentes == model.componentes
+        && canonicalModelKey(d.linha, d.modelo) == canonicalModelKey(model.linha, model.modelo);
+    }
+    function canonicalModelKey(linha, modelo) {
+      let line = string(linha).replace('[^0-9]', '').replace('^0+', '');
+      let raw = string(modelo).trim();
+      let parts = raw.split('[._/-]');
+      let short = parts.size() > 1 && parts[0].replace('[^0-9]', '').replace('^0+', '') == line
+        ? raw.replace('^[0-9]+[._/-]', '') : raw;
+      let model = short.replace('[^0-9]', '').replace('^0+', '');
+      return (line == '' ? '0' : line) + '.' + (model == '' ? '0' : model);
+    }
+    function hasProductionDate(value) {
+      return !(value in ['', null, 'N/A', 'Não se aplica']);
+    }
+    function cutItemComplete(d, prefix) {
+      return d.get(prefix + 'Concluido', null) is bool
+        ? d[prefix + 'Concluido'] : hasProductionDate(d.get(prefix + 'Data', ''));
+    }
+    function validAtelierDirectory() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['nome','setor','nivelAcesso','ativo'])
+        && d.nome is string && d.nome.size() > 0 && d.ativo is bool
+        && ((d.setor == 'costura' && d.nivelAcesso == '03')
+          || (d.setor == 'sola' && d.nivelAcesso == '04')
+          || (d.setor == 'palmilha' && d.nivelAcesso == '05'));
+    }
+    function validAtelier(uid, name, sector) {
+      let path = /databases/$(database)/documents/atelies/$(uid);
+      return uid is string && uid.size() > 0 && exists(path)
+        && get(path).data.ativo == true
+        && get(path).data.setor == sector && get(path).data.nome == name;
+    }
+    function stageNotStarted(d, statusField, startField, endField) {
+      return !(d.get(statusField, '') in ['Em Produção','Em produção','Finalizado'])
+        && d.get(startField, '') in ['', null] && d.get(endField, '') in ['', null];
+    }
+    function initialStageEmpty(d, lower, upper) {
+      return d.get('atelie' + upper + 'Id', '') == ''
+        && d.get('origemAtelie' + upper, '') == ''
+        && d.get('distribuicao' + upper + 'Id', '') == ''
+        && d.get(lower + 'DataInicio', '') == ''
+        && d.get(lower + 'DataFim', '') == ''
+        && d.get(lower + 'Usuario', '') == ''
+        && d.get('dataSaida' + upper, '') == '';
+    }
+    function cutComplete(d) {
+      return (!requiresComponent(d, 'cabedal', true) || cutItemComplete(d, 'cabedal'))
+        && (!requiresComponent(d, 'forro', true) || cutItemComplete(d, 'forro'))
+        && (!requiresComponent(d, 'tiras', true) || cutItemComplete(d, 'tiras'))
+        && (!requiresComponent(d, 'aviamentos', true) || cutItemComplete(d, 'aviamento'));
+    }
+    function validInitialTalao() {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+          'id','codigoBarrasIdentificador','numeroRemessa','numeroTalaoSequencial','linha','modelo','modeloId',
+          'corSapato','pares','dataCorte','dataEntrega','tipoCliente','corTalao','dataRegistro','componentes',
+          'statusGeral','statusCorte','statusCostura','statusSola','statusPalmilha','statusMontagem',
+          'corteDataInicio','corteDataFim','corteUsuario','costuraDataInicio','costuraDataFim','costuraUsuario',
+          'solaDataInicio','solaDataFim','solaUsuario','palmilhaDataInicio','palmilhaDataFim','palmilhaUsuario',
+          'montagemDataInicio','montagemDataFim','montagemUsuario',
+          'cabedalConcluido','cabedalData','cabedalUsuario','forroConcluido','forroData','forroUsuario',
+          'tirasConcluido','tirasData','tirasUsuario','aviamentoConcluido','aviamentoData','aviamentoUsuario',
+          'atelieCosturaId','atelieSolaId','ateliePalmilhaId','idAtelieResponsavel','idAtelieSolaResponsavel','idAteliePalmilhaResponsavel',
+          'origemAtelieCostura','origemAtelieSola','origemAteliePalmilha',
+          'distribuicaoCosturaId','distribuicaoSolaId','distribuicaoPalmilhaId',
+          'dataSaidaCostura','dataSaidaSola','dataSaidaPalmilha','observacao','cliente','normativa','fabrica'
+        ]) && validComponents(d.componentes) && matchesModelComponents(d)
+        && d.numeroRemessa is string && d.numeroRemessa.size() > 0
+        && d.numeroTalaoSequencial is string && d.linha is string && d.modelo is string
+        && d.pares is number && d.pares >= 0
+        && d.dataCorte is string && d.dataEntrega is string
+        && d.statusGeral == 'Pendente'
+        && d.statusCorte == ((d.componentes.cabedal || d.componentes.forro || d.componentes.tiras || d.componentes.aviamentos)
+          ? 'Aguardando Material' : 'Cortado')
+        && d.statusCostura in ['Aguardando Material','Pendente']
+        && d.get('statusMontagem', 'Aguardando Material') in ['Aguardando Material','Pendente']
+        && d.statusSola == (d.componentes.sola ? 'Aguardando Material' : 'Não se aplica')
+        && d.statusPalmilha == (d.componentes.palmilha ? 'Aguardando Material' : 'Não se aplica')
+        && d.get('cabedalConcluido', false) == false && d.get('forroConcluido', false) == false
+        && d.get('tirasConcluido', false) == false && d.get('aviamentoConcluido', false) == false
+        && initialStageEmpty(d, 'costura', 'Costura')
+        && initialStageEmpty(d, 'sola', 'Sola')
+        && initialStageEmpty(d, 'palmilha', 'Palmilha')
+        && d.get('idAtelieResponsavel', '') == ''
+        && d.get('idAtelieSolaResponsavel', '') == ''
+        && d.get('idAteliePalmilhaResponsavel', '') == ''
+        && d.get('corteDataInicio', '') == '' && d.get('corteDataFim', '') == ''
+        && d.get('montagemDataInicio', '') == '' && d.get('montagemDataFim', '') == ''
+        && d.get('cabedalData', '') == '' && d.get('forroData', '') == ''
+        && d.get('tirasData', '') == '' && d.get('aviamentoData', '') == '';
+    }
+    function productionNotStarted(d) {
+      return d.get('cabedalConcluido', false) == false && d.get('forroConcluido', false) == false
+        && d.get('tirasConcluido', false) == false && d.get('aviamentoConcluido', false) == false
+        && !hasProductionDate(d.get('cabedalData', '')) && !hasProductionDate(d.get('forroData', ''))
+        && !hasProductionDate(d.get('tirasData', '')) && !hasProductionDate(d.get('aviamentoData', ''))
+        && stageNotStarted(d, 'statusCostura', 'costuraDataInicio', 'dataSaidaCostura')
+        && stageNotStarted(d, 'statusSola', 'solaDataInicio', 'dataSaidaSola')
+        && stageNotStarted(d, 'statusPalmilha', 'palmilhaDataInicio', 'dataSaidaPalmilha')
+        && d.get('dataEntradaDistribuicao', '') in ['', null]
+        && d.get('dataEntradaTalonagem', '') in ['', null]
+        && d.get('dataEntradaMontagem', '') in ['', null];
+    }
+    function updatesRegistration() {
+      return changesOnly([
+          'numeroRemessa','numeroTalaoSequencial','linha','modelo','pares','corSapato',
+          'dataCorte','dataEntrega','tipoCliente','corTalao','observacao','componentes','modeloId',
+          'statusCorte','statusSola','statusPalmilha'
+        ])
+        && (!changedAny(['componentes','modeloId','linha','modelo','statusCorte','statusSola','statusPalmilha'])
+          || (productionNotStarted(resource.data) && validComponents(request.resource.data.componentes)
+            && matchesModelComponents(request.resource.data)
+            && request.resource.data.statusCorte == (cutComplete(request.resource.data) ? 'Cortado' : 'Aguardando Material')
+            && request.resource.data.statusSola == (request.resource.data.componentes.sola ? 'Aguardando Material' : 'Não se aplica')
+            && request.resource.data.statusPalmilha == (request.resource.data.componentes.palmilha ? 'Aguardando Material' : 'Não se aplica')));
+    }
+    function updatesPlanningMetadata() {
+      return changesOnly(['cliente','normativa','fabrica'])
+        && request.resource.data.get('cliente', '') is string
+        && request.resource.data.get('normativa', '') is string
+        && request.resource.data.get('fabrica', '') is string;
+    }
+    function validCutField(key, prefix) {
+      let d = request.resource.data;
+      return !changedAny([prefix + 'Concluido', prefix + 'Data', prefix + 'Usuario'])
+        || (d.get(prefix + 'Concluido', false) is bool
+          && d.get(prefix + 'Data', '') is string && d.get(prefix + 'Usuario', '') is string
+          && (d.get(prefix + 'Concluido', false)
+            ? (requiresComponent(d, key, true) && d.get(prefix + 'Usuario', '') == profile().Nome)
+            : d.get(prefix + 'Usuario', '') == ''));
+    }
+    function cuttingAssignment(sector, upper, nameField) {
+      let d = request.resource.data;
+      let fields = ['atelie' + upper + 'Id', nameField, 'origemAtelie' + upper, 'distribuicao' + upper + 'Id'];
+      let uid = d.get('atelie' + upper + 'Id', '');
+      return !changedAny(fields)
+        || (d.get('origemAtelie' + upper, '') == 'corte'
+          && d.get('distribuicao' + upper + 'Id', '') == ''
+          && ((uid == '' && d.get(nameField, '') == '')
+            || (stageApplicable(d, sector) && validAtelier(uid, d.get(nameField, ''), sector))));
+    }
+    function updatesCutting() {
+      let d = request.resource.data;
+      return changesOnly([
+          'atelieCosturaId','idAtelieResponsavel','origemAtelieCostura','distribuicaoCosturaId',
+          'atelieSolaId','idAtelieSolaResponsavel','origemAtelieSola','distribuicaoSolaId',
+          'ateliePalmilhaId','idAteliePalmilhaResponsavel','origemAteliePalmilha','distribuicaoPalmilhaId',
+          'statusCorte','statusGeral','cabedalConcluido','cabedalData','cabedalUsuario',
+          'forroConcluido','forroData','forroUsuario','tirasConcluido','tirasData','tirasUsuario',
+          'aviamentoConcluido','aviamentoData','aviamentoUsuario'
+        ])
+        && (!changedAny(['statusCorte']) || (d.statusCorte in ['Cortado','Em produção','Em Produção','Aguardando Material']
+          && (d.statusCorte != 'Cortado' || cutComplete(d))))
+        && (!changedAny(['statusGeral']) || d.statusGeral in ['Cortado','Cortando','Aguardando Material','Pendente'])
+        && validCutField('cabedal', 'cabedal') && validCutField('forro', 'forro')
+        && validCutField('tiras', 'tiras') && validCutField('aviamentos', 'aviamento')
+        && cuttingAssignment('costura', 'Costura', 'idAtelieResponsavel')
+        && cuttingAssignment('sola', 'Sola', 'idAtelieSolaResponsavel')
+        && cuttingAssignment('palmilha', 'Palmilha', 'idAteliePalmilhaResponsavel');
+    }
+    function sourceDistributionMatches(distributionId, sector, uid) {
+      let d = get(/databases/$(database)/documents/DistribuicaoAtelier/$(distributionId)).data;
+      let cut = resource.data.get('dataCorte', '');
+      let key = canonicalModelKey(resource.data.get('linha', ''), resource.data.get('modelo', ''));
+      return d.setor == sector && d.get('destinosUnicos', {}).get(key, '') == uid
+        && cut is string && cut.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}.*')
+        && (cut[8:10] + '-' + cut[5:7] + '-' + cut[0:4]) in d.distribuicoes;
+    }
+    function launchesSector(sector, upper, nameField) {
+      let d = request.resource.data;
+      let uid = d.get('atelie' + upper + 'Id', '');
+      let distId = d.get('distribuicao' + upper + 'Id', '');
+      let oldUid = resource.data.get('atelie' + upper + 'Id', '');
+      let oldName = resource.data.get(nameField, '');
+      let oldOrigin = resource.data.get('origemAtelie' + upper, '');
+      return changesOnly(['atelie' + upper + 'Id', nameField, 'origemAtelie' + upper, 'distribuicao' + upper + 'Id'])
+        && stageApplicable(d, sector)
+        && !(oldOrigin in ['corte','migracao'])
+        && (oldUid == '' || oldOrigin == 'distribuicao')
+        && !(oldUid == '' && oldName != '' && oldOrigin == '')
+        && stageNotStarted(resource.data, 'status' + upper, sector + 'DataInicio', 'dataSaida' + upper)
+        && d.get('origemAtelie' + upper, '') == 'distribuicao'
+        && distId is string && distId.size() > 0
+        && validAtelier(uid, d.get(nameField, ''), sector)
+        && sourceDistributionMatches(distId, sector, uid);
+    }
+    function entersSector(sector, upper) {
+      let d = request.resource.data;
+      let allowed = sector == 'costura'
+        ? ['statusCostura','costuraDataInicio','costuraUsuario','statusGeral']
+        : ['status' + upper, sector + 'DataInicio', sector + 'Usuario'];
+      return changesOnly(allowed) && resource.data.get('atelie' + upper + 'Id', '') == request.auth.uid
+        && stageApplicable(resource.data, sector)
+        && stageNotStarted(resource.data, 'status' + upper, sector + 'DataInicio', 'dataSaida' + upper)
+        && (sector != 'costura' || !(resource.data.get('statusGeral', '') in ['Costurado','Distribuído','Talonado','Montado','Finalizado']))
+        && d['status' + upper] == 'Em Produção'
+        && d[sector + 'DataInicio'] is string && d[sector + 'DataInicio'].size() > 0
+        && d[sector + 'Usuario'] == profile().Nome
+        && (sector != 'costura' || d.statusGeral == 'Costurando');
+    }
+    function exitsSector(sector, upper) {
+      let d = request.resource.data;
+      let allowed = sector == 'costura'
+        ? ['statusCostura','dataSaidaCostura','statusGeral']
+        : ['status' + upper, 'dataSaida' + upper];
+      return changesOnly(allowed) && resource.data.get('atelie' + upper + 'Id', '') == request.auth.uid
+        && stageApplicable(resource.data, sector)
+        && resource.data.get('status' + upper, '') == 'Em Produção'
+        && hasProductionDate(resource.data.get(sector + 'DataInicio', ''))
+        && resource.data.get('dataSaida' + upper, '') in ['', null]
+        && d['status' + upper] == 'Finalizado'
+        && d['dataSaida' + upper] is string && d['dataSaida' + upper].size() > 0
+        && (sector != 'costura' || d.statusGeral == 'Costurado');
+    }
+    function updatesFactory() {
+      return changesOnly([
+          'statusGeral','statusMontagem','dataEntradaDistribuicao','usuarioDistribuicao',
+          'dataEntradaTalonagem','usuarioTalonagem','dataEntradaMontagem','usuarioMontagem',
+          'trilhoProduzido','dataProducao','dataLeituraMontagem','periodoProducao',
+          'dataReferenciaProducao','periodoProducaoDefinidoPor','periodoProducaoEditadoPor',
+          'periodoProducaoEditadoEm'
+        ])
+        && (!changedAny(['statusGeral']) || request.resource.data.statusGeral in ['Distribuído','Talonado','Montado'])
+        && (!changedAny(['statusMontagem']) || request.resource.data.statusMontagem in ['Em Produção','Finalizado','Montado']);
+    }
+    function resolvesScanError() {
+      let d = request.resource.data;
+      return changesOnly(['resolvido','resolvidoPor','resolvidoEm']) && d.resolvido is bool
+        && ((d.resolvido && d.resolvidoPor == profile().Nome && d.resolvidoEm is string)
+          || (!d.resolvido && d.resolvidoPor == null && d.resolvidoEm == null));
+    }
+    function validDistributionModel(model, modeloId) {
+      return model.linha is string && model.modelo is string
+        && model.linha.matches('0|[1-9][0-9]*') && model.modelo.matches('0|[1-9][0-9]*')
+        && modeloId == model.linha + '.' + model.modelo
+        && model == {
+          'linha': model.linha, 'modelo': model.modelo, 'chave': modeloId,
+          'categoria': '', 'subcategoria': '', 'observacaoModelo': '',
+          'componentes': {'cabedal': true, 'forro': true, 'tiras': true, 'aviamentos': true, 'palmilha': false, 'sola': false},
+          'preco': {'valor': 0, 'setores': {}}, 'totalSetores': 0, 'saldo': 0,
+          'ativo': true, 'origem': 'Distribuicao', 'criadoEm': request.time,
+          'atualizadoEm': request.time, 'atualizadoPor': request.auth.token.email, 'historico': []
+        };
+    }
+    function createsDistributionModel(modeloId) {
+      let modelPath = /databases/$(database)/documents/modelos/$(modeloId);
+      let operationalPath = /databases/$(database)/documents/modelosOperacionais/$(modeloId);
+      let pricesPath = /databases/$(database)/documents/precosAtelier/$(modeloId);
+      let model = getAfter(modelPath).data;
+      let operational = getAfter(operationalPath).data;
+      let prices = getAfter(pricesPath).data;
+      // Os três documentos precisam ser novos e criados juntos. Nenhuma leitura
+      // financeira é concedida ao cliente, nem permissão de alterar um existente.
+      return !exists(modelPath) && !exists(operationalPath) && !exists(pricesPath)
+        && validDistributionModel(model, modeloId)
+        && operational == {
+          'linha': model.linha, 'modelo': model.modelo, 'chave': modeloId,
+          'categoria': '', 'subcategoria': '', 'observacaoModelo': '',
+          'ativo': true, 'componentes': model.componentes, 'atualizadoEm': request.time
+        }
+        && prices == {
+          'linha': model.linha, 'modelo': model.modelo,
+          'costura': 0, 'palmilha': 0, 'sola': 0, 'atualizadoEm': request.time
+        };
+    }
+    function validOperationalModel() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['linha','modelo','categoria','subcategoria','chave','observacaoModelo','ativo','componentes','atualizadoEm'])
+        && d.linha is string && d.modelo is string && d.ativo is bool
+        && validComponents(d.componentes);
+    }
+    function validAtelierPrices() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['linha','modelo','costura','palmilha','sola','atualizadoEm'])
+        && d.linha is string && d.modelo is string
+        && d.costura is number && d.costura >= 0
+        && d.palmilha is number && d.palmilha >= 0
+        && d.sola is number && d.sola >= 0;
+    }
+    function validAtelierDistribution() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['setor','distribuicoes','itens','observacoesAtelier','observacoesAtelierPosicoes',
+          'gruposResumoLinhas','resumo','atualizadoEm','atualizadoPor','atualizadoPorNome','destinosUnicos'])
+        && d.setor in ['costura','sola','palmilha'] && d.distribuicoes is list
+        && d.itens is list && d.destinosUnicos is map
+        && d.resumo.keys().hasOnly(['totalPares','totalValor','valorDia','totalAtelies'])
+        && d.atualizadoPor == request.auth.token.email;
+    }
+    function readsTalao() {
+      let level = profile().nivelAcesso;
+      return level in ['01','02','06','07','08','09']
+        || (level == '03' && resource.data.get('atelieCosturaId', '') == request.auth.uid)
+        || (level == '04' && resource.data.get('atelieSolaId', '') == request.auth.uid)
+        || (level == '05' && resource.data.get('ateliePalmilhaId', '') == request.auth.uid);
+    }
+    function updatesTalao() {
+      // Validar a sessão uma única vez evita exceder o limite de expressões
+      // das regras em lotes e operações com vários responsáveis.
+      let level = profile().nivelAcesso;
+      return level == '09'
+        || (level == '01' && updatesRegistration())
+        || (level == '02' && (updatesCutting() || resolvesScanError()))
+        || (level == '03' && (entersSector('costura','Costura') || exitsSector('costura','Costura')))
+        || (level == '04' && (entersSector('sola','Sola') || exitsSector('sola','Sola')))
+        || (level == '05' && (entersSector('palmilha','Palmilha') || exitsSector('palmilha','Palmilha')))
+        || (level == '06' && (updatesFactory() || resolvesScanError()))
+        || (level in ['07','08'] && (updatesPlanningMetadata()
+          || launchesSector('costura','Costura','idAtelieResponsavel')
+          || launchesSector('sola','Sola','idAtelieSolaResponsavel')
+          || launchesSector('palmilha','Palmilha','idAteliePalmilhaResponsavel')));
+    }
+
+    match /Usuario/{email} {
+      allow get: if (signedInWithEmail() && email == request.auth.token.email) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && validProfile(email);
+      allow delete: if isAdmin();
+    }
+    match /atelies/{uid} {
+      allow read: if hasLevel(['01','02','06','07','08','09']) || (activeUser() && uid == request.auth.uid);
+      allow create, update: if isAdmin() && validAtelierDirectory();
+      allow delete: if isAdmin();
+    }
+    match /taloes/{talaoId} {
+      allow read: if activeUser() && readsTalao();
+      allow create: if activeUser() && (profile().nivelAcesso == '09'
+        || (profile().nivelAcesso in ['01','07','08'] && validInitialTalao()));
+      allow delete: if hasLevel(['01','09']);
+      allow update: if activeUser() && updatesTalao();
+    }
+    match /modelos/{modeloId} {
+      allow read, update, delete: if hasLevel(['08','09']);
+      allow create: if hasLevel(['08','09'])
+        || (hasLevel(['07']) && createsDistributionModel(modeloId));
+    }
+    match /modelosOperacionais/{modeloId} {
+      allow read: if activeUser();
+      allow create: if (hasLevel(['08','09']) && validOperationalModel())
+        || (hasLevel(['07']) && createsDistributionModel(modeloId));
+      allow update: if hasLevel(['08','09']) && validOperationalModel();
+      allow delete: if hasLevel(['08','09']);
+    }
+    match /precosAtelier/{modeloId} {
+      allow read: if hasLevel(['07','08','09']);
+      allow create: if (hasLevel(['08','09']) && validAtelierPrices())
+        || (hasLevel(['07']) && createsDistributionModel(modeloId));
+      allow update: if hasLevel(['08','09']) && validAtelierPrices();
+      allow delete: if hasLevel(['08','09']);
+    }
+    match /metas/{metaId} {
+      allow read: if hasLevel(['06','07','08','09']);
+      allow create, update: if hasLevel(['07','08','09']);
+      allow delete: if isAdmin();
+    }
+    match /Distribuicao/{distribuicaoId} {
+      allow read: if hasLevel(['02','06','07','08','09']);
+      allow create, update: if hasLevel(['07','08','09']);
+      allow delete: if isAdmin();
+    }
+    match /DistribuicaoAtelier/{distribuicaoId} {
+      allow read: if hasLevel(['07','08','09']);
+      allow create, update: if hasLevel(['07','08','09']) && validAtelierDistribution();
+      allow delete: if isAdmin();
+    }
+    match /programacoesMontagem/{programacaoId} {
+      allow read: if hasLevel(['06','07','08','09']);
+      allow create, update: if hasLevel(['07','08','09']);
+      allow delete: if isAdmin();
+    }
+    match /quinzenas/{quinzenaId} { allow read, write: if isAdmin(); }
+    match /registroBackup/{backupId} {
+      allow read, write: if isAdmin();
+      match /lotesTaloes/{loteId} { allow read, write: if isAdmin(); }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

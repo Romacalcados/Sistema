@@ -1,0 +1,2345 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+  <script src="roma-core.js"></script>
+  <script src="roma-setores.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <link rel="stylesheet" href="styles.css">
+<title>Relatório Ateliê - Calçados Roma</title>
+  <script src="navegacao.js"></script>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #d7dde7;
+      --primary: #0d6efd;
+      --primary-2: #0b5ed7;
+      --green: #16a34a;
+      --green-2: #15803d;
+      --danger: #ef4444;
+      --yellow-soft: #fff6cc;
+      --green-soft: #e2f3e8;
+      --red-soft: #f6dddd;
+      --blue-soft: #dfeaf7;
+      --gray-soft: #eef2f7;
+      --shadow: 0 6px 18px rgba(15, 23, 42, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .main-content {
+      width: min(1760px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 12px 0 28px;
+    }
+
+    .filters-container {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      overflow: visible;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .span-1 { grid-column: span 1; }
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
+
+    label {
+      color: #334155;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    input, select, .date-range-button {
+      width: 100%;
+      border: 1px solid #cfd6e3;
+      border-radius: 10px;
+      padding: 10px 11px;
+      min-height: 44px;
+      background: #fff;
+      color: #111827;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus, select:focus, .date-range-button:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, .13);
+    }
+
+    .date-range-button {
+      text-align: left;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 800;
+    }
+
+    .date-range-button span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .date-range-button::after {
+      content: "▾";
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .filters-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-start;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 12px;
+      margin-top: 2px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 15px;
+      min-height: 42px;
+      cursor: pointer;
+      font-weight: 900;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-2); }
+    .btn-secondary { background: #e5e7eb; color: #111827; }
+    .btn-secondary:hover { background: #d1d5db; }
+    .btn-success { background: var(--green); color: #fff; }
+    .btn-success:hover { background: var(--green-2); }
+
+    .status-line {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 8px 4px 12px;
+      min-height: 18px;
+    }
+
+    .overview-panel {
+      display: none;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .overview-panel.show { display: block; }
+
+    .overview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .overview-head h2 {
+      margin: 0;
+      font-size: 18px;
+      color: #111827;
+    }
+
+    .overview-head p {
+      margin: 3px 0 0;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .mini-cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(170px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .mini-card {
+      border-radius: 16px;
+      border: 1px solid #d7dde7;
+      padding: 13px 14px;
+      min-height: 92px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+    .mini-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .11);
+      border-color: #93c5fd;
+    }
+
+    .mini-card:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, .18), 0 10px 24px rgba(15, 23, 42, .11);
+    }
+
+    .mini-card h3 {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.2;
+      color: #1e3a5f;
+    }
+
+    .mini-card strong {
+      font-size: 18px;
+      color: #475569;
+    }
+
+    .mini-card span {
+      color: #64748b;
+      font-weight: 800;
+      font-size: 12px;
+      margin-left: 3px;
+    }
+
+    .mini-card.total { background: var(--blue-soft); border-color: #b8cbe0; }
+    .mini-card.produced { background: var(--green-soft); border-color: #b8d9c5; }
+    .mini-card.todo { background: var(--yellow-soft); border-color: #eadb94; }
+    .mini-card.models, .mini-card.unbipped { background: var(--gray-soft); border-color: #cbd5e1; }
+
+    .model-sections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .model-section {
+      border: 1px solid #d7dde7;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: #f8fafc;
+    }
+
+    .model-section h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: #0f172a;
+    }
+
+    .model-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+    }
+
+    .model-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(255,255,255,.84);
+      border: 1px solid rgba(148, 163, 184, .48);
+      border-radius: 12px;
+      padding: 9px 11px;
+      font-size: 13px;
+    }
+
+    .model-row strong {
+      color: #0f172a;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .model-row span {
+      font-weight: 900;
+      color: #1e3a5f;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .empty-message {
+      padding: 12px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.7);
+      color: var(--muted);
+      font-style: italic;
+      font-size: 12px;
+      border: 1px dashed #cbd5e1;
+    }
+
+    #loading, #noData {
+      text-align: center;
+      font-style: italic;
+      color: #64748b;
+      margin: 20px 0;
+    }
+
+    .table-container {
+      width: 100%;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: auto;
+      display: none;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1120px;
+      border-collapse: collapse;
+      text-align: left;
+      table-layout: auto;
+    }
+
+    table th, table td {
+      padding: 8px 9px;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: middle;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    table th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      font-weight: 900;
+      color: #334155;
+      text-transform: uppercase;
+      font-size: 11px;
+      z-index: 1;
+    }
+
+    table tbody tr:hover td { background-color: rgba(241, 245, 249, .72); }
+
+    .row-azul { background-color: #e0f2f7; }
+    .row-rosa { background-color: #fce4ec; }
+    .row-branco { background-color: #ffffff; }
+    .row-amarelo { background-color: #fffde7; }
+    .row-verde { background-color: #e8f5e9; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      color: #111827;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .status-badge.cortado, .status-badge.aguardando-material { background-color: #ffc107; }
+    .status-badge.em-producao { background-color: #93c5fd; }
+    .status-badge.finalizado, .status-badge.costurado { background-color: #c4b5fd; }
+    .status-badge.costurando { background-color: #f0abfc; }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      inset: 0;
+      overflow: auto;
+      background-color: rgba(15, 23, 42, .48);
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal-content {
+      background-color: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 18px;
+      width: min(1100px, 96vw);
+      max-height: 90vh;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, .25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-content.small { width: min(520px, 94vw); }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 14px 18px;
+      background: #f8fafc;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 20px;
+      color: #111827;
+    }
+
+    .close-button {
+      color: #94a3b8;
+      font-size: 28px;
+      font-weight: 900;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .close-button:hover { color: #111827; }
+
+    .modal-body {
+      padding: 16px 18px;
+      overflow: auto;
+    }
+
+    .modal-subtitle {
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .detail-modal-content {
+      width: min(1280px, 98vw);
+    }
+
+    .detail-summary-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .detail-summary-pill {
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      background: #f8fafc;
+      padding: 8px 12px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+
+
+    .detail-filter-bar {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      margin: 0 0 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fafc;
+    }
+
+    .detail-filter-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .detail-filter-option input {
+      width: 18px;
+      height: 18px;
+      min-height: 18px;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      accent-color: var(--primary);
+    }
+
+    .missing-date-x {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: #dc2626;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .detail-table-wrap {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      overflow: auto;
+      max-height: 62vh;
+    }
+
+    .detail-table {
+      min-width: 1240px;
+    }
+
+    .detail-table th, .detail-table td {
+      font-size: 12px;
+      padding: 8px;
+    }
+
+    .type-breakdown-panel {
+      border: 1px solid #d7dde7;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      margin-bottom: 12px;
+    }
+
+    .type-breakdown-panel h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: #0f172a;
+    }
+
+    .type-breakdown-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(150px, 1fr));
+      gap: 8px;
+    }
+
+    .type-chip {
+      border: 1px solid rgba(148, 163, 184, .6);
+      border-radius: 13px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.82);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .type-chip strong {
+      font-size: 13px;
+      color: #334155;
+    }
+
+    .type-chip span {
+      font-size: 15px;
+      font-weight: 900;
+      color: #1e3a5f;
+    }
+
+    .quick-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .quick-group {
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      background: #f8fafc;
+      padding: 12px;
+    }
+
+    .quick-group-title {
+      font-size: 12px;
+      font-weight: 900;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin: 0 0 9px;
+    }
+
+    .quick-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(170px, 1fr));
+      gap: 10px;
+    }
+
+    .quick-option {
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #111827;
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 900;
+      text-align: left;
+      min-height: 66px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .quick-option small {
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .quick-option:hover {
+      background: #eaf2ff;
+      border-color: #93c5fd;
+    }
+
+    .date-picker-content {
+      width: min(560px, 94vw) !important;
+      padding: 0;
+    }
+
+    .date-picker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4px 0 8px;
+    }
+
+    .date-picker-header button {
+      border: none;
+      background: #fff;
+      font-size: 30px;
+      cursor: pointer;
+      color: #444;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-weight: 800;
+    }
+
+    .date-picker-header button:hover { background: #f1f5f9; }
+
+    .date-picker-month-title {
+      font-size: 18px;
+      font-weight: 900;
+      color: #444;
+    }
+
+    .date-picker-weekdays,
+    .date-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+    }
+
+    .date-picker-weekdays div {
+      text-align: center;
+      font-weight: 900;
+      color: #555;
+      padding: 7px 0;
+      font-size: 13px;
+    }
+
+    .date-picker-day {
+      min-height: 36px;
+      border: 0;
+      background: #fff;
+      cursor: pointer;
+      font-size: 15px;
+      color: #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .date-picker-day:hover { background: #eef7e9; }
+    .date-picker-day.out-month { color: #a1a1aa; background: #fff; }
+    .date-picker-day.in-range { background: #e6f3df; }
+    .date-picker-day.range-start,
+    .date-picker-day.range-end {
+      background: #35a80d;
+      color: #fff;
+      border-radius: 999px;
+      font-weight: 900;
+    }
+
+    .date-picker-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 12px;
+    }
+
+    .date-picker-hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.25;
+      max-width: 315px;
+    }
+
+    .summary-cards-container {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(240px, 1fr));
+      gap: 14px;
+      box-sizing: border-box;
+    }
+
+    .summary-status-section {
+      border: 1px solid #d7dde7;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      background: #f8fafc;
+      min-height: 250px;
+    }
+
+    .summary-status-section.produced { background: var(--green-soft); border-color: #b8d9c5; }
+    .summary-status-section.todo { background: var(--yellow-soft); border-color: #eadb94; }
+    .summary-status-section.total { background: var(--blue-soft); border-color: #b8cbe0; }
+    .summary-status-section.unbipped { background: var(--gray-soft); border-color: #cbd5e1; }
+
+    .overview-summary-cards .summary-status-section {
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+
+    .overview-summary-cards .summary-status-section:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .11);
+      border-color: #93c5fd;
+    }
+
+    .overview-summary-cards .summary-status-section:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, .18), 0 10px 24px rgba(15, 23, 42, .11);
+    }
+
+    .summary-status-section h4 {
+      margin: 0 0 10px;
+      color: #31435b;
+      font-size: 16px;
+      text-align: center;
+      border-bottom: 1px solid rgba(148,163,184,.5);
+      padding-bottom: 8px;
+    }
+
+    .summary-content-sub { flex-grow: 1; }
+
+    .summary-content-sub h5 {
+      margin: 4px 0 8px;
+      color: #64748b;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px dotted rgba(148,163,184,.6);
+      font-size: 13px;
+    }
+
+    .summary-item .item-label { font-weight: 900; color: #334155; }
+    .summary-item .item-value { color: #1e3a5f; font-weight: 900; }
+
+    .summary-total {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(148,163,184,.6);
+      text-align: right;
+      font-weight: 900;
+      font-size: 15px;
+      color: #0d6efd;
+    }
+
+    @media (max-width: 1280px) {
+      .span-1, .span-2, .span-3 { grid-column: span 3; }
+      .filters-actions { justify-content: flex-start; }
+      .mini-cards, .summary-cards-container { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+    }
+
+    @media (max-width: 820px) {
+      .main-content { width: calc(100vw - 16px); }
+      .filters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .span-1, .span-2, .span-3 { grid-column: span 1; }
+      .filters-actions { grid-column: 1 / -1; }
+      .btn { flex: 1 1 150px; }
+      .mini-cards, .model-sections-grid, .summary-cards-container, .quick-options, .type-breakdown-list { grid-template-columns: 1fr; }
+      .date-picker-actions { flex-direction: column; align-items: stretch; }
+      .date-picker-actions > div { justify-content: flex-end; }
+    }
+  </style>
+
+
+  <style id="modal-remessas-padrao-factor">
+    /* Modal no padrão Controle Ateliê: remessas em cards + talões agrupados em tabela compacta */
+    .modal-overlay.show{ align-items:center !important; justify-content:center !important; padding:18px !important; z-index:9999 !important; }
+    .modal-content, .detail-modal-content{
+      width:min(1120px,94vw) !important;
+      max-height:90vh !important;
+      border-radius:18px !important;
+      overflow:hidden !important;
+      background:#fff !important;
+      box-shadow:0 22px 55px rgba(15,23,42,.30) !important;
+      border:1px solid #cbd5e1 !important;
+    }
+    .modal-table-wrap, .detail-table-wrap{
+      overflow:auto !important;
+      background:#fff !important;
+      padding:20px 18px 28px !important;
+      max-height:65vh !important;
+      border:0 !important;
+      border-radius:0 !important;
+    }
+    .remessa-list{
+      width:960px !important;
+      max-width:100% !important;
+      margin:0 auto !important;
+      padding:0 !important;
+      color:#002b5c !important;
+    }
+    .remessa-card{
+      display:block !important;
+      width:960px !important;
+      max-width:100% !important;
+      margin:0 auto 24px !important;
+      background:transparent !important;
+      border:0 !important;
+      box-shadow:none !important;
+    }
+    .remessa-card-header{
+      width:650px !important;
+      max-width:calc(100% - 70px) !important;
+      display:grid !important;
+      grid-template-columns:120px 150px 130px 200px !important;
+      gap:14px !important;
+      align-items:end !important;
+      padding:9px 16px 10px !important;
+      background:#fff !important;
+      border:1px solid #c7d4e5 !important;
+      border-radius:12px !important;
+      box-shadow:0 4px 12px rgba(15,23,42,.10) !important;
+      margin:0 !important;
+    }
+    .remessa-info-label{
+      display:block !important;
+      font-size:9px !important;
+      line-height:1 !important;
+      margin:0 0 3px !important;
+      color:#64748b !important;
+      font-weight:900 !important;
+      letter-spacing:.05em !important;
+      text-transform:uppercase !important;
+    }
+    .remessa-info-value{
+      display:block !important;
+      font-size:14px !important;
+      line-height:1.05 !important;
+      color:#002b5c !important;
+      font-weight:900 !important;
+      white-space:nowrap !important;
+    }
+    .remessa-card-table{
+      display:table !important;
+      width:880px !important;
+      min-width:880px !important;
+      max-width:880px !important;
+      margin:-1px 0 0 58px !important;
+      border-collapse:separate !important;
+      border-spacing:0 !important;
+      table-layout:fixed !important;
+      background:#fff !important;
+      border:1px solid #c7d4e5 !important;
+      border-radius:0 10px 10px 10px !important;
+      overflow:hidden !important;
+      box-shadow:0 4px 12px rgba(15,23,42,.08) !important;
+      color:#002b5c !important;
+    }
+    .remessa-card-table thead{ display:table-header-group !important; }
+    .remessa-card-table tbody{ display:table-row-group !important; }
+    .remessa-card-table tr{ display:table-row !important; }
+    .remessa-card-table th,.remessa-card-table td{
+      display:table-cell !important;
+      text-align:center !important;
+      vertical-align:middle !important;
+      white-space:nowrap !important;
+      padding:4px 6px !important;
+      height:24px !important;
+      line-height:1.05 !important;
+      border:0 !important;
+      border-bottom:1px solid #e1e7ef !important;
+      background:#fff !important;
+      color:#002b5c !important;
+      font-size:11px !important;
+      font-weight:500 !important;
+    }
+    .remessa-card-table th{
+      background:#f1f5f9 !important;
+      color:#0f172a !important;
+      font-size:10px !important;
+      font-weight:900 !important;
+      text-transform:uppercase !important;
+      border-bottom:1px solid #ccd6e2 !important;
+    }
+    .remessa-card-table tbody tr:last-child td{ border-bottom:0 !important; }
+    .remessa-card-table .model-cell{ font-size:12px !important; font-weight:900 !important; }
+    .remessa-card-table .alert-cell,.remessa-card-table .alert-row td.alert-cell,.remessa-card-table .alert-row .model-cell{ color:#dc2626 !important; font-weight:900 !important; }
+    .remessa-card.tipo-exportacao .remessa-card-header,
+    .remessa-card.tipo-exportacao .remessa-card-table th{ background:#d9ebff !important; border-color:#7fb2ef !important; }
+    .remessa-card.tipo-exportacao .remessa-card-table tbody td{ background:#eef6ff !important; }
+    .remessa-card.tipo-cliente-especial .remessa-card-header,
+    .remessa-card.tipo-cliente-especial .remessa-card-table th{ background:#ffd9ea !important; border-color:#ef8db9 !important; }
+    .remessa-card.tipo-cliente-especial .remessa-card-table tbody td{ background:#fff0f7 !important; }
+    .remessa-card.tipo-estoque .remessa-card-header,
+    .remessa-card.tipo-estoque .remessa-card-table th{ background:#fff0a8 !important; border-color:#e6c94e !important; }
+    .remessa-card.tipo-estoque .remessa-card-table tbody td{ background:#fff9dc !important; }
+    .remessa-card.tipo-amostra .remessa-card-header,
+    .remessa-card.tipo-amostra .remessa-card-table th{ background:#d6f6df !important; border-color:#79ca8d !important; }
+    .remessa-card.tipo-amostra .remessa-card-table tbody td{ background:#effbf2 !important; }
+    .remessa-card.tipo-mercado-interno .remessa-card-header,
+    .remessa-card.tipo-mercado-interno .remessa-card-table th{ background:#f8fafc !important; border-color:#c7d4e5 !important; }
+    .remessa-card.tipo-mercado-interno .remessa-card-table tbody td{ background:#ffffff !important; }
+    .remessa-card-table th:nth-child(1),.remessa-card-table td:nth-child(1){ width:58px !important; }
+    .remessa-card-table th:nth-child(2),.remessa-card-table td:nth-child(2){ width:118px !important; }
+    .remessa-card-table th:nth-child(3),.remessa-card-table td:nth-child(3){ width:78px !important; }
+    .remessa-card-table th:nth-child(4),.remessa-card-table td:nth-child(4){ width:62px !important; }
+    .remessa-card-table th:nth-child(5),.remessa-card-table td:nth-child(5){ width:150px !important; }
+    .remessa-card-table th:nth-child(6),.remessa-card-table td:nth-child(6){ width:145px !important; }
+    .remessa-card-table th:nth-child(7),.remessa-card-table td:nth-child(7){ width:155px !important; }
+    .remessa-card-table th:nth-child(8),.remessa-card-table td:nth-child(8){ width:114px !important; }
+    @media (max-width:980px){
+      .modal-content,.detail-modal-content{ width:96vw !important; }
+      .remessa-card-table{ margin-left:0 !important; }
+      .remessa-card-header{ max-width:100% !important; width:100% !important; grid-template-columns:repeat(2, minmax(120px,1fr)) !important; }
+    }
+  </style>
+
+</head>
+<body>
+  <main class="main-content">
+    <section class="filters-container">
+      <div class="filters-grid">
+        <div class="form-group span-2">
+          <label>Data de Saída:</label>
+          <button class="date-range-button" id="saidaRangeButton" type="button"><span>Selecionar data/período</span></button>
+          <input type="hidden" id="filterDataSaida" />
+          <input type="hidden" id="filterDataSaidaFim" />
+        </div>
+
+        <div class="form-group span-2">
+          <label>Data de Corte:</label>
+          <button class="date-range-button" id="corteRangeButton" type="button"><span>Selecionar data/período</span></button>
+          <input type="hidden" id="filterDataCorte" />
+          <input type="hidden" id="filterDataCorteFim" />
+        </div>
+
+        <div class="form-group span-2">
+          <label>Data de Entrega:</label>
+          <button class="date-range-button" id="entregaRangeButton" type="button"><span>Selecionar data/período</span></button>
+          <input type="hidden" id="filterDataEntrega" />
+          <input type="hidden" id="filterDataEntregaFim" />
+        </div>
+
+        <div class="form-group span-1">
+          <label for="filterRemessa">Remessa:</label>
+          <input type="text" id="filterRemessa" placeholder="Ex: 2684982" />
+        </div>
+
+        <div class="form-group span-1">
+          <label for="filterTalao">Talão:</label>
+          <input type="text" id="filterTalao" placeholder="Ex: 001" />
+        </div>
+
+        <div class="form-group span-1">
+          <label for="filterLinha">Linha:</label>
+          <input type="text" id="filterLinha" placeholder="Ex: 7142" />
+        </div>
+
+        <div class="form-group span-1">
+          <label for="filterModelo">Modelo:</label>
+          <input type="text" id="filterModelo" placeholder="Ex: 522" />
+        </div>
+
+        <div class="form-group span-1">
+          <label for="filterTipoCliente">Tipo de Cliente:</label>
+          <select id="filterTipoCliente">
+            <option value="">Todos</option>
+            <option value="Exportacao">Exportação</option>
+            <option value="Cliente especial">Cliente Especial</option>
+            <option value="Mercado Interno">Mercado Interno</option>
+            <option value="Estoque">Estoque</option>
+            <option value="Amostra">Amostra</option>
+          </select>
+        </div>
+
+        <div class="form-group span-2" id="atelieFilterGroup" style="display:none;">
+          <label for="filterAtelie">Filtrar por ateliê responsável:</label>
+          <select id="filterAtelie">
+            <option value="">Todos os ateliês</option>
+          </select>
+        </div>
+
+        <div class="filters-actions">
+          <button class="btn btn-primary" id="searchButton" type="button">Gerar Relatório</button>
+          <button class="btn btn-secondary" id="quickFiltersButton" type="button">Filtros rápidos</button>
+          <button class="btn btn-secondary" id="clearFiltersButton" type="button">Limpar</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="status-line" id="statusLine">Carregando talões...</div>
+    <p id="loading" style="display:none;">Carregando dados...</p>
+    <p id="noData">Selecione um filtro ou use os filtros rápidos para exibir os dados.</p>
+
+    <section class="overview-panel" id="overviewPanel">
+      <div class="overview-head">
+        <div>
+          <h2>Resumo do Relatório</h2>
+
+        </div>
+      </div>
+
+      <div id="overviewSummaryCards" class="summary-cards-container overview-summary-cards"></div>
+
+    </section>
+
+    <div class="table-container" id="reportContent">
+      <table>
+        <thead>
+          <tr>
+            <th>Data Corte</th>
+            <th>Data Entrega</th>
+            <th>Remessa</th>
+            <th>Talão</th>
+            <th>Linha</th>
+            <th>Modelo</th>
+            <th>Cor Sapato</th>
+            <th>Tipo Cliente</th>
+            <th>Pares</th>
+            <th>Status Costura</th>
+            <th>Data Entrada</th>
+            <th>Data Saída</th>
+          </tr>
+        </thead>
+        <tbody id="taloesTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <div id="summaryModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Resumo por Status</h3>
+        <span class="close-button" id="closeModalButton">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div id="atelierSummaryCard" class="summary-cards-container">
+          <p class="empty-message">Nenhum dado disponível para o ateliê.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cardDetailModal" class="modal-overlay">
+    <div class="modal-content detail-modal-content">
+      <div class="modal-header">
+        <div>
+          <h3 id="cardDetailTitle">Lista de talões</h3>
+          <p id="cardDetailSubtitle" class="modal-subtitle"></p>
+        </div>
+        <span class="close-button" id="closeCardDetailModalButton">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div id="cardDetailTotals" class="detail-summary-bar"></div>
+        <div class="detail-filter-bar" id="cardDetailFilterBar">
+          <label class="detail-filter-option" for="detailRemoveProduced">
+            <input type="checkbox" id="detailRemoveProduced" />
+            <span>Remover talões já produzidos</span>
+          </label>
+          <label class="detail-filter-option" for="detailOnlyNoEntry">
+            <input type="checkbox" id="detailOnlyNoEntry" />
+            <span>Talões sem entrada</span>
+          </label>
+          <label class="detail-filter-option" for="detailOnlyBippedNotFactory">
+            <input type="checkbox" id="detailOnlyBippedNotFactory" />
+            <span>Bipados na costura e não na fábrica</span>
+          </label>
+        </div>
+        <div class="detail-table-wrap">
+          <div id="cardDetailTableBody" class="remessa-list">
+            <div class="empty-message">Nenhum talão encontrado.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="quickModal" class="modal-overlay">
+    <div class="modal-content small">
+      <div class="modal-header">
+        <h3>Filtros rápidos</h3>
+        <span class="close-button" id="closeQuickModalButton">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="quick-groups">
+          <section class="quick-group">
+            <div class="quick-group-title">Produção</div>
+            <div class="quick-options">
+              <button class="quick-option" type="button" data-filter="productionToday">
+                <span>Produção hoje</span>
+                <small data-quick-detail="productionToday"></small>
+              </button>
+              <button class="quick-option" type="button" data-filter="productionYesterday">
+                <span>Produção ontem</span>
+                <small data-quick-detail="productionYesterday"></small>
+              </button>
+              <button class="quick-option" type="button" data-filter="productionWeek">
+                <span>Produção semana</span>
+                <small data-quick-detail="productionWeek"></small>
+              </button>
+            </div>
+          </section>
+
+          <section class="quick-group">
+            <div class="quick-group-title">Entregas e atrasos</div>
+            <div class="quick-options">
+              <button class="quick-option" type="button" data-filter="exportMonday">
+                <span>Exportação Segunda</span>
+                <small data-quick-detail="exportMonday"></small>
+              </button>
+              <button class="quick-option" type="button" data-filter="exportThursday">
+                <span>Exportação Quinta</span>
+                <small data-quick-detail="exportThursday"></small>
+              </button>
+              <button class="quick-option" type="button" data-filter="exportDelayed">
+                <span>Exportação em atraso</span>
+                <small data-quick-detail="exportDelayed"></small>
+              </button>
+              <button class="quick-option" type="button" data-filter="deliveryWeek">
+                <span>Entregas da semana</span>
+                <small data-quick-detail="deliveryWeek"></small>
+              </button>
+              <button class="quick-option" type="button" data-filter="weekDelayed">
+                <span>Atraso da semana</span>
+                <small data-quick-detail="weekDelayed"></small>
+              </button>
+              <button class="quick-option" type="button" data-filter="cutDelivery">
+                <span>Entrega por corte</span>
+                <small data-quick-detail="cutDelivery"></small>
+              </button>
+              <button class="quick-option" type="button" data-filter="cutDelayed">
+                <span>Corte em atraso</span>
+                <small data-quick-detail="cutDelayed"></small>
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dateModal" class="modal-overlay">
+    <div class="modal-content small date-picker-content">
+      <div class="modal-header">
+        <h3 id="dateModalTitle">Selecionar período</h3>
+        <span class="close-button" id="closeDateModalButton">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="date-picker-header">
+          <button type="button" id="datePickerPrev" aria-label="Mês anterior">‹</button>
+          <div id="datePickerMonthTitle" class="date-picker-month-title"></div>
+          <button type="button" id="datePickerNext" aria-label="Próximo mês">›</button>
+        </div>
+        <div class="date-picker-weekdays">
+          <div>DOM.</div><div>SEG.</div><div>TER.</div><div>QUA.</div><div>QUI.</div><div>SEX.</div><div>SÁB.</div>
+        </div>
+        <div id="datePickerGrid" class="date-picker-grid"></div>
+        <div class="date-picker-actions">
+          <span class="date-picker-hint">Clique em uma data para buscar somente aquele dia, ou clique em duas datas para selecionar um período.</span>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary" id="clearDateModalButton" type="button">Limpar</button>
+            <button class="btn btn-primary" id="applyDateModalButton" type="button">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const firebaseConfig = window.FIREBASE_CONFIG;
+      const SETOR = window.RomaSetores.current;
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const filterLinha = document.getElementById("filterLinha");
+    const filterModelo = document.getElementById("filterModelo");
+    const filterRemessa = document.getElementById("filterRemessa");
+    const filterTalao = document.getElementById("filterTalao");
+    const filterDataCorte = document.getElementById("filterDataCorte");
+    const filterDataCorteFim = document.getElementById("filterDataCorteFim");
+    const filterDataSaida = document.getElementById("filterDataSaida");
+    const filterDataSaidaFim = document.getElementById("filterDataSaidaFim");
+    const filterDataEntrega = document.getElementById("filterDataEntrega");
+    const filterDataEntregaFim = document.getElementById("filterDataEntregaFim");
+    const filterTipoCliente = document.getElementById("filterTipoCliente");
+    const filterAtelie = document.getElementById("filterAtelie");
+    const atelieFilterGroup = document.getElementById("atelieFilterGroup");
+
+    const corteRangeButton = document.getElementById("corteRangeButton");
+    const saidaRangeButton = document.getElementById("saidaRangeButton");
+    const entregaRangeButton = document.getElementById("entregaRangeButton");
+    const searchButton = document.getElementById("searchButton");
+    const clearFiltersButton = document.getElementById("clearFiltersButton");
+    const quickFiltersButton = document.getElementById("quickFiltersButton");
+
+    const taloesTableBody = document.getElementById("taloesTableBody");
+    const reportContent = document.getElementById("reportContent");
+    const loading = document.getElementById("loading");
+    const noData = document.getElementById("noData");
+    const statusLine = document.getElementById("statusLine");
+    const overviewPanel = document.getElementById("overviewPanel");
+    const overviewSubtitle = document.getElementById("overviewSubtitle");
+    const overviewSummaryCards = document.getElementById("overviewSummaryCards");
+
+    const summaryModal = document.getElementById("summaryModal");
+    const closeModalButton = document.getElementById("closeModalButton");
+    const atelierSummaryCard = document.getElementById("atelierSummaryCard");
+    const cardDetailModal = document.getElementById("cardDetailModal");
+    const closeCardDetailModalButton = document.getElementById("closeCardDetailModalButton");
+    const cardDetailTitle = document.getElementById("cardDetailTitle");
+    const cardDetailSubtitle = document.getElementById("cardDetailSubtitle");
+    const cardDetailTotals = document.getElementById("cardDetailTotals");
+    const cardDetailTableBody = document.getElementById("cardDetailTableBody");
+    const detailRemoveProduced = document.getElementById("detailRemoveProduced");
+    const detailOnlyNoEntry = document.getElementById("detailOnlyNoEntry");
+    const detailOnlyBippedNotFactory = document.getElementById("detailOnlyBippedNotFactory");
+    const quickModal = document.getElementById("quickModal");
+    const closeQuickModalButton = document.getElementById("closeQuickModalButton");
+    const dateModal = document.getElementById("dateModal");
+    const closeDateModalButton = document.getElementById("closeDateModalButton");
+    const dateModalTitle = document.getElementById("dateModalTitle");
+    const datePickerPrev = document.getElementById("datePickerPrev");
+    const datePickerNext = document.getElementById("datePickerNext");
+    const datePickerMonthTitle = document.getElementById("datePickerMonthTitle");
+    const datePickerGrid = document.getElementById("datePickerGrid");
+    const applyDateModalButton = document.getElementById("applyDateModalButton");
+    const clearDateModalButton = document.getElementById("clearDateModalButton");
+
+    let allTaloes = [];
+    let filteredTaloes = [];
+    let currentUserName = "";
+      let currentUserUid = "";
+    let currentUserLevel = "";
+    let unsubscribeTaloes = null;
+    let activeDateField = "corte";
+    let datePickerMonth = new Date();
+    let datePickerStart = null;
+    let datePickerEnd = null;
+    let quickFilterMode = null;
+    let currentCardDetailTaloes = [];
+
+    const corTalaoMapping = {
+      "Exportacao": "row-azul",
+      "Exportação": "row-azul",
+      "Cliente especial": "row-rosa",
+      "Mercado Interno": "row-branco",
+      "Estoque": "row-amarelo",
+      "Amostra": "row-verde"
+    };
+
+    function iniciarNavegacaoPadrao(nivelUsuario, nomeUsuario) {
+      if (!window.SistemaNavegacao) return;
+      window.SistemaNavegacao.init({
+        userLevel: String(nivelUsuario || ""),
+        userName: nomeUsuario || "Ateliê",
+        title: `Relatório Ateliê — ${SETOR.name}`,
+        onLogout: async () => {
+          try { await signOut(auth); }
+          catch (error) { console.error("Erro ao fazer logout:", error); }
+          finally {
+            localStorage.removeItem("calcadosroma-65ac6:userNivelAcesso");
+            localStorage.removeItem("calcadosroma-65ac6:userName");
+            window.location.href = "login.html";
+          }
+        }
+      });
+    }
+
+
+    function todayISO() {
+      const d = new Date();
+      return localDateToISO(d);
+    }
+
+    function localDateToISO(dateObj) {
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const dd = String(dateObj.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function dateFromISO(iso) {
+      const [y, m, d] = String(iso || "").split("-").map(Number);
+      return new Date(y, (m || 1) - 1, d || 1);
+    }
+
+    function addDaysISO(iso, days) {
+      const dt = dateFromISO(iso);
+      dt.setDate(dt.getDate() + days);
+      return localDateToISO(dt);
+    }
+
+    function getWeekRange(baseIso = todayISO()) {
+      const base = dateFromISO(baseIso);
+      const day = base.getDay();
+      const diffToMonday = day === 0 ? 6 : day - 1;
+      base.setDate(base.getDate() - diffToMonday);
+      const monday = localDateToISO(base);
+      const friday = addDaysISO(monday, 4);
+      return { start: monday, end: friday };
+    }
+
+    function getUpcomingWeekday(targetDay, baseIso = todayISO()) {
+      const base = dateFromISO(baseIso);
+      const day = base.getDay();
+      let diff = (targetDay - day + 7) % 7;
+      if (diff === 0) diff = 7;
+      const target = new Date(base);
+      target.setDate(base.getDate() + diff);
+      return localDateToISO(target);
+    }
+
+    function getCurrentOrUpcomingWeekday(targetDay, baseIso = todayISO()) {
+      const base = dateFromISO(baseIso);
+      const day = base.getDay();
+      const diff = (targetDay - day + 7) % 7;
+      const target = new Date(base);
+      target.setDate(base.getDate() + diff);
+      return localDateToISO(target);
+    }
+
+    function getCutDeliveryRange(baseIso = todayISO()) {
+      const targetTuesday = getCurrentOrUpcomingWeekday(2, baseIso);
+      return {
+        targetTuesday,
+        start: addDaysISO(targetTuesday, -15),
+        end: addDaysISO(targetTuesday, -12)
+      };
+    }
+
+    function formatDateShort(iso) {
+      const clean = toISODateOnly(iso);
+      if (!clean) return "";
+      const [, m, d] = clean.split("-");
+      return `${d}-${m}`;
+    }
+
+    function formatDate(iso) {
+      const clean = toISODateOnly(iso);
+      if (!clean) return "";
+      const [y, m, d] = clean.split("-");
+      return `${d}/${m}/${y}`;
+    }
+
+    function toISODateOnly(value) {
+      if (!value) return "";
+      if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+      if (value && typeof value.toDate === "function") return localDateToISO(value.toDate());
+      try {
+        const dt = new Date(value);
+        if (Number.isNaN(dt.getTime())) return "";
+        return localDateToISO(dt);
+      } catch (error) {
+        return "";
+      }
+    }
+
+    function hasFilledDate(value) {
+      return value !== undefined && value !== null && String(value).trim() !== "";
+    }
+
+    function normalizePares(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function normalizeTipoCliente(tipo) {
+      const value = String(tipo || "").trim().toLowerCase();
+      if (["exportacao", "exportação", "exportacoes", "exportações"].includes(value)) return "Exportacao";
+      return String(tipo || "").trim();
+    }
+
+    function isTrackedTipoCliente(tipo) {
+      const normalized = normalizeTipoCliente(tipo);
+      return ["Exportacao", "Cliente especial", "Mercado Interno", "Estoque"].includes(normalized);
+    }
+
+    function getTipoClienteLabel(tipo) {
+      const normalized = normalizeTipoCliente(tipo);
+      if (normalized === "Exportacao") return "Exportação";
+      if (normalized === "Cliente especial") return "Cliente Especial";
+      if (normalized === "Mercado Interno") return "Mercado Interno";
+      if (normalized === "Estoque") return "Estoque";
+      if (normalized === "Amostra") return "Amostra";
+      return normalized || "Sem tipo";
+    }
+
+    function isNotProduced(talao) {
+      return !hasFilledDate(talao.dataSaidaCostura);
+    }
+
+    function getDataEntradaDistribuicao(talao) {
+      return talao.dataEntradaDistribuicao || talao.entradaDistribuicao || talao.dataEntradaFabrica || "";
+    }
+
+    function getDataEntradaAtelie(talao) {
+      return talao.costuraDataInicio || talao.dataEntradaCostura || talao.dataEntradaAtelie || "";
+    }
+
+    function renderDateOrRedX(value) {
+      const formatted = formatDate(value);
+      return formatted || '<span class="missing-date-x" title="Sem entrada">×</span>';
+    }
+
+    function isNotBippedInFactory(talao) {
+      // Considera como "não bipado na fábrica" o talão que já saiu da costura,
+      // mas ainda não possui data de entrada na distribuição/fábrica.
+      return hasFilledDate(talao.dataSaidaCostura) && !hasFilledDate(getDataEntradaDistribuicao(talao));
+    }
+
+    function isPendingAtelierOrFactory(talao) {
+      // Para filtros de entregas/atrasos, ainda precisa aparecer quando:
+      // 1) falta produzir no ateliê; OU
+      // 2) já foi produzido, mas ainda não foi bipado na fábrica/distribuição.
+      return isNotProduced(talao) || isNotBippedInFactory(talao);
+    }
+
+    function getModelKey(talao) {
+      const linha = talao.linha ? String(talao.linha).trim() : "";
+      const modelo = talao.modelo ? String(talao.modelo).trim() : "";
+      if (modelo && modelo.includes(".")) return modelo;
+      if (linha && modelo) return `${linha}.${modelo}`;
+      if (modelo) return modelo;
+      if (linha) return linha;
+      return "Sem modelo";
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+      }[char]));
+    }
+
+    function compareTextNumeric(a, b) {
+      return String(a || "").localeCompare(String(b || ""), "pt-BR", { numeric: true });
+    }
+
+    function sortTaloes(taloes) {
+      return [...taloes].sort((a, b) => {
+        const corteCompare = compareTextNumeric(toISODateOnly(a.dataCorte), toISODateOnly(b.dataCorte));
+        if (corteCompare !== 0) return corteCompare;
+        const modelCompare = compareTextNumeric(getModelKey(a), getModelKey(b));
+        if (modelCompare !== 0) return modelCompare;
+        return compareTextNumeric(a.numeroTalaoSequencial, b.numeroTalaoSequencial);
+      });
+    }
+
+    function sumTotal(taloes) {
+      return taloes.reduce((acc, t) => acc + normalizePares(t.pares), 0);
+    }
+
+    function sumByModel(taloes) {
+      const result = {};
+      taloes.forEach((t) => {
+        const key = getModelKey(t);
+        result[key] = (result[key] || 0) + normalizePares(t.pares);
+      });
+      return result;
+    }
+
+    function renderModelList(container, data) {
+      const entries = Object.entries(data).filter(([, pares]) => pares > 0);
+      entries.sort((a, b) => a[0].localeCompare(b[0], "pt-BR", { numeric: true }));
+      if (!entries.length) {
+        container.innerHTML = '<div class="empty-message">Nenhum modelo encontrado.</div>';
+        return;
+      }
+      container.innerHTML = entries.map(([model, pares]) => `
+        <div class="model-row">
+          <strong>${escapeHTML(model)}</strong>
+          <span>${pares.toLocaleString("pt-BR")} pares</span>
+        </div>
+      `).join("");
+    }
+
+    function getTypeBreakdown(taloes) {
+      const base = {
+        "Exportação": { taloes: 0, pares: 0 },
+        "Cliente Especial": { taloes: 0, pares: 0 },
+        "Mercado Interno": { taloes: 0, pares: 0 },
+        "Estoque": { taloes: 0, pares: 0 }
+      };
+
+      taloes.forEach((t) => {
+        const label = getTipoClienteLabel(t.tipoCliente);
+        if (!base[label]) return;
+        base[label].taloes += 1;
+        base[label].pares += normalizePares(t.pares);
+      });
+
+      return base;
+    }
+
+
+    function getTypeBreakdownText(taloes) {
+      const data = getTypeBreakdown(taloes);
+      return Object.entries(data)
+        .map(([label, totals]) => `${label}: ${totals.pares.toLocaleString("pt-BR")} pares`)
+        .join(" • ");
+    }
+
+    function getQuickFilterInfo(mode, baseIso = todayISO()) {
+      const today = baseIso;
+      const week = getWeekRange(today);
+      const cutRange = getCutDeliveryRange(today);
+      const tomorrow = addDaysISO(today, 1);
+      const infos = {
+        productionToday: { label: "Produção hoje", detail: formatDateShort(today) },
+        productionYesterday: { label: "Produção ontem", detail: formatDateShort(addDaysISO(today, -1)) },
+        productionWeek: { label: "Produção semana", detail: `${formatDateShort(week.start)} a ${formatDateShort(week.end)}` },
+        exportMonday: { label: "Exportação Segunda", detail: formatDateShort(getUpcomingWeekday(1, today)) },
+        exportThursday: { label: "Exportação Quinta", detail: formatDateShort(getUpcomingWeekday(4, today)) },
+        exportDelayed: { label: "Exportação em atraso", detail: `entrega menor que ${formatDateShort(tomorrow)}` },
+        deliveryWeek: { label: "Entregas da semana", detail: `${formatDateShort(week.start)} a ${formatDateShort(week.end)}` },
+        weekDelayed: { label: "Atraso da semana", detail: `entrega menor que ${formatDateShort(week.start)}` },
+        cutDelivery: { label: "Entrega por corte", detail: `${formatDateShort(cutRange.start)} a ${formatDateShort(cutRange.end)}` },
+        cutDelayed: { label: "Corte em atraso", detail: `corte menor que ${formatDateShort(cutRange.start)}` }
+      };
+      return infos[mode] || null;
+    }
+
+    function updateQuickFilterLabels() {
+      quickModal.querySelectorAll("[data-quick-detail]").forEach((element) => {
+        const info = getQuickFilterInfo(element.dataset.quickDetail);
+        element.textContent = info ? info.detail : "";
+      });
+    }
+
+    function functionNeedsBreakdown(mode) {
+      return ["exportDelayed", "weekDelayed", "cutDelivery", "cutDelayed"].includes(mode);
+    }
+
+    function getStatusCostura(talao) {
+      return talao[SETOR.status] || "Aguardando Material";
+    }
+
+    function getStatusClass(status) {
+      if (!status) return "";
+      return String(status).toLowerCase().replace(/\s+/g, "-");
+    }
+
+    function canSelectAtelie() {
+      return window.RomaSetores.canSelectAtelier(currentUserLevel);
+    }
+
+    function normalizeAtelieText(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function talaoPertenceAoAtelie(talao, atelie) {
+      return !atelie || String(talao[SETOR.owner] || "") === String(atelie);
+    }
+
+    function getSelectedAtelieFilter() {
+      return window.RomaSetores.selectedOwner(currentUserLevel, currentUserUid, filterAtelie?.value || "");
+    }
+
+    function getSelectedAtelieLabel() {
+      if (!canSelectAtelie()) return currentUserName || "ateliê atual";
+      return filterAtelie?.selectedOptions?.[0]?.textContent || "Todos os ateliês";
+    }
+
+    async function loadAtelies() {
+      if (!atelieFilterGroup || !filterAtelie) return;
+      if (!canSelectAtelie()) {
+        atelieFilterGroup.style.display = "none";
+        filterAtelie.value = "";
+        return;
+      }
+      atelieFilterGroup.style.display = "flex";
+      filterAtelie.innerHTML = '<option value="">Todos os ateliês</option>';
+      try {
+        const snap = await getDocs(query(collection(db, "atelies"), where("setor", "==", SETOR.key)));
+        const ateliers = snap.docs.map(d => ({uid: d.id, ...d.data()}))
+          .sort((a,b) => String(a.nome).localeCompare(String(b.nome), "pt-BR", {numeric:true}));
+        filterAtelie.innerHTML += ateliers.map(a => `<option value="${escapeHTML(a.uid)}">${escapeHTML(a.nome)}${a.ativo === false ? " (inativo)" : ""}</option>`).join("");
+      } catch (error) {
+        console.error("Erro ao carregar ateliês:", error);
+        statusLine.textContent = "Não foi possível carregar a lista de ateliês.";
+      }
+    }
+
+    function listenToTaloes() {
+      // Carga otimizada: não escuta mais todos os talões do banco na abertura.
+      // A busca é feita sob demanda a partir dos filtros selecionados.
+      allTaloes = [];
+      loading.style.display = "none";
+      statusLine.textContent = "";
+    }
+
+    function buildQueryFromCurrentFilters() {
+      const remessa = filterRemessa.value.trim();
+      const talao = filterTalao.value.trim();
+
+      let conditions = [];
+      const selectedAtelie = getSelectedAtelieFilter();
+
+      if (selectedAtelie) {
+        // Quando o relatório está filtrado por ateliê, buscamos a base do ateliê
+        // e aplicamos os demais filtros localmente. Isso evita divergência quando
+        // datas foram gravadas como string, Timestamp ou em campos alternativos.
+        conditions.push(where(SETOR.owner, "==", selectedAtelie));
+        return query(collection(db, "taloes"), ...conditions);
+      }
+
+      if (quickFilterMode === "exportMonday" || quickFilterMode === "exportThursday") {
+        const targetDay = quickFilterMode === "exportMonday" ? 1 : 4;
+        conditions.push(where("dataEntrega", "==", getUpcomingWeekday(targetDay, todayISO())));
+      } else if (quickFilterMode === "deliveryWeek") {
+        const week = getWeekRange(todayISO());
+        conditions.push(where("dataEntrega", ">=", week.start), where("dataEntrega", "<=", week.end));
+      } else if (quickFilterMode === "weekDelayed" || quickFilterMode === "exportDelayed") {
+        const week = getWeekRange(todayISO());
+        conditions.push(where("dataEntrega", "<", quickFilterMode === "exportDelayed" ? addDaysISO(todayISO(), 1) : week.start));
+      } else if (quickFilterMode === "cutDelivery") {
+        const cutRange = getCutDeliveryRange(todayISO());
+        conditions.push(where("dataCorte", ">=", cutRange.start), where("dataCorte", "<=", cutRange.end));
+      } else if (quickFilterMode === "cutDelayed") {
+        const cutRange = getCutDeliveryRange(todayISO());
+        conditions.push(where("dataCorte", "<", cutRange.start));
+      } else if (filterDataCorte.value || filterDataCorteFim.value) {
+        const start = filterDataCorte.value || filterDataCorteFim.value;
+        const end = filterDataCorteFim.value || filterDataCorte.value;
+        conditions.push(where("dataCorte", ">=", start), where("dataCorte", "<=", end));
+      } else if (filterDataSaida.value || filterDataSaidaFim.value) {
+        const start = filterDataSaida.value || filterDataSaidaFim.value;
+        const end = filterDataSaidaFim.value || filterDataSaida.value;
+        conditions.push(where("dataSaidaCostura", ">=", start), where("dataSaidaCostura", "<=", end));
+      } else if (filterDataEntrega.value || filterDataEntregaFim.value) {
+        const start = filterDataEntrega.value || filterDataEntregaFim.value;
+        const end = filterDataEntregaFim.value || filterDataEntrega.value;
+        conditions.push(where("dataEntrega", ">=", start), where("dataEntrega", "<=", end));
+      } else if (remessa) {
+        conditions.push(where("numeroRemessa", "==", remessa));
+      } else if (talao) {
+        conditions.push(where("numeroTalaoSequencial", "==", talao));
+      } else if (filterTipoCliente.value) {
+        conditions.push(where("tipoCliente", "==", filterTipoCliente.value));
+      }
+
+      if (!conditions.length) return null;
+      return query(collection(db, "taloes"), ...conditions);
+    }
+
+    async function loadTaloesForCurrentFilters() {
+      const qRef = buildQueryFromCurrentFilters();
+      if (!qRef) {
+        allTaloes = [];
+        return [];
+      }
+      const snapshot = await getDocs(qRef);
+      allTaloes = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+        .filter(talao => window.RomaSetores.applicable(talao));
+      return [...allTaloes];
+    }
+
+    function updateRangeButton(button, startValue, endValue) {
+      const span = button.querySelector("span");
+      if (startValue && endValue && startValue !== endValue) span.textContent = `${formatDate(startValue)} a ${formatDate(endValue)}`;
+      else if (startValue) span.textContent = formatDate(startValue);
+      else span.textContent = "Selecionar data/período";
+    }
+
+    function openDateModal(field) {
+      activeDateField = field;
+      const fields = {
+        corte: {
+          start: filterDataCorte,
+          end: filterDataCorteFim,
+          title: "Selecionar Data de Corte"
+        },
+        saida: {
+          start: filterDataSaida,
+          end: filterDataSaidaFim,
+          title: "Selecionar Data de Saída"
+        },
+        entrega: {
+          start: filterDataEntrega,
+          end: filterDataEntregaFim,
+          title: "Selecionar Data de Entrega"
+        }
+      };
+      const config = fields[field] || fields.corte;
+      dateModalTitle.textContent = config.title;
+      datePickerStart = config.start.value || null;
+      datePickerEnd = config.end.value || null;
+      const base = dateFromISO(datePickerStart || datePickerEnd || todayISO());
+      datePickerMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+      renderDatePicker();
+      dateModal.classList.add("show");
+    }
+
+    function closeDateModal() { dateModal.classList.remove("show"); }
+
+    function renderDatePicker() {
+      const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      datePickerMonthTitle.textContent = `${months[datePickerMonth.getMonth()]} ${datePickerMonth.getFullYear()}`;
+      datePickerGrid.innerHTML = "";
+
+      const year = datePickerMonth.getFullYear();
+      const month = datePickerMonth.getMonth();
+      const first = new Date(year, month, 1);
+      const gridStart = new Date(year, month, 1 - first.getDay());
+
+      for (let i = 0; i < 42; i++) {
+        const cellDate = new Date(gridStart);
+        cellDate.setDate(gridStart.getDate() + i);
+        const currentISO = localDateToISO(cellDate);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "date-picker-day";
+        btn.textContent = String(cellDate.getDate());
+        btn.dataset.date = currentISO;
+
+        if (cellDate.getMonth() !== month) btn.classList.add("out-month");
+
+        const start = datePickerStart;
+        const end = datePickerEnd || datePickerStart;
+        if (start && end && currentISO >= start && currentISO <= end) btn.classList.add("in-range");
+        if (start && currentISO === start) btn.classList.add("range-start");
+        if (end && currentISO === end) btn.classList.add("range-end");
+
+        btn.addEventListener("click", () => selectDateInPicker(currentISO));
+        datePickerGrid.appendChild(btn);
+      }
+    }
+
+    function selectDateInPicker(iso) {
+      if (!datePickerStart || (datePickerStart && datePickerEnd)) {
+        datePickerStart = iso;
+        datePickerEnd = null;
+      } else if (iso < datePickerStart) {
+        datePickerEnd = datePickerStart;
+        datePickerStart = iso;
+      } else {
+        datePickerEnd = iso;
+      }
+      renderDatePicker();
+    }
+
+    function getActiveDateControls() {
+      if (activeDateField === "entrega") return { start: filterDataEntrega, end: filterDataEntregaFim, button: entregaRangeButton };
+      if (activeDateField === "saida") return { start: filterDataSaida, end: filterDataSaidaFim, button: saidaRangeButton };
+      return { start: filterDataCorte, end: filterDataCorteFim, button: corteRangeButton };
+    }
+
+    function applyDateModal() {
+      quickFilterMode = null;
+      if (datePickerStart && !datePickerEnd) datePickerEnd = datePickerStart;
+
+      const controls = getActiveDateControls();
+      controls.start.value = datePickerStart || "";
+      controls.end.value = datePickerEnd || "";
+      updateRangeButton(controls.button, controls.start.value, controls.end.value);
+      closeDateModal();
+    }
+
+    function clearDateModal() {
+      datePickerStart = null;
+      datePickerEnd = null;
+      const controls = getActiveDateControls();
+      controls.start.value = "";
+      controls.end.value = "";
+      updateRangeButton(controls.button, "", "");
+      quickFilterMode = null;
+      renderDatePicker();
+    }
+
+    function clearFilterValues(clearAtelie = false) {
+      filterLinha.value = "";
+      filterModelo.value = "";
+      filterRemessa.value = "";
+      filterTalao.value = "";
+      filterDataCorte.value = "";
+      filterDataCorteFim.value = "";
+      filterDataSaida.value = "";
+      filterDataSaidaFim.value = "";
+      filterDataEntrega.value = "";
+      filterDataEntregaFim.value = "";
+      filterTipoCliente.value = "";
+      if (clearAtelie && filterAtelie) filterAtelie.value = "";
+      updateRangeButton(corteRangeButton, "", "");
+      updateRangeButton(saidaRangeButton, "", "");
+      updateRangeButton(entregaRangeButton, "", "");
+      quickFilterMode = null;
+    }
+
+    function applyQuickFilter(mode) {
+      clearFilterValues();
+      const today = todayISO();
+      const info = getQuickFilterInfo(mode, today);
+      quickFilterMode = mode;
+
+      if (mode === "productionToday") {
+        filterDataSaida.value = today;
+        filterDataSaidaFim.value = today;
+        updateRangeButton(saidaRangeButton, today, today);
+      }
+
+      if (mode === "productionYesterday") {
+        const yesterday = addDaysISO(today, -1);
+        filterDataSaida.value = yesterday;
+        filterDataSaidaFim.value = yesterday;
+        updateRangeButton(saidaRangeButton, yesterday, yesterday);
+      }
+
+      if (mode === "productionWeek") {
+        const week = getWeekRange(today);
+        filterDataSaida.value = week.start;
+        filterDataSaidaFim.value = week.end;
+        updateRangeButton(saidaRangeButton, week.start, week.end);
+      }
+
+      if (mode === "exportMonday" || mode === "exportThursday" || mode === "exportDelayed") {
+        filterTipoCliente.value = "Exportacao";
+      }
+
+      
+      closeQuickModal();
+      applyFilters();
+    }
+
+    function passesDateRange(value, start, end) {
+      const date = toISODateOnly(value);
+      if (start && end) return date && date >= start && date <= end;
+      if (start) return date === start;
+      return true;
+    }
+
+    async function applyFilters() {
+      loading.style.display = "block";
+      noData.style.display = "none";
+      reportContent.style.display = "none";
+      overviewPanel.classList.remove("show");
+
+      const linha = filterLinha.value.trim().toLowerCase();
+      const modelo = filterModelo.value.trim().toLowerCase();
+      const remessa = filterRemessa.value.trim().toLowerCase();
+      const talao = filterTalao.value.trim().toLowerCase();
+      const tipoCliente = filterTipoCliente.value;
+
+      let currentFiltered;
+      try {
+        currentFiltered = await loadTaloesForCurrentFilters();
+      } catch (error) {
+        console.error("Erro ao buscar talões:", error);
+        loading.style.display = "none";
+        noData.textContent = "Erro ao buscar talões. Verifique os filtros e índices do Firebase.";
+        noData.style.display = "block";
+        statusLine.textContent = "Erro ao buscar talões.";
+        return;
+      }
+
+      if (!currentFiltered.length && !buildQueryFromCurrentFilters()) {
+        loading.style.display = "none";
+        noData.textContent = "";
+        noData.style.display = "block";
+        statusLine.textContent = "";
+        return;
+      }
+
+      if (quickFilterMode === "exportMonday" || quickFilterMode === "exportThursday") {
+        const targetDay = quickFilterMode === "exportMonday" ? 1 : 4;
+        const targetDate = getUpcomingWeekday(targetDay, todayISO());
+        currentFiltered = currentFiltered.filter((t) =>
+          normalizeTipoCliente(t.tipoCliente) === "Exportacao" &&
+          toISODateOnly(t.dataEntrega) === targetDate &&
+          isPendingAtelierOrFactory(t)
+        );
+      }
+
+      if (quickFilterMode === "exportDelayed") {
+        const tomorrow = addDaysISO(todayISO(), 1);
+        currentFiltered = currentFiltered.filter((t) => {
+          const entrega = toISODateOnly(t.dataEntrega);
+          return normalizeTipoCliente(t.tipoCliente) === "Exportacao" && entrega && entrega < tomorrow && isPendingAtelierOrFactory(t);
+        });
+      }
+
+      if (quickFilterMode === "deliveryWeek") {
+        const week = getWeekRange(todayISO());
+        currentFiltered = currentFiltered.filter((t) => passesDateRange(t.dataEntrega, week.start, week.end) && isPendingAtelierOrFactory(t));
+      }
+
+      if (quickFilterMode === "weekDelayed") {
+        const week = getWeekRange(todayISO());
+        currentFiltered = currentFiltered.filter((t) => {
+          const entrega = toISODateOnly(t.dataEntrega);
+          return entrega && entrega < week.start && isPendingAtelierOrFactory(t) && isTrackedTipoCliente(t.tipoCliente);
+        });
+      }
+
+      if (quickFilterMode === "cutDelivery") {
+        const cutRange = getCutDeliveryRange(todayISO());
+        currentFiltered = currentFiltered.filter((t) =>
+          passesDateRange(t.dataCorte, cutRange.start, cutRange.end) && isPendingAtelierOrFactory(t) && isTrackedTipoCliente(t.tipoCliente)
+        );
+      }
+
+      if (quickFilterMode === "cutDelayed") {
+        const cutRange = getCutDeliveryRange(todayISO());
+        currentFiltered = currentFiltered.filter((t) => {
+          const corte = toISODateOnly(t.dataCorte);
+          return corte && corte < cutRange.start && isPendingAtelierOrFactory(t) && isTrackedTipoCliente(t.tipoCliente);
+        });
+      }
+
+      if (linha) currentFiltered = currentFiltered.filter((t) => String(t.linha || "").toLowerCase().includes(linha));
+      if (modelo) currentFiltered = currentFiltered.filter((t) => String(t.modelo || "").toLowerCase().includes(modelo));
+      if (remessa) currentFiltered = currentFiltered.filter((t) => String(t.numeroRemessa || "").toLowerCase().includes(remessa));
+      if (talao) currentFiltered = currentFiltered.filter((t) => String(t.numeroTalaoSequencial || "").toLowerCase().includes(talao));
+      if (tipoCliente) currentFiltered = currentFiltered.filter((t) => normalizeTipoCliente(t.tipoCliente) === normalizeTipoCliente(tipoCliente));
+      const selectedAtelie = getSelectedAtelieFilter();
+      if (selectedAtelie) currentFiltered = currentFiltered.filter((t) => talaoPertenceAoAtelie(t, selectedAtelie));
+      currentFiltered = currentFiltered.filter((t) => passesDateRange(t.dataCorte, filterDataCorte.value, filterDataCorteFim.value));
+      currentFiltered = currentFiltered.filter((t) => passesDateRange(t.dataSaidaCostura, filterDataSaida.value, filterDataSaidaFim.value));
+      currentFiltered = currentFiltered.filter((t) => passesDateRange(t.dataEntrega, filterDataEntrega.value, filterDataEntregaFim.value));
+
+      filteredTaloes = sortTaloes(currentFiltered);
+      renderTable(filteredTaloes);
+      renderOverview(filteredTaloes);
+
+      loading.style.display = "none";
+      if (filteredTaloes.length > 0) {
+        reportContent.style.display = "block";
+        overviewPanel.classList.add("show");
+        noData.style.display = "none";
+      } else {
+        noData.textContent = "Nenhum dado encontrado com os filtros selecionados.";
+        noData.style.display = "block";
+      }
+
+      const total = sumTotal(filteredTaloes);
+      const quickInfo = quickFilterMode ? getQuickFilterInfo(quickFilterMode) : null;
+      const quickText = quickInfo ? `Filtro rápido: ${quickInfo.label} (${quickInfo.detail}) • ` : "";
+      const breakdownText = quickFilterMode && functionNeedsBreakdown(quickFilterMode) ? ` • ${getTypeBreakdownText(filteredTaloes)}` : "";
+      statusLine.textContent = `${quickText}${filteredTaloes.length.toLocaleString("pt-BR")} talões encontrados • Total: ${total.toLocaleString("pt-BR")} pares • Ateliê: ${getSelectedAtelieLabel()}${breakdownText}`;
+      
+    }
+
+    function renderSummaryStatusCards(container, cards) {
+      container.innerHTML = cards.map((card) => {
+        const byModel = sumByModel(card.taloes);
+        const entries = Object.entries(byModel).sort((a, b) => a[0].localeCompare(b[0], "pt-BR", { numeric: true }));
+        const items = entries.length
+          ? entries.map(([model, pares]) => `<div class="summary-item"><span class="item-label">${escapeHTML(model)}</span><span class="item-value">${pares.toLocaleString("pt-BR")} pares</span></div>`).join("")
+          : '<p class="empty-message">Nenhum modelo encontrado.</p>';
+
+        return `
+          <section class="summary-status-section ${card.className}" data-detail="${card.detail}" role="button" tabindex="0" title="Clique para ver a lista de talões">
+            <h4>${card.title}</h4>
+            <div class="summary-content-sub">
+              <h5>Por Linha / Modelo</h5>
+              ${items}
+            </div>
+            <div class="summary-total">Total: ${sumTotal(card.taloes).toLocaleString("pt-BR")} pares</div>
+          </section>
+        `;
+      }).join("");
+    }
+
+    function getOverviewCards(taloes) {
+      const produced = taloes.filter((t) => hasFilledDate(t.dataSaidaCostura));
+      const todo = taloes.filter((t) => !hasFilledDate(t.dataSaidaCostura));
+      const unbipped = taloes.filter(isNotBippedInFactory);
+
+      return [
+        { title: "Total de pares", className: "total", detail: "total", taloes },
+        { title: "Produzidos", className: "produced", detail: "produced", taloes: produced },
+        { title: "Falta Produzir", className: "todo", detail: "todo", taloes: todo },
+        { title: "Não bipados na fábrica", className: "unbipped", detail: "unbipped", taloes: unbipped }
+      ];
+    }
+
+    function renderOverview(taloes) {
+      const total = sumTotal(taloes);
+      
+      renderSummaryStatusCards(overviewSummaryCards, getOverviewCards(taloes));
+    }
+
+    function renderTable(taloes) {
+      if (!taloes.length) {
+        taloesTableBody.innerHTML = '<tr><td colspan="12" style="text-align:center;">Nenhum talão encontrado com os filtros aplicados.</td></tr>';
+        return;
+      }
+
+      taloesTableBody.innerHTML = taloes.map((talao) => {
+        const rowColorClass = corTalaoMapping[talao.tipoCliente] || "";
+        const displayStatusCostura = getStatusCostura(talao);
+        return `
+          <tr class="${rowColorClass}">
+            <td>${formatDate(talao.dataCorte)}</td>
+            <td>${formatDate(talao.dataEntrega)}</td>
+            <td>${escapeHTML(talao.numeroRemessa || "")}</td>
+            <td>${escapeHTML(talao.numeroTalaoSequencial || "")}</td>
+            <td>${escapeHTML(talao.linha || "")}</td>
+            <td>${escapeHTML(talao.modelo || "")}</td>
+            <td>${escapeHTML(talao.corSapato || "")}</td>
+            <td>${escapeHTML(talao.tipoCliente || "")}</td>
+            <td><strong>${normalizePares(talao.pares).toLocaleString("pt-BR")}</strong></td>
+            <td><span class="status-badge ${getStatusClass(displayStatusCostura)}">${escapeHTML(displayStatusCostura)}</span></td>
+            <td>${formatDate(talao.costuraDataInicio)}</td>
+            <td>${formatDate(talao.dataSaidaCostura)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function getSummaryCardData(type) {
+      const source = filteredTaloes || [];
+      const config = {
+        total: {
+          title: "Total de pares filtrados",
+          description: "Todos os talões do relatório atual",
+          taloes: source
+        },
+        produced: {
+          title: "Pares já produzidos",
+          description: "Talões com data de saída da costura preenchida",
+          taloes: source.filter((t) => hasFilledDate(t.dataSaidaCostura))
+        },
+        todo: {
+          title: "Pares que faltam produzir",
+          description: "Talões sem data de saída da costura",
+          taloes: source.filter((t) => !hasFilledDate(t.dataSaidaCostura))
+        },
+        unbipped: {
+          title: "Pares não bipados na fábrica",
+          description: "Talões já produzidos, mas sem entrada na distribuição/fábrica",
+          taloes: source.filter(isNotBippedInFactory)
+        }
+      };
+      return config[type] || config.total;
+    }
+
+    function applyCardDetailFilters(taloes) {
+      let result = [...(taloes || [])];
+
+      if (detailRemoveProduced?.checked) {
+        result = result.filter((t) => !hasFilledDate(t.dataSaidaCostura));
+      }
+
+      if (detailOnlyNoEntry?.checked) {
+        result = result.filter((t) => !hasFilledDate(getDataEntradaAtelie(t)));
+      }
+
+      if (detailOnlyBippedNotFactory?.checked) {
+        result = result.filter(isNotBippedInFactory);
+      }
+
+      return result;
+    }
+
+    function updateCardDetailTotals(taloes) {
+      const totalTaloes = taloes.length;
+      const totalPares = sumTotal(taloes);
+      const totalModelos = new Set(taloes.map(getModelKey)).size;
+
+      cardDetailTotals.innerHTML = `
+        <span class="detail-summary-pill">${totalTaloes.toLocaleString("pt-BR")} talões</span>
+        <span class="detail-summary-pill">${totalPares.toLocaleString("pt-BR")} pares</span>
+        <span class="detail-summary-pill">${totalModelos.toLocaleString("pt-BR")} modelos</span>
+      `;
+    }
+
+    function refreshCardDetailModal() {
+      const visibleTaloes = applyCardDetailFilters(currentCardDetailTaloes);
+      updateCardDetailTotals(visibleTaloes);
+      renderCardDetailTable(visibleTaloes);
+    }
+
+
+    function getTipoClienteCardClass(talao){
+      const tipo = normalizeTipoCliente(talao.tipoCliente);
+      if (tipo === "Exportacao" || tipo === "Exportação") return "tipo-exportacao";
+      if (tipo === "Cliente especial") return "tipo-cliente-especial";
+      if (tipo === "Estoque") return "tipo-estoque";
+      if (tipo === "Amostra") return "tipo-amostra";
+      return "tipo-mercado-interno";
+    }
+
+    function groupTaloesByRemessa(taloes){
+      const map = new Map();
+      taloes.forEach((t) => {
+        const key = String(t.numeroRemessa || "Sem remessa");
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(t);
+      });
+      return Array.from(map.entries()).sort((a,b)=>compareTextNumeric(a[0], b[0]));
+    }
+
+    function renderDateCell(value, alertWhenMissing){
+      const formatted = formatDate(value);
+      if (formatted) return escapeHTML(formatted);
+      return alertWhenMissing ? '<span class="missing-date-x">×</span>' : '';
+    }
+
+    function renderCardDetailTable(taloes) {
+      if (!taloes.length) {
+        cardDetailTableBody.innerHTML = '<div class="empty-message" style="text-align:center;">Nenhum talão encontrado para este card.</div>';
+        return;
+      }
+
+      const sorted = sortTaloes(taloes);
+      const groups = groupTaloesByRemessa(sorted);
+
+      cardDetailTableBody.innerHTML = groups.map(([remessa, grupo]) => {
+        const ref = grupo[0] || {};
+        const rowsHtml = grupo.map((talao) => {
+          const entradaAtelie = getDataEntradaAtelie(talao);
+          const entradaDistribuicao = getDataEntradaDistribuicao(talao);
+          const semEntradaAtelie = !hasFilledDate(entradaAtelie);
+          const semEntradaFabricaAposSaida = hasFilledDate(talao.dataSaidaCostura) && !hasFilledDate(entradaDistribuicao);
+          const alertRow = semEntradaAtelie || semEntradaFabricaAposSaida;
+          const statusText = semEntradaAtelie ? "Sem entrada" : (semEntradaFabricaAposSaida ? "No atelier" : (hasFilledDate(entradaDistribuicao) ? "Entregue" : (hasFilledDate(talao.dataSaidaCostura) ? "Produzido" : "Sem saída")));
+
+          return `
+            <tr class="${alertRow ? "alert-row" : ""}">
+              <td>${escapeHTML(talao.numeroTalaoSequencial || "")}</td>
+              <td class="model-cell">${escapeHTML(getModelKey(talao))}</td>
+              <td>${escapeHTML(talao.corSapato || "")}</td>
+              <td>${normalizePares(talao.pares).toLocaleString("pt-BR")}</td>
+              <td class="${semEntradaAtelie ? "alert-cell" : ""}">${renderDateCell(entradaAtelie, true)}</td>
+              <td>${renderDateCell(talao.dataSaidaCostura, false)}</td>
+              <td class="${semEntradaFabricaAposSaida ? "alert-cell" : ""}">${renderDateCell(entradaDistribuicao, false)}</td>
+              <td class="${alertRow ? "alert-cell" : ""}">${escapeHTML(statusText)}</td>
+            </tr>
+          `;
+        }).join("");
+
+        return `
+          <section class="remessa-card ${getTipoClienteCardClass(ref)}">
+            <div class="remessa-card-header">
+              <div><span class="remessa-info-label">Remessa</span><span class="remessa-info-value">${escapeHTML(remessa)}</span></div>
+              <div><span class="remessa-info-label">Data de corte</span><span class="remessa-info-value">${formatDate(ref.dataCorte)}</span></div>
+              <div><span class="remessa-info-label">Entrega</span><span class="remessa-info-value">${formatDate(ref.dataEntrega)}</span></div>
+              <div><span class="remessa-info-label">Tipo cliente</span><span class="remessa-info-value">${escapeHTML(getTipoClienteLabel(ref.tipoCliente))}</span></div>
+            </div>
+            <table class="remessa-card-table">
+              <thead><tr><th>Talão</th><th>Linha/Modelo</th><th>Cor</th><th>Pares</th><th>Entrada Costura</th><th>Saída Costura</th><th>Entrada Fábrica</th><th>Status</th></tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </section>
+        `;
+      }).join("");
+    }
+
+    function openCardDetailModal(type) {
+      if (!filteredTaloes.length) return;
+      const cardData = getSummaryCardData(type);
+
+      currentCardDetailTaloes = [...cardData.taloes];
+      if (detailRemoveProduced) detailRemoveProduced.checked = false;
+      if (detailOnlyNoEntry) detailOnlyNoEntry.checked = false;
+      if (detailOnlyBippedNotFactory) detailOnlyBippedNotFactory.checked = false;
+
+      cardDetailTitle.textContent = cardData.title;
+      cardDetailSubtitle.textContent = cardData.description;
+      refreshCardDetailModal();
+      cardDetailModal.classList.add("show");
+    }
+
+    function closeCardDetailModal() {
+      cardDetailModal.classList.remove("show");
+    }
+
+    function updateAtelierSummaryCards() {
+      const taloesForSummary = filteredTaloes.length ? filteredTaloes : [];
+      renderSummaryStatusCards(atelierSummaryCard, getOverviewCards(taloesForSummary));
+    }
+
+    function openModal() {
+      updateAtelierSummaryCards();
+      summaryModal.classList.add("show");
+    }
+
+    function closeModal() { summaryModal.classList.remove("show"); }
+    function openQuickModal() {
+      updateQuickFilterLabels();
+      quickModal.classList.add("show");
+    }
+    function closeQuickModal() { quickModal.classList.remove("show"); }
+
+    searchButton.addEventListener("click", () => {
+      quickFilterMode = null;
+      applyFilters();
+    });
+
+    clearFiltersButton.addEventListener("click", () => {
+      clearFilterValues(true);
+      filteredTaloes = [];
+      taloesTableBody.innerHTML = "";
+      reportContent.style.display = "none";
+      overviewPanel.classList.remove("show");
+      noData.textContent = "Selecione um filtro ou use os filtros rápidos para exibir os dados.";
+      noData.style.display = "block";
+      statusLine.textContent = `${allTaloes.length.toLocaleString("pt-BR")} talões carregados.`;
+    });
+
+    if (filterAtelie) {
+      filterAtelie.addEventListener("change", () => {
+        applyFilters();
+      });
+    }
+
+    quickFiltersButton.addEventListener("click", openQuickModal);
+    closeModalButton.addEventListener("click", closeModal);
+    closeCardDetailModalButton.addEventListener("click", closeCardDetailModal);
+    closeQuickModalButton.addEventListener("click", closeQuickModal);
+    closeDateModalButton.addEventListener("click", closeDateModal);
+    corteRangeButton.addEventListener("click", () => openDateModal("corte"));
+    saidaRangeButton.addEventListener("click", () => openDateModal("saida"));
+    entregaRangeButton.addEventListener("click", () => openDateModal("entrega"));
+    applyDateModalButton.addEventListener("click", applyDateModal);
+    clearDateModalButton.addEventListener("click", clearDateModal);
+    datePickerPrev.addEventListener("click", () => {
+      datePickerMonth = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() - 1, 1);
+      renderDatePicker();
+    });
+    datePickerNext.addEventListener("click", () => {
+      datePickerMonth = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth() + 1, 1);
+      renderDatePicker();
+    });
+
+    quickModal.querySelectorAll(".quick-option").forEach((button) => {
+      button.addEventListener("click", () => applyQuickFilter(button.dataset.filter));
+    });
+
+    overviewSummaryCards.addEventListener("click", (event) => {
+      const card = event.target.closest("[data-detail]");
+      if (card) openCardDetailModal(card.dataset.detail);
+    });
+
+    overviewSummaryCards.addEventListener("keydown", (event) => {
+      const card = event.target.closest("[data-detail]");
+      if (card && (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        openCardDetailModal(card.dataset.detail);
+      }
+    });
+
+
+    [detailRemoveProduced, detailOnlyNoEntry, detailOnlyBippedNotFactory].forEach((checkbox) => {
+      if (!checkbox) return;
+      checkbox.addEventListener("change", refreshCardDetailModal);
+    });
+
+    [summaryModal, cardDetailModal, quickModal, dateModal].forEach((modal) => {
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) modal.classList.remove("show");
+      });
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const userDocRef = doc(db, "Usuario", user.email);
+      const userDocSnap = await getDoc(userDocRef);
+      if (!userDocSnap.exists()) {
+        alert("Dados do usuário não encontrados. Faça login novamente.");
+        await signOut(auth);
+        window.location.href = "login.html";
+        return;
+      }
+
+      const userData = userDocSnap.data();
+      currentUserLevel = String(userData.nivelAcesso || "");
+      currentUserName = userData.Nome || user.email || "Usuário";
+      currentUserUid = user.uid;
+
+      if (!window.RomaSetores.validProfile(user, userData, "report")) {
+        alert("Você não tem permissão para acessar esta página.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      localStorage.setItem("calcadosroma-65ac6:userNivelAcesso", currentUserLevel);
+      localStorage.setItem("calcadosroma-65ac6:userName", currentUserName);
+      iniciarNavegacaoPadrao(currentUserLevel, currentUserName);
+
+      window.Roma.validateProfile(user, userData);
+      await loadAtelies();
+      listenToTaloes();
+    });
+
+    window.addEventListener("beforeunload", () => {
+      if (unsubscribeTaloes) unsubscribeTaloes();
+    });
+  </script>
+</body>
+</html>

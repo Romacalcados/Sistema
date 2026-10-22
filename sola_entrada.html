@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+  <script src="roma-core.js"></script>
+  <script src="roma-setores.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sola - Entrada - Calçados Roma</title>
+  <script src="navegacao.js"></script>
+
+  <style>
+
+    body { font-family: Arial, sans-serif; background-color:#f4f4f4; margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; }
+    header { background-color:#333; color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.2); gap:12px; }
+    header h1 { margin:0; font-size:24px; }
+    .user-info { font-size:14px; text-align:right; }
+    .user-info span { display:block; font-weight:bold; }
+    nav { background-color:#555; padding:10px 20px; box-shadow:0 2px 5px rgba(0,0,0,0.1); font-size:0.8em; }
+    nav ul { list-style:none; padding:0; margin:0; display:flex; gap:15px; flex-wrap:wrap; }
+    nav ul li a { color:white; text-decoration:none; padding:8px 15px; border-radius:4px; transition:background-color 0.3s ease; display:block; }
+    nav ul li a:hover { background-color:#777; }
+    .main-content { flex-grow:1; padding:20px; display:flex; flex-direction:column; align-items:center; }
+    .mode-switch { width:min(720px, 100%); display:flex; gap:12px; justify-content:center; margin:10px 0 20px; flex-wrap:wrap; }
+    .mode-switch a { text-decoration:none; color:#fff; padding:12px 18px; border-radius:8px; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.15); }
+    .btn-entry { background:#28a745; }
+    .btn-exit { background:#dc3545; }
+    .btn-muted { background:#6c757d; }
+    .scanner-sections-container { display:flex; justify-content:center; width:100%; margin-top:5px; }
+    .barcode-scanner-container { background-color:#fff; padding:24px; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1); width:min(620px, 100%); display:flex; flex-direction:column; gap:15px; }
+    .entry-section { border:3px solid #28a745; }
+    .exit-section { border:3px solid #dc3545; }
+    .page-title { margin:0 0 8px; text-align:center; font-size:1.6em; color:#222; }
+    .page-subtitle { margin:0 0 15px; text-align:center; color:#555; font-size:0.95em; }
+    .barcode-input-group { display:flex; flex-direction:column; gap:8px; }
+    .barcode-input-group label { font-weight:bold; font-size:1.1em; color:#333; }
+    .barcode-input-group input { padding:16px; border:2px solid #007bff; border-radius:8px; font-size:1.35em; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:border-color 0.3s ease, box-shadow 0.3s ease; }
+    .barcode-input-group input:focus { outline:none; border-color:#0056b3; box-shadow:0 0 0 4px rgba(0,123,255,0.25); }
+    .scanner-message { margin-top:10px; font-size:1em; min-height:22px; padding:10px 15px; border-radius:6px; text-align:center; font-weight:bold; }
+    .scanner-message.success { background-color:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+    .scanner-message.error { background-color:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+    button#logoutButton { background-color:#dc3545; color:white; border:none; border-radius:6px; padding:10px 14px; cursor:pointer; font-weight:bold; }
+    button#logoutButton:hover { background-color:#c82333; }
+    .last-scanned-container { margin-top:15px; border-top:1px solid #eee; padding-top:15px; }
+    .last-scanned-container h4 { margin-top:0; margin-bottom:10px; color:#555; font-size:1em; }
+    .last-scanned-list { list-style:none; padding:0; margin:0; max-height:180px; overflow-y:auto; border:1px solid #ddd; border-radius:5px; background-color:#f9f9f9; }
+    .last-scanned-list li { padding:8px 10px; border-bottom:1px dotted #eee; font-size:1em; color:#333; }
+    .last-scanned-list li:last-child { border-bottom:none; }
+    .last-scanned-list li.scan-success {
+      background: #e8f5e9;
+      color: #155724;
+      font-weight: 700;
+    }
+    .last-scanned-list li.scan-error {
+      background: #fde2e2;
+      color: #721c24;
+      font-weight: 800;
+    }
+    .last-scanned-list .scan-code {
+      display: block;
+      font-size: .95em;
+    }
+    .last-scanned-list .scan-detail {
+      display: block;
+      font-size: .82em;
+      opacity: .88;
+      margin-top: 2px;
+    }
+    .loading-message { margin-top:20px; padding:15px; border:1px solid #ffc107; background-color:#fff3cd; color:#856404; border-radius:8px; font-weight:bold; text-align:center; }
+    @media (max-width: 768px) {
+      header { flex-direction:column; align-items:flex-start; padding:10px; }
+      header h1 { font-size:20px; }
+      .user-info { text-align:left; margin-top:5px; }
+      .user-info span { display:inline; margin-right:10px; }
+      nav ul { flex-direction:column; gap:5px; }
+      nav ul li a { padding:5px 10px; }
+      .main-content { padding:10px; }
+      .barcode-scanner-container { width:100%; box-sizing:border-box; }
+      .barcode-input-group input { padding:16px; font-size:1.2em; }
+      .scanner-message { font-size:1em; }
+      .mode-switch a { flex:1 1 170px; text-align:center; }
+    }
+
+  </style>
+</head>
+
+<body>
+<div class="main-content">
+    <div id="loadingMessage" class="loading-message">
+      Carregando dados... Por favor, aguarde apagar essa mensagem para começar a ler.
+    </div>
+
+
+    <div class="scanner-sections-container">
+      <div class="barcode-scanner-container entry-section">
+        <h2 class="page-title">Escaneamento para Entrada</h2>
+        
+
+        <div class="barcode-input-group">
+          <input type="text" id="barcodeInput" placeholder="Leia o código de entrada aqui" autofocus disabled autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text" enterkeyhint="done" />
+          <div id="scannerMessage" class="scanner-message"></div>
+        </div>
+
+        <div class="last-scanned-container">
+          <h4>Últimos Códigos Lidos (Entrada):</h4>
+          <ul id="lastScannedList" class="last-scanned-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase COMPAT (roda em tablet antigo) -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+
+  <!-- Código JS embutido no HTML: não precisa de arquivo sola.js -->
+  <script>
+
+    (function () {
+
+
+const firebaseConfig = window.FIREBASE_CONFIG;
+      const SETOR = window.RomaSetores.current;
+
+
+      const SCAN_ACTION = "entrada";
+
+      async function processTalao(talao, barcode) {
+        const context = {level: currentUserLevel, uid: currentUserUid, name: currentUserName};
+        window.RomaSetores.scanUpdate(talao, SCAN_ACTION, context);
+        await updateTalaoInFirestore(talao.id, barcode);
+      }
+
+      try {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      } catch (e) {
+        console.error("Erro ao inicializar Firebase:", e);
+      }
+
+      const auth = firebase.auth();
+      const db = firebase.firestore();
+
+const menuNav = document.getElementById("menuNav");
+      const userNameDisplay = document.getElementById("userNameDisplay");
+      const userNivelDisplay = document.getElementById("userNivelDisplay");
+      const logoutButton = document.getElementById("logoutButton");
+      const barcodeInput = document.getElementById("barcodeInput");
+      const scannerMessageDiv = document.getElementById("scannerMessage");
+      const lastScannedList = document.getElementById("lastScannedList");
+      const loadingMessageDiv = document.getElementById("loadingMessage");
+
+      let currentUserName = "";
+      let currentUserUid = "";
+      let currentUserLevel = "";
+      const lastScanned = [];
+      const MAX_LAST_SCANNED = 5;
+      let isReady = false;
+      let busy = false;
+
+      const nivelNomes = window.Roma.ROLES;
+      const pages = window.SistemaNavegacao?.pages || [];
+
+      function iniciarNavegacaoPadrao(userLevel, userName) {
+        if (!window.SistemaNavegacao) return;
+
+        window.SistemaNavegacao.init({
+          userLevel: String(userLevel || ""),
+          userName: userName || "Usuário",
+          title: `${SETOR.name} — ${SCAN_ACTION === "entrada" ? "Entrada Ateliê" : "Saída Ateliê"}`,
+          onLogout: async () => {
+            try {
+              await auth.signOut();
+            } catch (error) {
+              console.error("Erro ao fazer logout:", error);
+            } finally {
+              localStorage.removeItem("calcadosroma-65ac6:userNivelAcesso");
+              localStorage.removeItem("calcadosroma-65ac6:userName");
+              window.location.href = "login.html";
+            }
+          }
+        });
+      }
+
+      function showLoading(msg) {
+        if (!loadingMessageDiv) return;
+        loadingMessageDiv.style.display = "block";
+        loadingMessageDiv.textContent = msg || "Carregando dados... Por favor, aguarde apagar essa mensagem para começar a ler.";
+      }
+
+      function hideLoading() {
+        if (!loadingMessageDiv) return;
+        loadingMessageDiv.style.display = "none";
+      }
+
+      function setMessage(text, type) {
+        if (!scannerMessageDiv) return;
+        scannerMessageDiv.textContent = text || "";
+        scannerMessageDiv.className = "scanner-message" + (type ? " " + type : "");
+      }
+
+      function safeFocus() {
+        try {
+          if (!barcodeInput || barcodeInput.disabled) return;
+          barcodeInput.focus();
+          const v = barcodeInput.value || "";
+          if (typeof barcodeInput.setSelectionRange === "function") {
+            barcodeInput.setSelectionRange(v.length, v.length);
+          }
+        } catch (e) {}
+      }
+
+      function abrirTecladoCelular() {
+        try {
+          if (!barcodeInput || barcodeInput.disabled) return;
+          barcodeInput.removeAttribute("readonly");
+          barcodeInput.focus();
+          const v = barcodeInput.value || "";
+          if (typeof barcodeInput.setSelectionRange === "function") {
+            barcodeInput.setSelectionRange(v.length, v.length);
+          }
+        } catch (e) {}
+      }
+
+      function playErrorSound() {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) {
+            if (navigator.vibrate) navigator.vibrate([180, 80, 180]);
+            return;
+          }
+
+          const ctx = new AudioContext();
+          const oscillator = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+          oscillator.frequency.setValueAtTime(440, ctx.currentTime + 0.13);
+
+          gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+
+          oscillator.connect(gain);
+          gain.connect(ctx.destination);
+          oscillator.start();
+          oscillator.stop(ctx.currentTime + 0.36);
+
+          if (navigator.vibrate) navigator.vibrate([180, 80, 180]);
+
+          setTimeout(() => {
+            try { ctx.close(); } catch (e) {}
+          }, 600);
+        } catch (e) {
+          if (navigator.vibrate) navigator.vibrate([180, 80, 180]);
+        }
+      }
+
+      function renderLastScannedList() {
+        if (!lastScannedList) return;
+
+        lastScannedList.innerHTML = lastScanned.map((item) => {
+          const typeClass = item.type === "error" ? "scan-error" : "scan-success";
+          const statusText = item.type === "error" ? "Erro" : "Sucesso";
+          const code = escapeHTML(item.barcode || "");
+          const detail = escapeHTML(item.message || statusText);
+          const time = escapeHTML(item.time || "");
+
+          return `
+            <li class="${typeClass}">
+              <span class="scan-code">${statusText}: ${code}</span>
+              <span class="scan-detail">${detail}${time ? " • " + time : ""}</span>
+            </li>
+          `;
+        }).join("");
+      }
+
+      function addLastScanned(barcode, type = "success", message = "Sucesso") {
+        if (!lastScannedList) return;
+
+        const now = new Date();
+        const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+
+        lastScanned.unshift({
+          barcode: barcode || "(sem código)",
+          type,
+          message,
+          time
+        });
+
+        if (lastScanned.length > MAX_LAST_SCANNED) lastScanned.pop();
+        renderLastScannedList();
+      }
+
+      function registerScanError(barcode, message) {
+        playErrorSound();
+        setMessage(message, "error");
+        addLastScanned(barcode || "(sem código)", "error", message);
+      }
+
+      function escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>'"]/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "'": "&#39;",
+          '"': "&quot;"
+        }[char]));
+      }
+
+      function normalizeBarcode(raw) {
+        let barcode = (raw || "").trim();
+        barcode = barcode.replace(/[\r\n\t]+/g, "");
+        if (barcode.length > 0 && barcode.charAt(0) !== "1") {
+          barcode = "1" + barcode.substring(1);
+        }
+        return barcode;
+      }
+
+      function generateMenu(userLevel, userName) {
+        if (!menuNav) return;
+
+        menuNav.innerHTML = "";
+        const userNivelText = nivelNomes[userLevel] || `Nível ${userLevel}`;
+
+        if (userNameDisplay) userNameDisplay.textContent = `Olá, ${userName || "Usuário"}!`;
+        if (userNivelDisplay) userNivelDisplay.textContent = `Setor: ${userNivelText}`;
+
+        pages.forEach((page) => {
+          if (page.levels.includes(userLevel)) {
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.href = page.href;
+            a.textContent = page.name;
+            li.appendChild(a);
+            menuNav.appendChild(li);
+          }
+        });
+      }
+
+      async function findTalaoByBarcode(barcode) {
+        const base = db.collection("taloes").where("codigoBarrasIdentificador", "==", barcode);
+        const scoped = window.RomaSetores.scopeCompat(base, currentUserLevel, currentUserUid);
+        const snap = await scoped.limit(2).get();
+        if (snap.size > 1) throw new Error("Código duplicado. Solicite a conferência em Edição de Talões.");
+        if (!snap.empty) {
+          const d = snap.docs[0];
+          return { id: d.id, ...d.data() };
+        }
+        return null;
+      }
+
+      async function updateTalaoInFirestore(talaoId, barcode) {
+        const ref = db.collection("taloes").doc(talaoId);
+        await db.runTransaction(async transaction => {
+          const fresh = await transaction.get(ref);
+          if (!fresh.exists) throw new Error("Talão não encontrado.");
+          const updates = window.RomaSetores.scanUpdate(fresh.data(), SCAN_ACTION, {
+            level: currentUserLevel, uid: currentUserUid, name: currentUserName
+          });
+          transaction.update(ref, updates);
+        });
+        setMessage("Sucesso!", "success");
+        addLastScanned(barcode);
+        setTimeout(() => setMessage("", ""), 2500);
+      }
+
+      function isScannerSubmitKey(e) {
+        const key = e.key;
+        const code = e.keyCode || e.which;
+        return key === "Enter" || code === 13 || key === "Tab" || code === 9 || key === "Next";
+      }
+
+      async function processBarcode() {
+        if (busy) return;
+        busy = true;
+        let barcode = "";
+
+        try {
+          if (!isReady) {
+            barcode = normalizeBarcode(barcodeInput ? barcodeInput.value : "");
+            registerScanError(barcode || "(aguardando)", "Aguarde o carregamento.");
+            return;
+          }
+
+          barcode = normalizeBarcode(barcodeInput.value);
+          barcodeInput.value = "";
+
+          setMessage("Processando...", "");
+
+          if (!barcode) {
+            registerScanError("(vazio)", "Código de barras vazio.");
+            return;
+          }
+
+          const talao = await findTalaoByBarcode(barcode);
+
+          if (!talao) {
+            registerScanError(barcode, `Talão ${barcode} não encontrado entre os talões atribuídos a este ateliê.`);
+            return;
+          }
+
+          await processTalao(talao, barcode);
+        } catch (err) {
+          console.error("Erro no scanner:", err);
+          registerScanError(barcode || "(erro)", "Erro: " + (err.message || "falha"));
+        } finally {
+          busy = false;
+          setTimeout(safeFocus, 0);
+          setTimeout(safeFocus, 40);
+          setTimeout(safeFocus, 120);
+        }
+      }
+
+      function attachScannerInput() {
+        if (!barcodeInput) return;
+
+        barcodeInput.addEventListener("click", abrirTecladoCelular);
+        barcodeInput.addEventListener("touchstart", () => {
+          abrirTecladoCelular();
+        }, { passive: true });
+
+        barcodeInput.addEventListener("keydown", (e) => {
+          if (isScannerSubmitKey(e)) {
+            e.preventDefault();
+            e.stopPropagation();
+            processBarcode();
+            return false;
+          }
+        }, true);
+
+        barcodeInput.addEventListener("input", () => {
+          const v = barcodeInput.value || "";
+          if (v.includes("\n") || v.includes("\r") || v.includes("\t")) {
+            barcodeInput.value = v.replace(/[\r\n\t]+/g, "");
+            processBarcode();
+          }
+        });
+
+        barcodeInput.addEventListener("blur", () => {
+          setTimeout(() => {
+            const v = (barcodeInput.value || "").trim();
+            if (v.length > 0) processBarcode();
+            const active = document.activeElement;
+            if (!active || (!["A", "BUTTON"].includes(active.tagName))) {
+              safeFocus();
+            }
+          }, 80);
+        });
+      }
+
+      attachScannerInput();
+      showLoading("Carregando dados...");
+
+      auth.onAuthStateChanged(async (user) => {
+        try {
+          if (!user) {
+            window.location.href = "login.html";
+            return;
+          }
+
+          const email = user.email || "";
+          const userSnap = await db.collection("Usuario").doc(email).get();
+
+          if (!userSnap.exists) {
+            alert("Dados do usuário não encontrados. Faça login novamente.");
+            await auth.signOut();
+            window.location.href = "login.html";
+            return;
+          }
+
+          const userData = userSnap.data() || {};
+          const nivelAcesso = String(userData.nivelAcesso || "");
+          currentUserUid = user.uid;
+          currentUserLevel = nivelAcesso;
+          currentUserName = userData.Nome || "";
+
+          if (!window.RomaSetores.validProfile(user, userData, "scan")) {
+            alert("Você não tem permissão para acessar esta página.");
+            window.location.href = "index.html";
+            return;
+          }
+
+          localStorage.setItem("calcadosroma-65ac6:userNivelAcesso", String(nivelAcesso || ""));
+          localStorage.setItem("calcadosroma-65ac6:userName", currentUserName || "Usuário");
+          iniciarNavegacaoPadrao(nivelAcesso, currentUserName);
+
+          window.Roma.validateProfile(user, userData);
+          isReady = true;
+          hideLoading();
+
+          if (barcodeInput) barcodeInput.disabled = false;
+          safeFocus();
+        } catch (err) {
+          console.error("Erro no login/carregamento:", err);
+          showLoading("Erro ao iniciar: " + (err && err.message ? err.message : "ver console"));
+        }
+      });
+
+      if (logoutButton) {
+        logoutButton.addEventListener("click", async () => {
+          try {
+            await auth.signOut();
+            window.location.href = "login.html";
+          } catch (error) {
+            console.error("Erro ao fazer logout:", error);
+            alert("Erro ao fazer logout. Tente novamente.");
+          }
+        });
+      }
+    })();
+
+  </script>
+</body>
+</html>

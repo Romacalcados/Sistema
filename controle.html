@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Produção - Calçados Roma</title>
+  <style>
+    :root {
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #526079;
+      --border: #1f2937;
+      --border-soft: #d9dde3;
+      --dark: #232323;
+      --nav: #444;
+      --green: #91d455;
+      --green-strong: #20944b;
+      --red: #ff1515;
+      --red-dark: #a80000;
+      --yellow: #fff3cd;
+      --blue: #0d6efd;
+      --shadow: 0 8px 24px rgba(15, 23, 42, .08);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: var(--dark);
+      color: #fff;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .user-info {
+      font-size: 13px;
+      text-align: right;
+      margin-left: auto;
+      line-height: 1.05;
+    }
+
+    .user-info span { display: block; font-weight: 700; }
+
+    .menu-toggle {
+      background: #f1f5f9;
+      color: #111827;
+      border: 1px solid rgba(255,255,255,.12);
+      min-width: 104px;
+    }
+
+    nav {
+      background-color: var(--nav);
+      padding: 0 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,.1);
+      font-size: .82em;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px);
+      transition: max-height .28s ease, opacity .2s ease, transform .2s ease, padding .2s ease, visibility .2s ease;
+      position: sticky;
+      top: 56px;
+      z-index: 999;
+    }
+
+    nav.menu-open {
+      max-height: 260px;
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      padding: 10px 20px;
+    }
+
+    nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background-color .2s ease;
+      display: block;
+      white-space: nowrap;
+    }
+
+    nav ul li a:hover, nav ul li a.active { background-color: #666; }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 800;
+      cursor: pointer;
+      background: var(--blue);
+      color: #fff;
+      transition: transform .12s ease, opacity .12s ease;
+      white-space: nowrap;
+    }
+
+    button:hover { opacity: .92; }
+    button:active { transform: translateY(1px); }
+    button.secondary { background: #6c757d; }
+    button.success { background: var(--green-strong); }
+    button.danger, button#logoutButton { background: #dc3545; }
+    button.light { background: #e9ecef; color: #222; }
+
+    input, select {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      font-size: 14px;
+      background: #fff;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(13,110,253,.15);
+    }
+
+    .page {
+      width: min(1800px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) 190px auto auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--muted);
+      margin: 0 0 5px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid var(--border-soft);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 13px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.04);
+      min-height: 38px;
+      justify-content: center;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--green-strong);
+      display: inline-block;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .summary-card, .section-card {
+      background: var(--card);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .summary-card { padding: 16px; min-height: 96px; }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 8px;
+    }
+
+    .summary-value {
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .summary-sub { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+    .section-card { padding: 16px 20px 20px; margin-bottom: 18px; }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-head h2 { margin: 0 0 4px; font-size: 24px; }
+    .section-head small { color: var(--muted); font-size: 16px; }
+
+    .hour-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .turno-section {
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      background: #fbfdff;
+      padding: 14px;
+    }
+
+    .turno-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .period-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(360px, 1fr));
+      gap: 14px;
+    }
+
+    .hour-card {
+      border: 1px solid var(--border);
+      background: #fff;
+      overflow: hidden;
+      border-radius: 10px;
+    }
+
+    .hour-title {
+      font-size: 22px;
+      font-weight: 500;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      padding: 5px 8px 2px;
+      line-height: 1.2;
+    }
+
+    .hour-subtitle {
+      text-align: center;
+      font-size: 11px;
+      color: #4b5563;
+      padding-bottom: 4px;
+    }
+
+    .hour-mini-grid {
+      display: block;
+      padding: 0;
+    }
+
+    .hour-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .hour-table th,
+    .hour-table td {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 8px;
+      font-size: 18px;
+      line-height: 1.15;
+      background: #fff;
+    }
+
+    .hour-table th:last-child,
+    .hour-table td:last-child { border-right: 0; }
+
+    .hour-table tbody tr:last-child td { border-bottom: 0; }
+
+    .hour-table th {
+      font-size: 17px;
+      font-weight: 500;
+      text-align: left;
+    }
+
+    .hour-table th:nth-child(2),
+    .hour-table td:nth-child(2),
+    .hour-table th:nth-child(3),
+    .hour-table td:nth-child(3) {
+      text-align: right;
+    }
+
+    .hour-table .supervisor-name {
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .hour-table .prod-cell {
+      font-size: 18px;
+      font-weight: 900;
+      position: relative;
+      min-width: auto;
+      padding-right: 8px !important;
+      padding-bottom: 14px !important;
+    }
+
+    .hour-table .mini-falta {
+      position: absolute;
+      right: 6px;
+      bottom: 2px;
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 900;
+      color: rgba(0,0,0,.78);
+    }
+
+    .hour-mini-card {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 10px 20px;
+      min-height: 116px;
+      color: #000;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 5px;
+    }
+
+    .hour-mini-card .mini-title {
+      font-size: 12px;
+      font-weight: 900;
+      opacity: .84;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .hour-mini-card .mini-supervisor {
+      font-size: 17px;
+      font-weight: 950;
+      line-height: 1.05;
+    }
+
+    .hour-mini-card .mini-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .hour-mini-card .mini-row span { opacity: .78; }
+
+    .hour-mini-card .mini-prod {
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.03em;
+      text-align: right;
+      align-self: end;
+    }
+
+    .hour-mini-card .mini-falta {
+      position: absolute;
+      right: 7px;
+      bottom: 5px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    .hour-card th, .hour-card td {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 4px 8px;
+      font-size: 18px;
+      line-height: 1.25;
+      background: #fff;
+    }
+
+    .hour-card th:last-child, .hour-card td:last-child { border-right: 0; }
+    .hour-card tbody tr:last-child td { border-bottom: 0; }
+    .hour-card th { font-weight: 500; }
+    .num { text-align: right; }
+    .supervisor-name { font-weight: 900; }
+
+    .prod-cell {
+      position: relative;
+      min-width: 140px;
+      text-align: right;
+      font-weight: 900;
+      padding-right: 10px !important;
+    }
+
+    .prod-ok { background: var(--green) !important; color: #000; }
+    .prod-bad { background: var(--red) !important; color: #000; }
+
+    .mini-falta {
+      position: absolute;
+      right: 6px;
+      bottom: 1px;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 900;
+      color: rgba(0,0,0,.72);
+      letter-spacing: -.02em;
+    }
+
+    .prod-cell .main-number { display: block; padding-bottom: 7px; }
+
+    .turno-total {
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr;
+      text-align: center;
+      font-size: 17px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .turno-total div:first-child { border-bottom: 1px solid var(--border); padding: 6px; font-weight: 800; }
+    .turno-total div:last-child { padding: 8px; font-size: 24px; font-weight: 950; }
+
+    .daily-table, .month-table, .report-table { border: 1px solid var(--border); }
+
+    .daily-table th, .daily-table td,
+    .month-table th, .month-table td,
+    .report-table th, .report-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .daily-table th { font-size: 22px; }
+    .daily-table td:first-child { font-size: 20px; font-weight: 900; width: 220px; }
+    .daily-table .big { font-size: 30px; font-weight: 900; position: relative; height: 56px; }
+    .media-ok { background: var(--green) !important; }
+    .media-bad { background: var(--red) !important; }
+    .red-total { font-size: 30px; font-weight: 900; }
+
+    .daily-prod-cell {
+      position: relative;
+      padding: 8px 8px 18px !important;
+    }
+
+    .daily-prod-cell .corner-missing {
+      position: absolute;
+      right: 8px;
+      bottom: 4px;
+      font-size: 11px;
+      font-weight: 900;
+      color: rgba(0,0,0,.76);
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(190px, 1fr));
+      gap: 12px;
+    }
+
+    .config-card {
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fafafa;
+      display: grid;
+      gap: 8px;
+    }
+
+    .config-card h3 { margin: 0 0 4px; }
+
+    .hint {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border-soft);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .warning {
+      background: #fff3cd;
+      border-color: #ffd35a;
+      color: #5f4300;
+    }
+
+    .month-wrap, .report-table-wrap { overflow-x: auto; }
+    .month-table th, .report-table th { font-weight: 900; background: #f8f9fa; }
+    .month-table td:first-child, .report-table td:first-child { text-align: right; font-weight: 700; white-space: nowrap; }
+    .month-table td { font-size: 15px; }
+    .month-table .month-total { font-weight: 900; }
+    .month-table .no-prod { color: #aaa; }
+    .report-ok { background: var(--green) !important; color: #000; }
+    .report-bad { background: var(--red) !important; color: #000; }
+
+    .report-filters {
+      display: grid;
+      grid-template-columns: 180px 180px auto auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .report-cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0 0 14px;
+    }
+
+    .mini-card {
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .mini-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 24px;
+      margin-top: 4px;
+    }
+
+    .mini-card small { display: block; margin-top: 4px; }
+
+
+
+    /* Layout compacto solicitado: horários pequenos lado a lado, parecido com Excel */
+    .section-card { padding: 14px 16px 16px; }
+    .section-head { margin-bottom: 10px; }
+    .section-head h2 { font-size: 22px; }
+    .section-head small { font-size: 13px; }
+
+    .hour-grid { gap: 14px; }
+    .turno-section {
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      background: #fbfdff;
+      padding: 12px;
+      margin-bottom: 14px;
+      overflow-x: auto;
+    }
+    .turno-heading {
+      margin: 0 0 10px;
+      font-size: 24px;
+      font-weight: 950;
+    }
+    .period-grid {
+      display: grid;
+      gap: 16px;
+      align-items: start;
+      min-width: 980px;
+    }
+    .period-grid.manha-grid { grid-template-columns: repeat(4, minmax(220px, 1fr)); }
+    .period-grid.tarde-grid { grid-template-columns: repeat(3, minmax(220px, 1fr)); min-width: 735px; }
+
+    .hour-card {
+      border-radius: 0;
+      box-shadow: none;
+      min-width: 0;
+    }
+    .hour-title {
+      font-size: 22px;
+      font-weight: 600;
+      padding: 2px 4px 1px;
+      line-height: 1.05;
+    }
+    .hour-subtitle {
+      font-size: 10px;
+      height: 18px;
+      padding: 2px 3px 1px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      border-bottom: 1px solid var(--border);
+    }
+    .hour-table {
+      table-layout: auto;
+    }
+    .hour-table th,
+    .hour-table td,
+    .hour-card th,
+    .hour-card td {
+      padding: 4px 6px !important;
+      font-size: 18px;
+      line-height: 1.08;
+    }
+    .hour-table th {
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .hour-table .supervisor-name {
+      font-size: 18px;
+      font-weight: 950;
+      width: 47%;
+    }
+    .hour-table th:nth-child(2),
+    .hour-table td:nth-child(2) {
+      width: 23%;
+      text-align: right;
+    }
+    .hour-table th:nth-child(3),
+    .hour-table td:nth-child(3) {
+      width: 30%;
+      text-align: right;
+    }
+    .hour-table .prod-cell {
+      font-size: 18px;
+      padding: 4px 6px 9px !important;
+      min-width: 0 !important;
+    }
+    .prod-cell .main-number {
+      padding-bottom: 4px;
+    }
+    .hour-table .mini-falta,
+    .mini-falta {
+      font-size: 8px;
+      right: 4px;
+      bottom: 1px;
+    }
+
+    .turno-total {
+      margin: 14px auto 4px;
+      width: min(100%, 990px);
+      border-radius: 10px;
+      box-shadow: none;
+    }
+    .turno-total div:first-child {
+      padding: 7px 8px;
+      font-size: 22px;
+      font-weight: 950;
+    }
+    .turno-total div:last-child {
+      padding: 7px 8px;
+      font-size: 32px;
+      font-weight: 950;
+    }
+
+    @media (max-width: 1050px) {
+      .toolbar { grid-template-columns: 1fr 170px; }
+      .summary-grid, .config-grid, .report-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .period-grid { grid-template-columns: 1fr; }
+      .report-filters { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 650px) {
+      header { flex-wrap: wrap; padding: 10px 12px; }
+      header h1 { font-size: 18px; }
+      .header-actions { width: 100%; justify-content: flex-end; gap: 8px; }
+      .user-info { font-size: 12px; }
+      .menu-toggle { min-width: 88px; padding: 9px 10px; }
+      nav { top: 86px; }
+      .page { padding: 10px; }
+      .toolbar, .summary-grid, .config-grid, .report-cards, .report-filters { grid-template-columns: 1fr; }
+      .section-card { padding: 12px; }
+      .section-head { flex-direction: column; }
+      .hour-card th, .hour-card td { font-size: 14px; padding: 4px 5px; }
+      .hour-title { font-size: 18px; }
+      .daily-table th { font-size: 16px; }
+      .daily-table td:first-child { font-size: 15px; width: auto; }
+      .daily-table .big, .red-total { font-size: 22px; }
+    }
+  
+
+    @media (max-width: 1250px) {
+      .period-grid.manha-grid { min-width: 980px; }
+      .period-grid.tarde-grid { min-width: 735px; }
+    }
+
+    @media (max-width: 650px) {
+      .turno-section { padding: 8px; }
+      .period-grid.manha-grid,
+      .period-grid.tarde-grid { min-width: 760px; }
+      .hour-title { font-size: 18px; }
+      .hour-subtitle { font-size: 9px; }
+      .hour-table th,
+      .hour-table td,
+      .hour-card th,
+      .hour-card td { font-size: 15px; padding: 3px 4px !important; }
+      .hour-table .supervisor-name { font-size: 15px; }
+      .hour-table .prod-cell { font-size: 15px; padding-bottom: 8px !important; }
+      .turno-heading { font-size: 20px; }
+      .turno-total div:first-child { font-size: 17px; padding: 6px; }
+      .turno-total div:last-child { font-size: 24px; padding: 6px; }
+    }
+
+
+    /* Modal de detalhamento dos modelos produzidos */
+    .click-detail {
+      cursor: pointer;
+      transition: outline-color .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+
+    .click-detail:hover {
+      outline: 2px solid rgba(13, 110, 253, .42);
+      outline-offset: -2px;
+      filter: brightness(.98);
+    }
+
+    .summary-value.click-detail:hover,
+    .turno-total.click-detail:hover {
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, .18);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .62);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 5000;
+    }
+
+    .modal-overlay[hidden] { display: none !important; }
+
+    .modelos-modal {
+      width: min(760px, 100%);
+      max-height: min(86vh, 760px);
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.28);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(15, 23, 42, .18);
+    }
+
+    .modelos-modal-head {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      background: #f8fafc;
+    }
+
+    .modelos-modal-head h3 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    .modelos-modal-head small {
+      display: block;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .modelos-modal-close {
+      background: #e5e7eb;
+      color: #111827;
+      border-radius: 999px;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 20px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .modelos-modal-body {
+      padding: 14px 18px 18px;
+      overflow: auto;
+    }
+
+    .modelos-modal-info {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .modelos-modal-info .info-box {
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .modelos-modal-info .info-box strong {
+      display: block;
+      color: var(--text);
+      font-size: 22px;
+      margin-top: 4px;
+      letter-spacing: -.03em;
+      text-transform: none;
+    }
+
+    .modelos-table-wrap { overflow-x: auto; }
+
+    .modelos-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .modelos-table th,
+    .modelos-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .modelos-table th {
+      background: #f8f9fa;
+      font-weight: 900;
+      text-align: left;
+    }
+
+    .modelos-table .modal-num { text-align: right; font-weight: 900; }
+    .modelos-table tfoot td { background: #f8fafc; font-weight: 950; }
+
+    .empty-modelos {
+      border: 1px dashed var(--border-soft);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+      background: #fbfdff;
+      font-weight: 800;
+    }
+
+    @media (max-width: 650px) {
+      .modelos-modal-info { grid-template-columns: 1fr; }
+      .modelos-modal-head h3 { font-size: 18px; }
+      .modelos-modal-body { padding: 12px; }
+    }
+
+
+    /* Ajuste para o menu padrão novo: evita que o CSS antigo do <nav> esconda a lista do drawer */
+    .sistema-menu-lista {
+      max-height: none !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: none !important;
+      position: static !important;
+      top: auto !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      display: block !important;
+    }
+
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="toolbar">
+      <div class="status-pill"><span class="dot"></span><span id="syncStatus">Aguardando carregamento...</span></div>
+      <div class="field">
+        <label for="selectedDate">Data</label>
+        <input type="date" id="selectedDate" />
+      </div>
+      <button class="light" id="todayButton">Hoje</button>
+      <button class="secondary" id="reloadButton">Atualizar</button>
+    </section>
+
+    <section class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Total fábrica</div>
+        <div class="summary-value click-detail" id="totalFabricaCard" data-detail-type="dia" title="Clique para ver os modelos produzidos">0</div>
+        <div class="summary-sub">Produção do dia selecionado</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total manhã</div>
+        <div class="summary-value click-detail" id="totalManhaCard" data-detail-type="turno" data-turno="manha" title="Clique para ver os modelos da manhã">0</div>
+        <div class="summary-sub">08:00 até 11:18</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Total tarde</div>
+        <div class="summary-value click-detail" id="totalTardeCard" data-detail-type="turno" data-turno="tarde" title="Clique para ver os modelos da tarde">0</div>
+        <div class="summary-sub">14:00 até 16:00</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">Talões lidos</div>
+        <div class="summary-value" id="qtdTaloesCard">0</div>
+        <div class="summary-sub" id="semHorarioInfo">Sem pendências</div>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <h2>Produção por horário</h2>
+          <small>Cada horário aparece em formato de tabela: Trilho, Meta e Produção. Exemplo: 08:00 soma os talões baixados das 08:00 às 09:00.</small>
+        </div>
+      </div>
+      <div class="hour-grid" id="hourGrid"></div>
+    </section>
+
+    <section class="section-card daily-panel">
+      <div class="section-head">
+        <div>
+          <h2>Resumo diário e média do mês</h2>
+          <small>A produção diária mostra no canto quanto falta para cada trilho atingir a meta do dia.</small>
+        </div>
+      </div>
+      <table class="daily-table" id="dailyTable"></table>
+    </section>
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <h2>Metas e supervisores</h2>
+          <small>A página usa somente a coleção metas. Ao salvar, cria um novo registro e sempre busca a última meta salva.</small>
+        </div>
+        <button class="success" id="saveConfigButton">Salvar metas</button>
+      </div>
+      <div class="config-grid" id="configGrid"></div>
+      <div class="hint" id="configHint">
+        Coleção usada pela página: <b>metas</b>. Clique em <b>Salvar metas</b> uma vez para criar o primeiro registro. Depois ela sempre usará a última meta salva.
+      </div>
+    </section>
+
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <h2>Relatório de produção</h2>
+          <small>O relatório é calculado direto dos talões baixados na montagem e compara cada dia com a meta válida naquele dia.</small>
+        </div>
+      </div>
+      <div class="report-filters">
+        <div class="field">
+          <label for="reportStart">Data inicial</label>
+          <input type="date" id="reportStart" />
+        </div>
+        <div class="field">
+          <label for="reportEnd">Data final</label>
+          <input type="date" id="reportEnd" />
+        </div>
+        <button id="loadReportButton">Buscar relatório</button>
+        <button class="secondary" id="exportCsvButton">Exportar CSV</button>
+      </div>
+      <div class="report-cards" id="reportCards"></div>
+      <div class="report-table-wrap">
+        <table class="report-table" id="reportTable"></table>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="modelosModal" hidden>
+    <div class="modelos-modal" role="dialog" aria-modal="true" aria-labelledby="modelosModalTitle">
+      <div class="modelos-modal-head">
+        <div>
+          <h3 id="modelosModalTitle">Modelos produzidos</h3>
+          <small id="modelosModalSubtitle"></small>
+        </div>
+        <button type="button" class="modelos-modal-close" id="closeModelosModal" aria-label="Fechar modal">×</button>
+      </div>
+      <div class="modelos-modal-body">
+        <div class="modelos-modal-info" id="modelosModalInfo"></div>
+        <div class="modelos-table-wrap" id="modelosModalContent"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="navegacao.js"></script>
+  <script type="module">
+    const firebaseConfig = window.FIREBASE_CONFIG;
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      getDocs,
+      addDoc,
+      collection,
+      onSnapshot,
+      query,
+      where,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const selectedDateInput = document.getElementById('selectedDate');
+    const todayButton = document.getElementById('todayButton');
+    const reloadButton = document.getElementById('reloadButton');
+    const saveConfigButton = document.getElementById('saveConfigButton');
+    const syncStatus = document.getElementById('syncStatus');
+    const hourGrid = document.getElementById('hourGrid');
+    const dailyTable = document.getElementById('dailyTable');
+    const configGrid = document.getElementById('configGrid');
+    const configHint = document.getElementById('configHint');
+    const reportStart = document.getElementById('reportStart');
+    const reportEnd = document.getElementById('reportEnd');
+    const loadReportButton = document.getElementById('loadReportButton');
+    const exportCsvButton = document.getElementById('exportCsvButton');
+    const reportCards = document.getElementById('reportCards');
+    const reportTable = document.getElementById('reportTable');
+
+    const totalFabricaCard = document.getElementById('totalFabricaCard');
+    const totalManhaCard = document.getElementById('totalManhaCard');
+    const totalTardeCard = document.getElementById('totalTardeCard');
+    const qtdTaloesCard = document.getElementById('qtdTaloesCard');
+    const semHorarioInfo = document.getElementById('semHorarioInfo');
+    const modelosModal = document.getElementById('modelosModal');
+    const modelosModalTitle = document.getElementById('modelosModalTitle');
+    const modelosModalSubtitle = document.getElementById('modelosModalSubtitle');
+    const modelosModalInfo = document.getElementById('modelosModalInfo');
+    const modelosModalContent = document.getElementById('modelosModalContent');
+    const closeModelosModal = document.getElementById('closeModelosModal');
+
+    const nivelNomes = window.Roma.ROLES;
+
+    const pages = window.SistemaNavegacao.pages;
+
+    const DEFAULT_TRILHOS = [
+      { key: 'trilho01', id: 'Trilho - 01', codigo: '01', supervisor: 'Vilmar', metaDia: 3700, pessoas: 0, necessidade: 30 },
+      { key: 'trilho02', id: 'Trilho - 02', codigo: '02', supervisor: 'Ueslei', metaDia: 3500, pessoas: 0, necessidade: 31 },
+      { key: 'trilho03', id: 'Trilho - 03', codigo: '03', supervisor: 'Nelson', metaDia: 2000, pessoas: 0, necessidade: 31 },
+      { key: 'trilho04', id: 'Trilho - 04', codigo: '04', supervisor: 'Andre', metaDia: 3200, pessoas: 0, necessidade: 34 }
+    ];
+
+    // Regra pedida: cada cartão soma os talões baixados na hora seguinte.
+    // Ex.: cartão 08:00 = produção das 07:00 às 08:00, mas baixada das 08:00 às 09:00.
+    const PERIODOS = [
+      { label: '08:00', producaoRef: '07:00 às 08:00', leituraInicio: '08:00', leituraFim: '09:00', fator: 1, turno: 'manha' },
+      { label: '09:00', producaoRef: '08:00 às 09:00', leituraInicio: '09:00', leituraFim: '10:00', fator: 1, turno: 'manha' },
+      { label: '10:00', producaoRef: '09:00 às 10:00', leituraInicio: '10:00', leituraFim: '11:00', fator: 1, turno: 'manha' },
+      { label: '11:18', producaoRef: '10:00 às 11:00', leituraInicio: '11:00', leituraFim: '13:00', fator: 1, turno: 'manha' },
+      { label: '14:00', producaoRef: '13:00 às 14:00', leituraInicio: '14:00', leituraFim: '15:00', fator: 1, turno: 'tarde' },
+      { label: '15:00', producaoRef: '14:00 às 15:00', leituraInicio: '15:00', leituraFim: '16:00', fator: 1, turno: 'tarde' },
+      { label: '16:00', producaoRef: '15:00 às 16:00', leituraInicio: '16:00', leituraFim: '17:00', fator: 2.8, turno: 'tarde' }
+    ];
+
+    const METAS_COLLECTION = 'metas';
+    let currentUserEmail = '';
+    let currentUserName = '';
+    let currentUserLevel = '';
+    let trilhosConfig = clone(DEFAULT_TRILHOS);
+    let taloesDia = [];
+    let taloesMes = [];
+    let reportRows = [];
+    let monthlyResumo = new Map();
+    let metasHistory = [];
+    let mediasMes = { totalFabrica: 0 };
+    let lastResumo = null;
+    let unsubscribeTaloesDia = null;
+    let unsubscribeTaloesMes = null;
+    let unsubscribeReport = null;
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function cleanNumber(value) {
+      const n = Number(value || 0);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function fmt(value) {
+      return cleanNumber(value).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    }
+
+    function todayISO() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDateBR(dateISO) {
+      if (!dateISO || !dateISO.includes('-')) return dateISO || '';
+      const [y, m, d] = dateISO.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    function monthStartISO(dateISO) {
+      const [y, m] = dateISO.split('-');
+      return `${y}-${m}-01`;
+    }
+
+    function monthEndISO(dateISO) {
+      const [y, m] = dateISO.split('-').map(Number);
+      const last = new Date(y, m, 0).getDate();
+      return `${y}-${String(m).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+    }
+
+    function daysInMonth(dateISO) {
+      const [y, m] = dateISO.split('-').map(Number);
+      return new Date(y, m, 0).getDate();
+    }
+
+    function toDate(value) {
+      if (!value) return null;
+      if (typeof value.toDate === 'function') return value.toDate();
+      if (value.seconds) return new Date(value.seconds * 1000);
+      if (value instanceof Date) return value;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function makeLocalDate(dateISO, time) {
+      return new Date(`${dateISO}T${time}:00`);
+    }
+
+    function normalizeTrilhoKey(value) {
+      const text = String(value || '').toLowerCase();
+      if (!text) return '';
+      const match = text.match(/0?([1-4])/);
+      if (!match) return '';
+      return `trilho0${match[1]}`;
+    }
+
+    function metaHorario(metaDia, fator = 1) {
+      return Math.round((cleanNumber(metaDia) / 8.8) * cleanNumber(fator));
+    }
+
+    function minutesOf(time) {
+      const [h, m] = String(time || '00:00').split(':').map(Number);
+      return (h || 0) * 60 + (m || 0);
+    }
+
+    function dateStatus(dateISO) {
+      const today = todayISO();
+      if (dateISO < today) return 'past';
+      if (dateISO > today) return 'future';
+      return 'today';
+    }
+
+    function fatorEsperadoAteAgora(dateISO) {
+      const status = dateStatus(dateISO);
+      const totalFator = PERIODOS.reduce((sum, p) => sum + cleanNumber(p.fator), 0);
+      if (status === 'past') return totalFator;
+      if (status === 'future') return totalFator;
+
+      const now = new Date();
+      const minNow = now.getHours() * 60 + now.getMinutes();
+      const fator = PERIODOS.reduce((sum, p) => {
+        return minNow >= minutesOf(p.leituraFim) ? sum + cleanNumber(p.fator) : sum;
+      }, 0);
+      return Math.min(totalFator, fator);
+    }
+
+    function metaEsperadaAteAgora(metaDia, dateISO) {
+      const fator = fatorEsperadoAteAgora(dateISO);
+      return Math.round((cleanNumber(metaDia) / 8.8) * fator);
+    }
+
+    function metaTotalDiaConfig(configList = trilhosConfig) {
+      return configList.reduce((sum, t) => sum + cleanNumber(t.metaDia), 0);
+    }
+
+    function metasFromSavedOrDefault(savedTrilhos) {
+      const source = Array.isArray(savedTrilhos) && savedTrilhos.length ? savedTrilhos : DEFAULT_TRILHOS;
+      return DEFAULT_TRILHOS.map(def => ({
+        ...def,
+        ...(source.find(t => t.key === def.key) || {})
+      }));
+    }
+
+    function getConfigByKey(key) {
+      return trilhosConfig.find(t => t.key === key) || DEFAULT_TRILHOS.find(t => t.key === key);
+    }
+
+    function iniciarNavegacao(userLevel, userName) {
+      if (!window.SistemaNavegacao) return;
+
+      window.SistemaNavegacao.init({
+        userLevel: String(userLevel || ''),
+        userName: userName || 'Usuário',
+        title: 'Controle de produção Calçados Roma',
+        onLogout: async () => {
+          try {
+            await signOut(auth);
+          } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+          } finally {
+            localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+            localStorage.removeItem('calcadosroma-65ac6:userName');
+            window.location.href = 'login.html';
+          }
+        }
+      });
+    }
+
+    function normalizeMetaDoc(id, data) {
+      const trilhos = Array.isArray(data?.trilhos) && data.trilhos.length ? metasFromSavedOrDefault(data.trilhos) : clone(DEFAULT_TRILHOS);
+      const criadoEmDate = toDate(data?.criadoEm) || toDate(data?.atualizadoEm);
+      const criadoEmMs = cleanNumber(data?.criadoEmMs) || (criadoEmDate ? criadoEmDate.getTime() : 0);
+      const vigenciaISO = data?.vigenciaISO || data?.data || (criadoEmDate ? `${criadoEmDate.getFullYear()}-${String(criadoEmDate.getMonth() + 1).padStart(2, '0')}-${String(criadoEmDate.getDate()).padStart(2, '0')}` : todayISO());
+      return { id, trilhos, criadoEmMs, vigenciaISO, raw: data || {} };
+    }
+
+    async function loadMetasHistory() {
+      const docs = [];
+      try {
+        const snap = await getDocs(collection(db, METAS_COLLECTION));
+        snap.forEach(d => {
+          const data = d.data();
+          if (Array.isArray(data?.trilhos) && data.trilhos.length) {
+            docs.push(normalizeMetaDoc(d.id, data));
+          }
+        });
+      } catch (error) {
+        console.warn('Não foi possível listar metas no Firebase:', error);
+      }
+
+      // Compatibilidade com a versão anterior, que usava metas/atual.
+      if (!docs.length) {
+        try {
+          const atualSnap = await getDoc(doc(db, METAS_COLLECTION, 'atual'));
+          if (atualSnap.exists()) docs.push(normalizeMetaDoc('atual', atualSnap.data()));
+        } catch (error) {
+          console.warn('Não foi possível ler metas/atual:', error);
+        }
+      }
+
+      docs.sort((a, b) => {
+        const dataCompare = String(a.vigenciaISO || '').localeCompare(String(b.vigenciaISO || ''));
+        if (dataCompare !== 0) return dataCompare;
+        return cleanNumber(a.criadoEmMs) - cleanNumber(b.criadoEmMs);
+      });
+      metasHistory = docs;
+      return docs;
+    }
+
+    function getMetaConfigForDate(dateISO) {
+      if (!metasHistory.length) return clone(DEFAULT_TRILHOS);
+      let chosen = null;
+      metasHistory.forEach(meta => {
+        if (!chosen) chosen = meta;
+        if (meta.vigenciaISO <= dateISO) chosen = meta;
+      });
+      return metasFromSavedOrDefault(chosen?.trilhos || DEFAULT_TRILHOS);
+    }
+
+    async function loadConfigOnce() {
+      renderConfig();
+      const metas = await loadMetasHistory();
+      if (metas.length) {
+        const latest = metas[metas.length - 1];
+        trilhosConfig = metasFromSavedOrDefault(latest.trilhos);
+        configHint.classList.remove('warning');
+        configHint.innerHTML = `Metas carregadas da coleção <b>metas</b>. Última meta registrada: <b>${formatDateBR(latest.vigenciaISO)}</b>. A página continuará usando esta meta até você salvar uma nova.`;
+      } else {
+        configHint.classList.add('warning');
+        configHint.innerHTML = 'Ainda não existe meta salva na coleção <b>metas</b>. A página está usando a meta padrão. Clique em <b>Salvar metas</b> uma vez para criar a primeira meta.';
+      }
+      renderConfig();
+      renderDashboard();
+      renderMonthlyFromMonthTaloes();
+    }
+
+    function renderConfig() {
+      configGrid.innerHTML = trilhosConfig.map((t, index) => `
+        <div class="config-card" data-index="${index}">
+          <h3>Trilho ${t.codigo}</h3>
+          <div class="field"><label>Supervisor</label><input data-field="supervisor" value="${t.supervisor || ''}" /></div>
+          <div class="field"><label>Meta diária</label><input data-field="metaDia" type="number" min="0" step="1" value="${cleanNumber(t.metaDia)}" /></div>
+          <div class="field"><label>Pessoas</label><input data-field="pessoas" type="number" min="0" step="1" value="${cleanNumber(t.pessoas)}" /></div>
+          <div class="field"><label>Necessário</label><input data-field="necessidade" type="number" min="0" step="1" value="${cleanNumber(t.necessidade)}" /></div>
+        </div>
+      `).join('');
+    }
+
+    async function saveConfig() {
+      const cards = [...configGrid.querySelectorAll('.config-card')];
+      trilhosConfig = cards.map(card => {
+        const index = Number(card.dataset.index);
+        const base = trilhosConfig[index];
+        return {
+          ...base,
+          supervisor: card.querySelector('[data-field="supervisor"]').value.trim() || base.supervisor,
+          metaDia: cleanNumber(card.querySelector('[data-field="metaDia"]').value),
+          pessoas: cleanNumber(card.querySelector('[data-field="pessoas"]').value),
+          necessidade: cleanNumber(card.querySelector('[data-field="necessidade"]').value)
+        };
+      });
+
+      renderDashboard();
+      renderMonthlyFromMonthTaloes();
+
+      try {
+        await addDoc(collection(db, METAS_COLLECTION), {
+          tipo: 'metaProducaoMontagem',
+          vigenciaISO: selectedDateInput.value || todayISO(),
+          criadoEmMs: Date.now(),
+          trilhos: trilhosConfig,
+          criadoEm: serverTimestamp(),
+          criadoPor: currentUserName || currentUserEmail
+        });
+        await loadMetasHistory();
+        configHint.classList.remove('warning');
+        configHint.innerHTML = 'Metas salvas com sucesso na coleção <b>metas</b>. Esta será a última meta usada até você salvar outra.';
+        syncStatus.textContent = 'Metas salvas';
+        listenReport();
+        setTimeout(() => syncStatus.textContent = 'Tempo real ativo', 1800);
+      } catch (error) {
+        console.error('Erro ao salvar metas:', error);
+        configHint.classList.add('warning');
+        configHint.innerHTML = 'As metas foram aplicadas na tela, mas o Firebase bloqueou o salvamento. Verifique a permissão da coleção <b>metas</b>.';
+        alert('As metas foram aplicadas na tela, mas não foram salvas no Firebase por falta de permissão na coleção metas.');
+      }
+    }
+
+    function emptyResumo(dateISO, configList = trilhosConfig) {
+      const resumo = {
+        data: dateISO,
+        dataBR: formatDateBR(dateISO),
+        totalFabrica: 0,
+        totalManha: 0,
+        totalTarde: 0,
+        qtdTaloes: 0,
+        semHorario: 0,
+        trilhos: {},
+        periodos: {}
+      };
+
+      configList.forEach(t => {
+        resumo.trilhos[t.key] = {
+          key: t.key,
+          id: t.id,
+          codigo: t.codigo,
+          supervisor: t.supervisor,
+          metaDia: cleanNumber(t.metaDia),
+          pessoas: cleanNumber(t.pessoas),
+          necessidade: cleanNumber(t.necessidade),
+          total: 0,
+          periodos: {}
+        };
+        PERIODOS.forEach(p => {
+          resumo.trilhos[t.key].periodos[p.label] = {
+            producao: 0,
+            meta: metaHorario(t.metaDia, p.fator),
+            turno: p.turno,
+            fator: p.fator,
+            leituraInicio: p.leituraInicio,
+            leituraFim: p.leituraFim,
+            producaoRef: p.producaoRef
+          };
+        });
+      });
+
+      PERIODOS.forEach(p => {
+        resumo.periodos[p.label] = {
+          label: p.label,
+          producaoRef: p.producaoRef,
+          leituraInicio: p.leituraInicio,
+          leituraFim: p.leituraFim,
+          fator: p.fator,
+          turno: p.turno,
+          total: 0
+        };
+      });
+
+      return resumo;
+    }
+
+    function getPeriodoProducaoTalao(talao, dateISO) {
+      const periodoSalvo = cleanText(talao?.periodoProducao);
+      const dataReferencia = cleanText(talao?.dataReferenciaProducao || talao?.dataEntradaMontagem);
+
+      // Registros novos podem informar explicitamente o cartão correto da produção.
+      // Registros antigos continuam usando dataProducao, sem migração e sem alteração do histórico.
+      if (periodoSalvo && (!dataReferencia || dataReferencia === dateISO)) {
+        const periodoManual = PERIODOS.find(p => p.label === periodoSalvo);
+        if (periodoManual) return periodoManual;
+      }
+
+      const dataProducao = toDate(talao?.dataProducao);
+      if (!dataProducao) return null;
+
+      return PERIODOS.find(p => {
+        const inicio = makeLocalDate(dateISO, p.leituraInicio);
+        const fim = makeLocalDate(dateISO, p.leituraFim);
+        return dataProducao >= inicio && dataProducao < fim;
+      }) || null;
+    }
+
+    function applyTaloesToResumo(taloes, dateISO, configList = trilhosConfig) {
+      const resumo = emptyResumo(dateISO, configList);
+
+      taloes.forEach(talao => {
+        const key = normalizeTrilhoKey(talao.trilhoProduzido);
+        if (!key || !resumo.trilhos[key]) return;
+
+        const pares = cleanNumber(talao.pares);
+        resumo.trilhos[key].total += pares;
+        resumo.totalFabrica += pares;
+        resumo.qtdTaloes += 1;
+
+        const periodoEncontrado = getPeriodoProducaoTalao(talao, dateISO);
+
+        if (!periodoEncontrado) {
+          resumo.semHorario += pares;
+          return;
+        }
+
+        resumo.trilhos[key].periodos[periodoEncontrado.label].producao += pares;
+        resumo.periodos[periodoEncontrado.label].total += pares;
+
+        if (periodoEncontrado.turno === 'manha') resumo.totalManha += pares;
+        if (periodoEncontrado.turno === 'tarde') resumo.totalTarde += pares;
+      });
+
+      return resumo;
+    }
+
+    function computeResumo() {
+      return applyTaloesToResumo(taloesDia, selectedDateInput.value || todayISO());
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function cleanText(value) {
+      return String(value ?? '').trim();
+    }
+
+    function getLinhaModeloLabel(talao) {
+      const linha = cleanText(talao.linha || talao.Linha || talao.codLinha || talao.codigoLinha || talao.linhaModelo);
+      const modelo = cleanText(talao.modelo || talao.Modelo || talao.referencia || talao.modeloReferencia || talao.nomeModelo);
+
+      if (linha && modelo) {
+        const modeloLower = modelo.toLowerCase();
+        const linhaLower = linha.toLowerCase();
+        if (modeloLower.startsWith(`${linhaLower}.`) || modeloLower.startsWith(`${linhaLower}-`) || modeloLower === linhaLower) {
+          return modelo;
+        }
+        return `${linha}.${modelo}`;
+      }
+
+      return modelo || linha || 'Sem modelo informado';
+    }
+
+    function findPeriodoFromTalao(talao, dateISO) {
+      return getPeriodoProducaoTalao(talao, dateISO);
+    }
+
+    function talaoPertenceAoTrilho(talao, trilhoKey) {
+      if (!trilhoKey) return true;
+      return normalizeTrilhoKey(talao.trilhoProduzido) === trilhoKey;
+    }
+
+    function getTrilhoLabel(trilhoKey) {
+      if (!trilhoKey) return 'Todos os trilhos';
+      const cfg = getConfigByKey(trilhoKey);
+      return cfg?.supervisor || trilhoKey;
+    }
+
+    function getTaloesForDetail(dataset) {
+      const tipo = dataset.detailType;
+      const trilhoKey = dataset.trilhoKey || '';
+      const turno = dataset.turno || '';
+      const periodoLabel = dataset.periodLabel || '';
+      const dateISO = selectedDateInput.value || todayISO();
+
+      if (tipo === 'media') {
+        return taloesMes.filter(talao => talaoPertenceAoTrilho(talao, trilhoKey));
+      }
+
+      return taloesDia.filter(talao => {
+        if (!talaoPertenceAoTrilho(talao, trilhoKey)) return false;
+
+        if (tipo === 'hora') {
+          const periodo = findPeriodoFromTalao(talao, dateISO);
+          return periodo?.label === periodoLabel;
+        }
+
+        if (tipo === 'turno') {
+          const periodo = findPeriodoFromTalao(talao, dateISO);
+          return periodo?.turno === turno;
+        }
+
+        return true;
+      });
+    }
+
+    function groupModelos(taloes, mostrarTrilho) {
+      const map = new Map();
+
+      taloes.forEach(talao => {
+        const modelo = getLinhaModeloLabel(talao);
+        const trilhoKey = normalizeTrilhoKey(talao.trilhoProduzido);
+        const trilhoNome = trilhoKey ? getTrilhoLabel(trilhoKey) : 'Sem trilho';
+        const key = mostrarTrilho ? `${modelo}||${trilhoKey || 'sem-trilho'}` : modelo;
+
+        if (!map.has(key)) {
+          map.set(key, { modelo, trilhoNome, pares: 0, taloes: 0 });
+        }
+
+        const item = map.get(key);
+        item.pares += cleanNumber(talao.pares);
+        item.taloes += 1;
+      });
+
+      return [...map.values()].sort((a, b) => {
+        const diff = cleanNumber(b.pares) - cleanNumber(a.pares);
+        if (diff !== 0) return diff;
+        return String(a.modelo).localeCompare(String(b.modelo), 'pt-BR');
+      });
+    }
+
+    function getDetailTitleAndSubtitle(dataset, taloes) {
+      const tipo = dataset.detailType;
+      const trilhoKey = dataset.trilhoKey || '';
+      const dateISO = selectedDateInput.value || todayISO();
+      const trilhoNome = getTrilhoLabel(trilhoKey);
+      const prefixTrilho = trilhoKey ? ` - ${trilhoNome}` : '';
+
+      if (tipo === 'hora') {
+        const periodo = PERIODOS.find(p => p.label === dataset.periodLabel);
+        return {
+          title: `Produção ${periodo?.label || ''}${prefixTrilho}`,
+          subtitle: `Data ${formatDateBR(dateISO)} • Prod. ${periodo?.producaoRef || ''} • baixados ${periodo?.leituraInicio || ''} às ${periodo?.leituraFim || ''}`
+        };
+      }
+
+      if (tipo === 'turno') {
+        const turnoNome = dataset.turno === 'manha' ? 'Manhã' : 'Tarde';
+        return {
+          title: `Produção total da ${turnoNome.toLowerCase()}${prefixTrilho}`,
+          subtitle: `Data ${formatDateBR(dateISO)} • Modelos produzidos no turno selecionado`
+        };
+      }
+
+      if (tipo === 'media') {
+        const diasComProducao = [...monthlyResumo.values()].filter(r => cleanNumber(r.totalFabrica) > 0).length;
+        const media = trilhoKey ? (mediasMes[trilhoKey] || 0) : (mediasMes.totalFabrica || 0);
+        return {
+          title: `Média do mês${prefixTrilho}`,
+          subtitle: `Mês de ${dateISO.slice(5, 7)}/${dateISO.slice(0, 4)} • A tabela mostra os modelos produzidos no mês. Média: ${fmt(media)} pares/dia em ${fmt(diasComProducao)} dia(s) com produção.`
+        };
+      }
+
+      return {
+        title: `Produção diária${prefixTrilho}`,
+        subtitle: `Data ${formatDateBR(dateISO)} • Modelos produzidos no dia selecionado`
+      };
+    }
+
+    function openModelosModalFromElement(element) {
+      const dataset = element.dataset || {};
+      const taloes = getTaloesForDetail(dataset);
+      const mostrarTrilho = !dataset.trilhoKey;
+      const rows = groupModelos(taloes, mostrarTrilho);
+      const totalPares = rows.reduce((sum, item) => sum + cleanNumber(item.pares), 0);
+      const totalTaloes = rows.reduce((sum, item) => sum + cleanNumber(item.taloes), 0);
+      const { title, subtitle } = getDetailTitleAndSubtitle(dataset, taloes);
+
+      modelosModalTitle.textContent = title;
+      modelosModalSubtitle.textContent = subtitle;
+      modelosModalInfo.innerHTML = `
+        <div class="info-box">Total de pares<strong>${fmt(totalPares)}</strong></div>
+        <div class="info-box">Modelos<strong>${fmt(rows.length)}</strong></div>
+        <div class="info-box">Talões<strong>${fmt(totalTaloes)}</strong></div>
+      `;
+
+      if (!rows.length) {
+        modelosModalContent.innerHTML = '<div class="empty-modelos">Nenhum modelo encontrado para este filtro.</div>';
+      } else {
+        const trilhoHeader = mostrarTrilho ? '<th>Trilho</th>' : '';
+        const trilhoFooter = mostrarTrilho ? '<td></td>' : '';
+        const body = rows.map((item, index) => `
+          <tr>
+            <td class="modal-num">${index + 1}</td>
+            <td>${escapeHtml(item.modelo)}</td>
+            ${mostrarTrilho ? `<td>${escapeHtml(item.trilhoNome)}</td>` : ''}
+            <td class="modal-num">${fmt(item.pares)}</td>
+            <td class="modal-num">${fmt(item.taloes)}</td>
+          </tr>
+        `).join('');
+
+        modelosModalContent.innerHTML = `
+          <table class="modelos-table">
+            <thead>
+              <tr>
+                <th style="width:56px; text-align:right;">#</th>
+                <th>Modelo</th>
+                ${trilhoHeader}
+                <th style="width:150px; text-align:right;">Total de pares</th>
+                <th style="width:110px; text-align:right;">Talões</th>
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+            <tfoot>
+              <tr>
+                <td></td>
+                <td>Total</td>
+                ${trilhoFooter}
+                <td class="modal-num">${fmt(totalPares)}</td>
+                <td class="modal-num">${fmt(totalTaloes)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        `;
+      }
+
+      modelosModal.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModelosModalHandler() {
+      modelosModal.hidden = true;
+      document.body.style.overflow = '';
+    }
+
+    function renderDashboard() {
+      if (!selectedDateInput.value) return;
+      const resumo = computeResumo();
+      lastResumo = resumo;
+
+      totalFabricaCard.textContent = fmt(resumo.totalFabrica);
+      totalManhaCard.textContent = fmt(resumo.totalManha);
+      totalTardeCard.textContent = fmt(resumo.totalTarde);
+      qtdTaloesCard.textContent = fmt(resumo.qtdTaloes);
+      semHorarioInfo.textContent = resumo.semHorario > 0 ? `${fmt(resumo.semHorario)} pares fora da janela de horário` : 'Sem pendências';
+
+      renderHourCards(resumo);
+      renderDailyTable(resumo);
+    }
+
+    function renderHourCards(resumo) {
+      const renderPeriodo = (p) => {
+        const rows = trilhosConfig.map(t => {
+          const item = resumo.trilhos[t.key];
+          const periodo = item.periodos[p.label];
+          const prod = cleanNumber(periodo.producao);
+          const meta = cleanNumber(periodo.meta);
+          const falta = Math.max(0, meta - prod);
+          const ok = prod >= meta && meta > 0;
+          const cellClass = ok ? 'prod-ok' : 'prod-bad';
+
+          return `
+            <tr>
+              <td class="supervisor-name">${item.supervisor}</td>
+              <td>${fmt(meta)}</td>
+              <td class="prod-cell ${cellClass} click-detail" data-detail-type="hora" data-trilho-key="${t.key}" data-period-label="${p.label}" title="Clique para ver os modelos produzidos">
+                <span class="main-number">${fmt(prod)}</span>
+                <span class="mini-falta">${falta > 0 ? 'Falta ' + fmt(falta) : 'OK'}</span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        return `
+          <div class="hour-card">
+            <div class="hour-title">${p.label}</div>
+            <div class="hour-subtitle">Prod. ${p.producaoRef} • baixados ${p.leituraInicio} às ${p.leituraFim}</div>
+            <table class="hour-table">
+              <thead>
+                <tr>
+                  <th>Trilho</th>
+                  <th>Meta</th>
+                  <th>Produção</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
+      };
+
+      const manha = PERIODOS.filter(p => p.turno === 'manha').map(renderPeriodo).join('');
+      const tarde = PERIODOS.filter(p => p.turno === 'tarde').map(renderPeriodo).join('');
+      const metaManha = trilhosConfig.reduce((sum, t) => sum + PERIODOS.filter(p => p.turno === 'manha').reduce((s, p) => s + metaHorario(t.metaDia, p.fator), 0), 0);
+      const metaTarde = trilhosConfig.reduce((sum, t) => sum + PERIODOS.filter(p => p.turno === 'tarde').reduce((s, p) => s + metaHorario(t.metaDia, p.fator), 0), 0);
+      const manhaCls = resumo.totalManha >= metaManha && metaManha > 0 ? 'prod-ok' : 'prod-bad';
+      const tardeCls = resumo.totalTarde >= metaTarde && metaTarde > 0 ? 'prod-ok' : 'prod-bad';
+
+      hourGrid.innerHTML = `
+        <div class="turno-section">
+          <div class="turno-heading"><span>Manhã</span></div>
+          <div class="period-grid manha-grid">${manha}</div>
+          <div class="turno-total ${manhaCls} click-detail" data-detail-type="turno" data-turno="manha" title="Clique para ver os modelos produzidos na manhã"><div>Produção total da manhã</div><div>${fmt(resumo.totalManha)}</div></div>
+        </div>
+        <div class="turno-section">
+          <div class="turno-heading"><span>Tarde</span></div>
+          <div class="period-grid tarde-grid">${tarde}</div>
+          <div class="turno-total ${tardeCls} click-detail" data-detail-type="turno" data-turno="tarde" title="Clique para ver os modelos produzidos na tarde"><div>Produção total da tarde</div><div>${fmt(resumo.totalTarde)}</div></div>
+        </div>
+      `;
+    }
+
+    function renderDailyTable(resumo) {
+      const headers = trilhosConfig.map(t => `<th>${resumo.trilhos[t.key].supervisor}</th>`).join('');
+      const metaRow = trilhosConfig.map(t => `<td class="big">${fmt(resumo.trilhos[t.key].metaDia)}</td>`).join('');
+      const prodRow = trilhosConfig.map(t => {
+        const item = resumo.trilhos[t.key];
+        const metaEsperada = metaEsperadaAteAgora(item.metaDia, resumo.data);
+        const faltaDia = Math.max(0, item.metaDia - item.total);
+        const ok = metaEsperada <= 0 ? item.total > 0 : item.total >= metaEsperada;
+        return `<td class="big daily-prod-cell ${ok ? 'media-ok' : 'media-bad'} click-detail" data-detail-type="dia" data-trilho-key="${t.key}" title="Clique para ver os modelos produzidos no dia"><span>${fmt(item.total)}</span><span class="corner-missing">${faltaDia > 0 ? 'Falta ' + fmt(faltaDia) : 'Meta batida'}</span></td>`;
+      }).join('');
+      const mediaRow = trilhosConfig.map(t => {
+        const item = resumo.trilhos[t.key];
+        const media = mediasMes[t.key] || 0;
+        const ok = media >= item.metaDia;
+        return `<td class="big ${ok ? 'media-ok' : 'media-bad'} click-detail" data-detail-type="media" data-trilho-key="${t.key}" title="Clique para ver os modelos produzidos no mês">${fmt(media)}</td>`;
+      }).join('');
+
+      const metaFabricaEsperada = trilhosConfig.reduce((sum, t) => {
+        const item = resumo.trilhos[t.key];
+        return sum + metaEsperadaAteAgora(item.metaDia, resumo.data);
+      }, 0);
+      const totalFabricaOk = metaFabricaEsperada <= 0 ? resumo.totalFabrica > 0 : resumo.totalFabrica >= metaFabricaEsperada;
+      const mediaFabricaOk = (mediasMes.totalFabrica || 0) >= metaTotalDiaConfig(trilhosConfig);
+
+      dailyTable.innerHTML = `
+        <thead><tr><th>${formatDateBR(resumo.data)}</th>${headers}</tr></thead>
+        <tbody>
+          <tr><td>Meta por esteira</td>${metaRow}</tr>
+          <tr><td>Produção diária</td>${prodRow}</tr>
+          <tr><td>Média Mês</td>${mediaRow}</tr>
+          <tr><td>Total Fábrica</td><td colspan="${trilhosConfig.length}" class="red-total ${totalFabricaOk ? 'media-ok' : 'media-bad'} click-detail" data-detail-type="dia" title="Clique para ver todos os modelos do dia">${fmt(resumo.totalFabrica)}</td></tr>
+          <tr><td>Média Fábrica</td><td colspan="${trilhosConfig.length}" class="red-total ${mediaFabricaOk ? 'media-ok' : 'media-bad'} click-detail" data-detail-type="media" title="Clique para ver todos os modelos do mês">${fmt(mediasMes.totalFabrica || 0)}</td></tr>
+        </tbody>
+      `;
+    }
+
+    function listenTaloesDia() {
+      if (unsubscribeTaloesDia) unsubscribeTaloesDia();
+      const dateISO = selectedDateInput.value;
+      if (!dateISO) return;
+
+      syncStatus.textContent = 'Carregando produção do dia...';
+      const qDia = query(collection(db, 'taloes'), where('dataEntradaMontagem', '==', dateISO));
+      unsubscribeTaloesDia = onSnapshot(qDia, (snapshot) => {
+        taloesDia = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        syncStatus.textContent = `Tempo real ativo • ${snapshot.size} talões no dia`;
+        renderDashboard();
+      }, (error) => {
+        console.error('Erro ao buscar talões do dia:', error);
+        syncStatus.textContent = 'Erro ao buscar produção do dia';
+      });
+    }
+
+    function listenTaloesMes() {
+      if (unsubscribeTaloesMes) unsubscribeTaloesMes();
+      const dateISO = selectedDateInput.value;
+      if (!dateISO) return;
+      const start = monthStartISO(dateISO);
+      const end = monthEndISO(dateISO);
+      const qMes = query(collection(db, 'taloes'), where('dataEntradaMontagem', '>=', start), where('dataEntradaMontagem', '<=', end));
+
+      unsubscribeTaloesMes = onSnapshot(qMes, (snapshot) => {
+        taloesMes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderMonthlyFromMonthTaloes();
+      }, (error) => {
+        console.error('Erro ao buscar talões do mês:', error);
+        syncStatus.textContent = 'Erro ao buscar produção do mês';
+      });
+    }
+
+    function renderMonthlyFromMonthTaloes() {
+      if (!selectedDateInput.value) return;
+      const dateISO = selectedDateInput.value;
+      const [year, month] = dateISO.split('-');
+      const lastDay = daysInMonth(dateISO);
+      const map = new Map();
+
+      for (let day = 1; day <= lastDay; day++) {
+        const iso = `${year}-${month}-${String(day).padStart(2, '0')}`;
+        map.set(iso, emptyResumo(iso));
+      }
+
+      const grouped = new Map();
+      taloesMes.forEach(talao => {
+        const d = talao.dataEntradaMontagem;
+        if (!d) return;
+        if (!grouped.has(d)) grouped.set(d, []);
+        grouped.get(d).push(talao);
+      });
+
+      grouped.forEach((list, dayISO) => {
+        map.set(dayISO, applyTaloesToResumo(list, dayISO));
+      });
+
+      monthlyResumo = map;
+      computeMediasFromMonthMap();
+      if (lastResumo) renderDailyTable(lastResumo);
+    }
+
+    function computeMediasFromMonthMap() {
+      const validDays = [...monthlyResumo.values()].filter(r => cleanNumber(r.totalFabrica) > 0);
+      const count = validDays.length;
+      const media = { totalFabrica: 0 };
+      trilhosConfig.forEach(t => media[t.key] = 0);
+
+      validDays.forEach(r => {
+        media.totalFabrica += cleanNumber(r.totalFabrica);
+        trilhosConfig.forEach(t => media[t.key] += cleanNumber(r.trilhos?.[t.key]?.total));
+      });
+
+      if (count > 0) {
+        media.totalFabrica = Math.round(media.totalFabrica / count);
+        trilhosConfig.forEach(t => media[t.key] = Math.round(media[t.key] / count));
+      }
+      mediasMes = media;
+    }
+
+    function defaultReportDates() {
+      const today = todayISO();
+      reportStart.value = monthStartISO(today);
+      reportEnd.value = today;
+    }
+
+    function listDatesBetween(start, end) {
+      const dates = [];
+      const cursor = new Date(`${start}T00:00:00`);
+      const endDate = new Date(`${end}T00:00:00`);
+      while (cursor <= endDate) {
+        dates.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return dates;
+    }
+
+    async function loadMetasPorData(start, end) {
+      // Usa somente a coleção metas. Para cada data do relatório,
+      // escolhe a meta mais recente cuja vigência seja igual ou anterior ao dia.
+      if (!metasHistory.length) await loadMetasHistory();
+      const map = new Map();
+      listDatesBetween(start, end).forEach(dateISO => map.set(dateISO, getMetaConfigForDate(dateISO)));
+      return map;
+    }
+
+    function listenReport() {
+      if (unsubscribeReport) unsubscribeReport();
+      const start = reportStart.value;
+      const end = reportEnd.value;
+      if (!start || !end) return;
+
+      const qReport = query(collection(db, 'taloes'), where('dataEntradaMontagem', '>=', start), where('dataEntradaMontagem', '<=', end));
+      unsubscribeReport = onSnapshot(qReport, async (snapshot) => {
+        const taloes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const metasPorData = await loadMetasPorData(start, end);
+        reportRows = buildReportRowsFromTaloes(taloes, start, end, metasPorData);
+        renderReport(reportRows);
+      }, (error) => {
+        console.error('Erro ao buscar relatório:', error);
+        reportCards.innerHTML = `<div class="hint warning">Erro ao buscar relatório. Verifique permissão de leitura na coleção taloes.</div>`;
+      });
+    }
+
+    function buildReportRowsFromTaloes(taloes, start, end, metasPorData = new Map()) {
+      const rows = [];
+      const grouped = new Map();
+
+      taloes.forEach(t => {
+        const d = t.dataEntradaMontagem;
+        if (!d) return;
+        if (!grouped.has(d)) grouped.set(d, []);
+        grouped.get(d).push(t);
+      });
+
+      listDatesBetween(start, end).forEach(iso => {
+        const configDia = metasPorData.get(iso) || metasFromSavedOrDefault(DEFAULT_TRILHOS);
+        rows.push(applyTaloesToResumo(grouped.get(iso) || [], iso, configDia));
+      });
+      return rows;
+    }
+
+    function renderReport(rows) {
+      const validRows = rows.filter(r => cleanNumber(r.totalFabrica) > 0);
+      const days = validRows.length;
+      let totalPeriodo = 0;
+      const totalsByTrilho = {};
+      trilhosConfig.forEach(t => totalsByTrilho[t.key] = 0);
+
+      validRows.forEach(r => {
+        totalPeriodo += cleanNumber(r.totalFabrica);
+        trilhosConfig.forEach(t => totalsByTrilho[t.key] += cleanNumber(r.trilhos?.[t.key]?.total));
+      });
+
+      const bestKey = Object.keys(totalsByTrilho).sort((a, b) => totalsByTrilho[b] - totalsByTrilho[a])[0];
+      const bestConfig = getConfigByKey(bestKey) || {};
+      const mediaDia = days ? Math.round(totalPeriodo / days) : 0;
+      const melhorDia = [...validRows].sort((a, b) => cleanNumber(b.totalFabrica) - cleanNumber(a.totalFabrica))[0];
+
+      reportCards.innerHTML = `
+        <div class="mini-card">Total do período<strong>${fmt(totalPeriodo)}</strong></div>
+        <div class="mini-card">Média por dia<strong>${fmt(mediaDia)}</strong></div>
+        <div class="mini-card">Melhor trilho<strong>${bestConfig.supervisor || '-'}</strong><small>${fmt(totalsByTrilho[bestKey] || 0)} pares</small></div>
+        <div class="mini-card">Melhor dia<strong>${melhorDia ? formatDateBR(melhorDia.data) : '-'}</strong><small>${melhorDia ? fmt(melhorDia.totalFabrica) + ' pares' : 'Sem produção'}</small></div>
+      `;
+
+      const headerTrilhos = trilhosConfig.map(t => `<th>${t.supervisor}</th>`).join('');
+      const bodyRows = rows.map(r => {
+        const cols = trilhosConfig.map(t => {
+          const item = r.trilhos?.[t.key] || {};
+          const total = cleanNumber(item.total);
+          const metaDia = cleanNumber(item.metaDia || t.metaDia);
+          const cls = total >= metaDia && metaDia > 0 ? 'report-ok' : 'report-bad';
+          return `<td class="${cls}">${fmt(total)}</td>`;
+        }).join('');
+        const metaTotal = Object.values(r.trilhos || {}).reduce((sum, item) => sum + cleanNumber(item.metaDia), 0);
+        const totalCls = r.totalFabrica >= metaTotal && metaTotal > 0 ? 'report-ok' : 'report-bad';
+        return `<tr><td>${formatDateBR(r.data)}</td>${cols}<td>${fmt(r.totalManha || 0)}</td><td>${fmt(r.totalTarde || 0)}</td><td class="${totalCls}"><b>${fmt(r.totalFabrica || 0)}</b></td></tr>`;
+      }).join('');
+
+      reportTable.innerHTML = `
+        <thead><tr><th>Data</th>${headerTrilhos}<th>Manhã</th><th>Tarde</th><th>Total fábrica</th></tr></thead>
+        <tbody>${bodyRows || `<tr><td colspan="${trilhosConfig.length + 4}">Nenhum registro encontrado no período.</td></tr>`}</tbody>
+      `;
+    }
+
+    function exportReportCSV() {
+      if (!reportRows.length) {
+        alert('Não há dados no relatório para exportar.');
+        return;
+      }
+      const headers = ['Data', ...trilhosConfig.map(t => t.supervisor), 'Manhã', 'Tarde', 'Total fábrica'];
+      const lines = [headers.join(';')];
+      reportRows.forEach(r => {
+        const cols = [formatDateBR(r.data)];
+        trilhosConfig.forEach(t => cols.push(cleanNumber(r.trilhos?.[t.key]?.total || 0)));
+        cols.push(cleanNumber(r.totalManha || 0));
+        cols.push(cleanNumber(r.totalTarde || 0));
+        cols.push(cleanNumber(r.totalFabrica || 0));
+        lines.push(cols.join(';'));
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio_producao_${reportStart.value}_a_${reportEnd.value}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function changeDate(dateISO) {
+      selectedDateInput.value = dateISO;
+      listenTaloesDia();
+      listenTaloesMes();
+    }
+
+    async function boot(user) {
+      currentUserEmail = user.email;
+      const userDocRef = doc(db, 'Usuario', user.email);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        alert('Dados do usuário não encontrados. Faça login novamente.');
+        await signOut(auth);
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+      currentUserLevel = userData.nivelAcesso;
+      currentUserName = userData.Nome;
+
+      const pageAllowed = pages.find(p => p.href === 'controle.html' && p.levels.includes(currentUserLevel));
+      if (!pageAllowed) {
+        alert('Você não tem permissão para acessar esta página.');
+        await signOut(auth);
+        window.location.href = 'index.html';
+        return;
+      }
+
+      localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', String(currentUserLevel || ''));
+      localStorage.setItem('calcadosroma-65ac6:userName', currentUserName || '');
+      iniciarNavegacao(currentUserLevel, currentUserName);
+      selectedDateInput.value = todayISO();
+      defaultReportDates();
+      renderConfig();
+      await loadConfigOnce();
+      listenTaloesDia();
+      listenTaloesMes();
+      listenReport();
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      try {
+        await boot(user);
+      } catch (error) {
+        console.error('Erro ao iniciar controle de produção:', error);
+        syncStatus.textContent = 'Erro ao iniciar página';
+      }
+    });
+
+
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-detail-type]');
+      if (!target || target.closest('#modelosModal')) return;
+      openModelosModalFromElement(target);
+    });
+
+    closeModelosModal.addEventListener('click', closeModelosModalHandler);
+    modelosModal.addEventListener('click', (event) => {
+      if (event.target === modelosModal) closeModelosModalHandler();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !modelosModal.hidden) closeModelosModalHandler();
+    });
+
+    selectedDateInput.addEventListener('change', () => changeDate(selectedDateInput.value));
+    todayButton.addEventListener('click', () => changeDate(todayISO()));
+    reloadButton.addEventListener('click', () => changeDate(selectedDateInput.value || todayISO()));
+    saveConfigButton.addEventListener('click', saveConfig);
+    loadReportButton.addEventListener('click', listenReport);
+    exportCsvButton.addEventListener('click', exportReportCSV);
+  </script>
+</body>
+</html>

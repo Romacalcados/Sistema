@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preparação da Roma</title>
+<script src="firebase-config.js"></script><script src="roma-core.js"></script><script src="roma-modelos.js"></script><script src="roma-preparacao.js"></script><script src="navegacao.js"></script>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;background:#f3f4f6;color:#202936}main{max-width:1160px;margin:24px auto;padding:0 18px}h1{font-size:27px;margin:0 0 8px}h2{font-size:20px;margin-top:0}.card{background:white;border:1px solid #dce2e9;border-radius:12px;padding:22px;margin-bottom:18px;box-shadow:0 3px 14px #17253b08}.muted{color:#576579;line-height:1.6}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.step{padding:16px;border:1px solid #dce2e9;border-radius:9px}.step b{display:block;margin-bottom:8px}button,.link{display:inline-block;border:0;border-radius:7px;padding:11px 16px;text-decoration:none;cursor:pointer;font:600 14px Arial;color:#fff;background:#176cc5}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#e7edf5;color:#243850}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}label{display:block;line-height:1.6}#summary{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}.metric{min-width:170px;background:#edf4fc;padding:16px;border-radius:8px}.metric strong{display:block;font-size:26px;margin-bottom:4px}.table-wrap{overflow:auto;max-height:420px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #e2e7ee;padding:11px;text-align:left}th{background:#edf1f6;position:sticky;top:0}.notice{background:#fff7df;border:1px solid #f1d88a;border-radius:8px;padding:14px;line-height:1.6}#status{white-space:pre-wrap;line-height:1.7}details{margin-top:16px}li{margin:8px 0}main[hidden]{display:none}@media(max-width:760px){.steps{grid-template-columns:1fr}.card{padding:16px}h1{font-size:24px}}
+</style></head><body><main id="main" hidden>
+<section class="card"><h1>Preparação da Roma</h1><p class="muted">Use esta página ao trazer dados da versão antiga ou ao publicar os cadastros operacionais. Primeiro revise os usuários; depois confira e aplique a preparação.</p>
+<div class="steps"><div class="step"><b>1. Revisar os usuários</b><p class="muted">Escolha os novos perfis e confira o UID de cada conta. Os códigos antigos não são convertidos automaticamente.</p><a class="link secondary" href="cadastroUsuarios.html">Cadastro de Usuários</a></div><div class="step"><b>2. Conferir os modelos</b><p class="muted">Revise Cabedal, Forro, Tiras, Aviamentos, Palmilha e Sola no cadastro de cada modelo.</p><a class="link secondary" href="modelos.html">Abrir Modelos</a></div><div class="step"><b>3. Preparar os dados</b><p class="muted">Publique os cadastros operacionais e vincule os responsáveis antigos aos ateliês revisados.</p></div></div>
+</section>
+<section class="card"><h2>Análise antes da aplicação</h2><label><input type="checkbox" id="refreshPending"> Atualizar também os componentes dos talões ainda não iniciados com a composição atual do modelo.</label><p class="muted">Talões já iniciados mantêm sua composição. Talões antigos sem composição e já iniciados conservam os quatro componentes originais do Corte. Um responsável antigo só será vinculado se existir um único ateliê ativo com o mesmo nome no setor.</p><div class="actions"><button id="analyze">Analisar cadastros e talões</button><button id="apply" disabled>Aplicar preparação conferida</button></div><p id="status" role="status">Aguardando análise.</p><div id="summary"></div><div id="preview"></div><details id="issuesBox" hidden><summary id="issuesTitle">Pendências que exigem revisão</summary><ul id="issues"></ul></details></section>
+<section class="notice">O primeiro Admin deve ter nível <strong>09</strong> e permissões da versão <strong>2</strong>. Contas antigas 07 não se tornam Programação automaticamente: revise o perfil em Cadastro de Usuários. A aplicação abaixo não cria contas no Authentication, não muda níveis de acesso e não registra entradas ou saídas de produção.</section>
+</main><script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
+import{getAuth,onAuthStateChanged,signOut}from'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';
+import{getFirestore,doc,getDoc,collection,getDocs,runTransaction,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js';
+const app=initializeApp(window.FIREBASE_CONFIG),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
+let plan=null,busy=false;
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setBusy(value){busy=value;$('analyze').disabled=value;$('apply').disabled=value||!plan;$('refreshPending').disabled=value;}
+onAuthStateChanged(auth,async user=>{if(!user){location.replace('login.html');return;}try{const snap=await getDoc(doc(db,'Usuario',user.email));const profile=snap.exists()?snap.data():null;window.Roma.validateProfile(user,profile);window.Roma.requireWrite('usuarios');window.SistemaNavegacao.init({userLevel:'09',userName:profile.Nome,title:'Preparação da Roma',onLogout:async()=>{await signOut(auth);location.replace('login.html');}});$('main').hidden=false;}catch(e){alert(e.message);location.replace('index.html');}});
+$('refreshPending').addEventListener('change',()=>{plan=null;$('apply').disabled=true;$('status').textContent='Opção alterada. Faça uma nova análise.';});
+$('analyze').addEventListener('click',async()=>{if(busy)return;window.Roma.requireWrite('usuarios');setBusy(true);plan=null;$('status').textContent='Analisando usuários, modelos e talões…';try{
+ const [users,models,taloes]=await Promise.all(['Usuario','modelos','taloes'].map(name=>getDocs(collection(db,name)).then(s=>s.docs.map(d=>({id:d.id,data:d.data()})))));
+ plan=window.RomaPreparacao.plan({users,models,taloes,refreshPending:$('refreshPending').checked});
+ $('summary').innerHTML=[[plan.directories.length,'Ateliês revisados'],[plan.modelPlans.length,'Modelos para publicação'],[plan.talaoPlans.length,'Talões com ajustes'],[plan.issues.length,'Pendências']].map(([n,label])=>`<div class="metric"><strong>${n}</strong>${label}</div>`).join('');
+ $('preview').innerHTML='<div class="table-wrap"><table><thead><tr><th>Talão</th><th>Modelo</th><th>Alterações propostas</th></tr></thead><tbody>'+plan.talaoPlans.slice(0,150).map(t=>`<tr><td>${esc(t.data.numeroRemessa)}/${esc(t.data.numeroTalaoSequencial||t.id)}</td><td>${esc(t.data.linha)}.${esc(t.data.modelo)}</td><td>${esc(JSON.stringify(t.patch))}</td></tr>`).join('')+'</tbody></table></div>'+(plan.talaoPlans.length>150?'<p class="muted">A prévia mostra os primeiros 150 talões. O total indicado acima inclui todos os ajustes.</p>':'');
+ $('issuesBox').hidden=!plan.issues.length;$('issuesTitle').textContent=`${plan.issues.length} pendência(s) para revisão`;$('issues').innerHTML=plan.issues.slice(0,300).map(t=>`<li>${esc(t)}</li>`).join('');
+ $('status').textContent='Análise concluída. Confira a prévia. Itens sem correspondência de ateliê permanecem pendentes para o Corte.';
+}catch(e){plan=null;$('status').textContent='Erro na análise: '+e.message;}finally{setBusy(false);}});
+$('apply').addEventListener('click',async()=>{if(busy||!plan)return;window.Roma.requireWrite('usuarios');if(!confirm(`Aplicar a preparação de ${plan.directories.length} ateliês, ${plan.modelPlans.length} modelos e ${plan.talaoPlans.length} talões, conforme a análise?`))return;setBusy(true);let ok=0,skipped=0,upstreamFailed=false;const errors=[];const operations=[...plan.directories.map(x=>({type:'directory',item:x})),...plan.modelPlans.map(x=>({type:'model',item:x})),...plan.talaoPlans.map(x=>({type:'talao',item:x}))];
+for(const operation of operations){if(operation.type==='talao'&&upstreamFailed){skipped++;continue;}try{
+ await runTransaction(db,async tx=>{
+  const {type,item}=operation,collectionName=type==='directory'?'Usuario':type==='model'?'modelos':'taloes';
+  const ref=doc(db,collectionName,type==='directory'?item.profileId:item.id),snap=await tx.get(ref),before=type==='directory'?item.before:item.data;
+  if(!snap.exists()||window.RomaPreparacao.fingerprint(snap.data())!==window.RomaPreparacao.fingerprint(before))throw new Error('Cadastro alterado após a análise; analise novamente.');
+  if(type==='directory')tx.set(doc(db,'atelies',item.id),item.data);
+  else if(type==='model'){
+   const data={...snap.data(),componentes:window.Roma.normalizeComponents(snap.data())},projections=window.RomaModelos.projections(data,serverTimestamp());
+   tx.update(ref,{componentes:data.componentes});tx.set(doc(db,'modelosOperacionais',item.id),projections.operacional);tx.set(doc(db,'precosAtelier',item.id),projections.precos);
+  }else {
+   const dependencies=item.dependencies||{};
+   if(dependencies.model){
+    const source=await tx.get(doc(db,'modelos',dependencies.model.id));
+    if(!source.exists()||window.RomaPreparacao.fingerprint(source.data())!==window.RomaPreparacao.fingerprint(dependencies.model.data))throw new Error('Modelo alterado durante a preparação; analise novamente.');
+   }
+   for(const atelier of dependencies.ateliers||[]){
+    const [profile,directory]=await Promise.all([tx.get(doc(db,'Usuario',atelier.profileId)),tx.get(doc(db,'atelies',atelier.id))]);
+    if(!profile.exists()||!directory.exists()||window.RomaPreparacao.fingerprint(profile.data())!==window.RomaPreparacao.fingerprint(atelier.before)||window.RomaPreparacao.fingerprint(directory.data())!==window.RomaPreparacao.fingerprint(atelier.data))throw new Error('Ateliê alterado durante a preparação; analise novamente.');
+   }
+   tx.update(ref,item.patch);
+  }
+ });ok++;
+}catch(e){if(operation.type!=='talao')upstreamFailed=true;errors.push(`${operation.type}/${operation.item.id}: ${e.message}`);}
+$('status').textContent=`Preparando ${ok+errors.length+skipped}/${operations.length} itens… ${ok} aplicado(s), ${errors.length} falha(s).`;
+}
+plan=null;$('status').textContent=`Preparação concluída: ${ok} item(ns) aplicado(s), ${errors.length} falha(s).`+(skipped?`\n${skipped} talão(ões) não aplicado(s), pois houve alteração ou falha nos cadastros de origem.`:'')+(errors.length?'\nFaça uma nova análise para concluir os itens restantes.\n'+errors.slice(0,20).join('\n'):'\nConfira os responsáveis no Corte antes das primeiras leituras.');setBusy(false);});
+</script></body></html>

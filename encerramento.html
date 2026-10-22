@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fechamento de Etapas - Calçados Roma</title>
+  <style>
+    /* Estilos do arquivo relatoriomaster.css, adaptados para a página */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: #333;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .user-info {
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .user-info span {
+      display: block;
+      font-weight: bold;
+    }
+
+    nav {
+      background-color: #555;
+      padding: 10px 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      font-size: 0.8em;
+    }
+
+    nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+
+    nav ul li a:hover {
+      color: #ffd700;
+    }
+
+    .main-content {
+      padding: 20px;
+      flex-grow: 1;
+    }
+
+    .filters-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 0.9em;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .form-group.col-span-2 {
+      grid-column: span 2;
+    }
+
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .date-range-sep {
+      color: #666;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 5px;
+    }
+
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: normal;
+    }
+
+    .btn-clear {
+      background-color: #f44336;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .btn-clear:hover {
+      background-color: #d32f2f;
+    }
+
+    .total-pares-display {
+      background-color: #e3f2fd;
+      padding: 10px;
+      border-radius: 6px;
+      border-left: 5px solid #2196f3;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      background-color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table th,
+    table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 0.9em;
+    }
+
+    table th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+    }
+
+    table tbody tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      color: white;
+      font-weight: bold;
+    }
+
+    .status-pendente {
+      background-color: #fbc02d;
+    }
+    .status-aguardando-material {
+      background-color: #ff9800;
+    }
+    .status-cortando {
+      background-color: #03a9f4;
+    }
+    .status-cortado {
+      background-color: #4caf50;
+    }
+    .status-costurando {
+      background-color: #9c27b0;
+    }
+    .status-costurado {
+      background-color: #ff5722;
+    }
+    .status-distribuído {
+      background-color: #607d8b;
+    }
+    .status-talonado {
+      background-color: #795548;
+    }
+    .status-montado {
+      background-color: #3f51b5;
+    }
+    .status-finalizado {
+      background-color: #2196f3;
+    }
+
+    .action-buttons button {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.8em;
+      margin-right: 5px;
+    }
+
+    .edit-btn {
+      background-color: #2196f3;
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      position: relative;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+      color: #333;
+      text-align: center;
+    }
+
+    .modal-content .form-group {
+      margin-bottom: 10px;
+    }
+
+    .modal-content label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .modal-content input,
+    .modal-content select {
+      width: calc(100% - 20px);
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-buttons button {
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      border: none;
+    }
+
+    .modal-buttons .save-btn {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .modal-buttons .save-btn:hover {
+      background-color: #218838;
+    }
+
+    .modal-buttons .cancel-btn {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .modal-buttons .cancel-btn:hover {
+      background-color: #5a6268;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.9em;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #666;
+    }
+
+    .modal-message {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .modal-message.success {
+      color: green;
+    }
+
+    .modal-message.error {
+      color: red;
+    }
+
+    .row-Exportacao {
+      background-color: #fce4ec;
+    }
+    .row-Cliente-especial {
+      background-color: #e0f2f1;
+    }
+    .row-Mercado-Interno {
+      background-color: #e8f5e9;
+    }
+    .row-Estoque {
+      background-color: #e3f2fd;
+    }
+    .row-Amostra {
+      background-color: #fffde7;
+    }
+
+    /* Estilos específicos para a página de Fechamento de Etapas */
+    .action-buttons-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .action-buttons-group button {
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9em;
+      font-weight: bold;
+      border: 1px solid #ccc;
+      color: #fff;
+    }
+    .action-buttons-group .btn-corte {
+      background-color: #ff5722;
+    }
+    .action-buttons-group .btn-costura {
+      background-color: #9c27b0;
+    }
+    .action-buttons-group .btn-distribuicao {
+      background-color: #607d8b;
+    }
+    .action-buttons-group .btn-talonagem {
+      background-color: #795548;
+    }
+    .action-buttons-group .btn-montagem {
+      background-color: #3f51b5;
+    }
+
+    .action-buttons-group button:hover {
+      opacity: 0.8;
+    }
+
+    /* Ajuste para botões de ação na tabela */
+    .table-container .action-buttons button {
+      padding: 4px 8px;
+    }
+  </style>
+  <script src="navegacao.js"></script>
+</head>
+<body>
+<div class="main-content">
+    <div class="filters-container">
+      <div class="form-group col-span-2">
+        <label>Data de Corte:</label>
+        <div class="date-range">
+          <input type="date" id="filterDataCorteStart" placeholder="de" />
+          <span class="date-range-sep">até</span>
+          <input type="date" id="filterDataCorteEnd" placeholder="até" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="filterRemessa">Remessa:</label>
+        <input type="text" id="filterRemessa" placeholder="Número da Remessa" />
+      </div>
+      <div class="form-group">
+        <label for="filterTalao">Talão:</label>
+        <input type="text" id="filterTalao" placeholder="Número do Talão" />
+      </div>
+      <div class="form-group">
+        <label for="filterLinha">Linha:</label>
+        <input type="text" id="filterLinha" placeholder="Número da Linha" />
+      </div>
+      <div class="form-group">
+        <label for="filterModelo">Modelo:</label>
+        <input type="text" id="filterModelo" placeholder="Modelo" />
+      </div>
+      <div class="form-group">
+        <label for="filterCor">Cor:</label>
+        <input type="text" id="filterCor" placeholder="Cor do Sapato" />
+      </div>
+      <div class="form-group">
+        <label for="filterTipoCliente">Tipo de Cliente:</label>
+        <select id="filterTipoCliente">
+          </select>
+      </div>
+      <div class="form-group">
+        <label for="filterStatusGeral">Status Geral:</label>
+        <select id="filterStatusGeral">
+          </select>
+      </div>
+      <div class="form-group">
+        <label for="filterAtelieResponsavel">Ateliê Responsável:</label>
+        <select id="filterAtelieResponsavel">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div class="form-group col-span-2">
+        <label>Filtrar por local/status:</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" id="chkNoAtelier" /> No ateliê</label>
+          <label><input type="checkbox" id="chkNaFabrica" /> Na fábrica</label>
+          <label><input type="checkbox" id="chkMontado" /> Montado</label>
+        </div>
+      </div>
+      <div class="form-group" style="align-self: end">
+        <label style="visibility: hidden"> </label>
+        <button id="btnClearFilters" class="btn-clear">Limpar filtros</button>
+      </div>
+    </div>
+
+    <div class="action-buttons-group">
+      <button class="btn-corte" id="btnFecharCorte">Fechar Corte</button>
+      <button class="btn-costura" id="btnFecharCostura">Fechar Costura</button>
+      <button class="btn-distribuicao" id="btnFecharDistribuicao">Distribuição</button>
+      <button class="btn-talonagem" id="btnFecharTalonagem">Talonagem</button>
+      <button class="btn-montagem" id="btnFecharMontagem">Montagem</button>
+      <button class="btn-corte" id="btnStatusCorte">Status Corte</button>
+      <button class="btn-costura" id="btnStatusCostura">Status Costura</button>
+      
+    </div>
+
+    <div class="total-pares-display">
+      Total filtrado: <span id="totalPares">0 pares | 0 talões</span>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Data Corte</th>
+            <th>Remessa</th>
+            <th>Talão</th>
+            <th>Linha</th>
+            <th>Modelo</th>
+            <th>Cor</th>
+            <th>Tipo Cliente</th>
+            <th>Pares</th>
+            <th>Status Geral</th>
+            <th>Ateliê Responsável</th>
+            <th>Entrada Costura</th>
+            <th>Saída Costura</th>
+            <th>Distribuição</th>
+            <th>Talonagem</th>
+            <th>Montagem</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="taloesTableBody">
+          <tr>
+            <td colspan="16" style="text-align: center">Aguardando filtros…</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="editModal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close-btn" id="closeEditModal">&times;</button>
+      <h3>Editar Talão</h3>
+      <form id="editTalaoForm">
+        <input type="hidden" id="editTalaoId" />
+        <div class="form-group">
+          <label for="editNumeroRemessa">Remessa:</label>
+          <input type="text" id="editNumeroRemessa" />
+        </div>
+        <div class="form-group">
+          <label for="editNumeroTalaoSequencial">Talão:</label>
+          <input type="text" id="editNumeroTalaoSequencial" />
+        </div>
+        <div class="form-group">
+          <label for="editLinha">Linha:</label>
+          <input type="text" id="editLinha" />
+        </div>
+        <div class="form-group">
+          <label for="editModelo">Modelo:</label>
+          <input type="text" id="editModelo" />
+        </div>
+        <div class="form-group">
+          <label for="editCorSapato">Cor:</label>
+          <input type="text" id="editCorSapato" />
+        </div>
+        <div class="form-group">
+          <label for="editPares">Pares:</label>
+          <input type="number" id="editPares" />
+        </div>
+        <div class="form-group">
+          <label for="editTipoCliente">Tipo de Cliente:</label>
+          <select id="editTipoCliente">
+            <option value="Exportacao">Exportação</option>
+            <option value="Cliente especial">Cliente Especial</option>
+            <option value="Mercado Interno">Mercado Interno</option>
+            <option value="Estoque">Estoque</option>
+            <option value="Amostra">Amostra</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editStatusGeral">Status Geral:</label>
+          <select id="editStatusGeral">
+            <option value="Pendente">Pendente</option>
+            <option value="Aguardando Material">Aguardando Material</option>
+            <option value="Cortando">Cortando</option>
+            <option value="Cortado">Cortado</option>
+            <option value="Costurando">Costurando</option>
+            <option value="Costurado">Costurado</option>
+            <option value="Distribuído">Distribuído</option>
+            <option value="Talonado">Talonado</option>
+            <option value="Montado">Montado</option>
+            <option value="Finalizado">Finalizado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editAtelieResponsavel">Ateliê:</label>
+          <select id="editAtelieResponsavel">
+            <option value="">Nenhum</option>
+          </select>
+        </div>
+
+        <div class="modal-buttons">
+          <button type="submit" class="save-btn">Salvar</button>
+          <button type="button" class="cancel-btn" id="cancelEditModal">
+            Cancelar
+          </button>
+        </div>
+        <p id="editMessage" class="modal-message"></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="messageModal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close-btn" id="closeMessageModal">&times;</button>
+      <h3 id="messageModalTitle"></h3>
+      <p id="messageModalText"></p>
+      <div class="modal-buttons" id="messageModalButtons"></div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    /* ==== Firebase (compat) ==== */
+    const firebaseConfig = window.FIREBASE_CONFIG;
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    /* ==== Captura de elementos ==== */
+    const menuNav = document.getElementById('menuNav');
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const userNivelDisplay = document.getElementById('userNivelDisplay');
+    const logoutButton = document.getElementById('logoutButton');
+
+    // Botões de ação em massa
+    const btnFecharCorte = document.getElementById('btnFecharCorte');
+    const btnFecharCostura = document.getElementById('btnFecharCostura');
+    const btnFecharDistribuicao = document.getElementById('btnFecharDistribuicao');
+    const btnFecharTalonagem = document.getElementById('btnFecharTalonagem');
+    const btnFecharMontagem = document.getElementById('btnFecharMontagem');
+    const btnStatusCorte = document.getElementById('btnStatusCorte');
+    const btnStatusCostura = document.getElementById('btnStatusCostura');
+
+    // Intervalo de Data de Corte
+    const filterDataCorteStart = document.getElementById('filterDataCorteStart');
+    const filterDataCorteEnd = document.getElementById('filterDataCorteEnd');
+    const filterRemessa = document.getElementById('filterRemessa');
+    const filterTalao = document.getElementById('filterTalao');
+    const filterLinha = document.getElementById('filterLinha');
+    const filterModelo = document.getElementById('filterModelo');
+    const filterCor = document.getElementById('filterCor');
+    const filterTipoCliente = document.getElementById('filterTipoCliente');
+    const filterStatusGeral = document.getElementById('filterStatusGeral');
+    const filterAtelieResponsavel = document.getElementById('filterAtelieResponsavel');
+    const chkNoAtelier = document.getElementById('chkNoAtelier');
+    const chkNaFabrica = document.getElementById('chkNaFabrica');
+    const chkMontado = document.getElementById('chkMontado');
+    const btnClearFilters = document.getElementById('btnClearFilters');
+    const taloesTableBody = document.getElementById('taloesTableBody');
+    const totalParesDisplay = document.getElementById('totalPares');
+    const editModal = document.getElementById('editModal');
+    const closeEditModalBtn = document.getElementById('closeEditModal');
+    const cancelEditModalBtn = document.getElementById('cancelEditModal');
+    const editTalaoForm = document.getElementById('editTalaoForm');
+    const editTalaoId = document.getElementById('editTalaoId');
+    const editNumeroRemessa = document.getElementById('editNumeroRemessa');
+    const editNumeroTalaoSequencial = document.getElementById('editNumeroTalaoSequencial');
+    const editLinha = document.getElementById('editLinha');
+    const editModelo = document.getElementById('editModelo');
+    const editCorSapato = document.getElementById('editCorSapato');
+    const editPares = document.getElementById('editPares');
+    const editTipoCliente = document.getElementById('editTipoCliente');
+    const editStatusGeral = document.getElementById('editStatusGeral');
+    const editAtelieResponsavel = document.getElementById('editAtelieResponsavel');
+    const editMessage = document.getElementById('editMessage');
+    const messageModal = document.getElementById('messageModal');
+    const closeMessageModalBtn = document.getElementById('closeMessageModal');
+    const messageModalTitle = document.getElementById('messageModalTitle');
+    const messageModalText = document.getElementById('messageModalText');
+    const messageModalButtons = document.getElementById('messageModalButtons');
+
+    /* ==== Estado ==== */
+    let allTaloes = [];
+    let filteredTaloes = [];
+    let currentUserName = '';
+    const nivelNomes = window.Roma.ROLES;
+    const pages = window.SistemaNavegacao.pages;
+    const corTalaoMapping = {
+      'Exportacao': 'row-Exportacao',
+      'Cliente especial': 'row-Cliente-especial',
+      'Mercado Interno': 'row-Mercado-Interno',
+      'Estoque': 'row-Estoque',
+      'Amostra': 'row-Amostra'
+    };
+
+    /* ==== Funções de Utilidade ==== */
+    const addSafeListener = (el, evt, handler, name) => {
+      if (el) el.addEventListener(evt, handler);
+      else console.warn(`[FecharEtapas] Elemento não encontrado: #${name}`);
+    };
+    const normalize = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const hasAnyFilterActive = () => {
+      const start = filterDataCorteStart?.value;
+      const end = filterDataCorteEnd?.value;
+      const textVals = [filterRemessa?.value, filterTalao?.value, filterLinha?.value, filterModelo?.value, filterCor?.value];
+      const selectVals = [filterTipoCliente?.value, filterStatusGeral?.value, filterAtelieResponsavel?.value];
+      const check = chkNoAtelier?.checked || chkNaFabrica?.checked || chkMontado?.checked;
+      return Boolean((start && start.trim()) || (end && end.trim()) || textVals.some(v => v && v.trim()) || selectVals.some(v => v) || check);
+    };
+    const TIPO_CLIENTE_OPTIONS = ['Exportacao', 'Cliente especial', 'Mercado Interno', 'Estoque', 'Amostra'];
+    const STATUS_GERAL_OPTIONS = ['Pendente', 'Aguardando Material', 'Cortando', 'Cortado', 'Costurando', 'Costurado', 'Distribuído', 'Talonado', 'Montado', 'Finalizado'];
+    const getTodayDate = () => {
+      const date = new Date();
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    };
+
+    function ensureFilterOptions() {
+      if (filterTipoCliente && filterTipoCliente.options.length <= 1) {
+        filterTipoCliente.innerHTML = '<option value=\"\">Todos</option>' + TIPO_CLIENTE_OPTIONS.map(v => `<option value=\"${v}\">${v}</option>`).join('');
+      }
+      if (filterStatusGeral && filterStatusGeral.options.length <= 1) {
+        filterStatusGeral.innerHTML = '<option value=\"\">Todos</option>' + STATUS_GERAL_OPTIONS.map(v => `<option value=\"${v}\">${v}</option>`).join('');
+      }
+    }
+    function clearFilters() {
+      if (filterDataCorteStart) filterDataCorteStart.value = '';
+      if (filterDataCorteEnd) filterDataCorteEnd.value = '';
+      if (filterRemessa) filterRemessa.value = '';
+      if (filterTalao) filterTalao.value = '';
+      if (filterLinha) filterLinha.value = '';
+      if (filterModelo) filterModelo.value = '';
+      if (filterCor) filterCor.value = '';
+      if (filterTipoCliente) filterTipoCliente.value = '';
+      if (filterStatusGeral) filterStatusGeral.value = '';
+      if (filterAtelieResponsavel) filterAtelieResponsavel.value = '';
+      if (chkNoAtelier) chkNoAtelier.checked = false;
+      if (chkNaFabrica) chkNaFabrica.checked = false;
+      if (chkMontado) chkMontado.checked = false;
+      renderTable([]);
+      calculateTotalPares([]);
+    }
+    addSafeListener(btnClearFilters, 'click', clearFilters, 'btnClearFilters');
+
+    /* ==== Menu e Autenticação ==== */
+    function generateMenu(userLevel, userName) {
+      menuNav.innerHTML = '';
+      userNameDisplay.textContent = `Olá, ${userName || 'Usuário'}!`;
+      userNivelDisplay.textContent = `Setor: ${nivelNomes[userLevel] || ('Nível ' + userLevel)}`;
+      pages.forEach(page => {
+        if (page.levels.includes(userLevel)) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = page.href;
+          a.textContent = page.name;
+          li.appendChild(a);
+          menuNav.appendChild(li);
+        }
+      });
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          const snap = await db.collection('Usuario').doc(user.email).get();
+          if (!snap.exists) throw new Error('Usuário não encontrado');
+          const data = snap.data(); window.Roma.validateProfile(user,data); if(!window.Roma.canWrite("fechamento")){document.querySelectorAll(".action-buttons-group button").forEach(el=>el.disabled=true);}
+          currentUserName = data.Nome || 'Usuário';
+          const nivelAcesso = String(data.nivelAcesso || '');
+
+          localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+          localStorage.setItem('calcadosroma-65ac6:userName', currentUserName);
+
+          if (window.SistemaNavegacao && !window.SistemaNavegacao.podeAcessar(nivelAcesso, 'encerramento.html')) {
+            showMessageModal('Acesso Negado', 'Você não tem permissão para acessar esta página.', 'error', () => { window.location.href = 'index.html'; });
+            return;
+          }
+
+          window.SistemaNavegacao.init({
+            userLevel: nivelAcesso,
+            userName: currentUserName,
+            title: 'Controle de produção Calçados Roma',
+            onLogout: async () => {
+              await auth.signOut();
+              localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+              localStorage.removeItem('calcadosroma-65ac6:userName');
+              window.location.href = 'login.html';
+            }
+          });
+
+          ensureFilterOptions();
+          await loadAtelies();
+          listenToTaloes();
+        } catch (e) {
+          console.error(e);
+          showMessageModal('Erro de Autenticação', 'Faça login novamente.', 'error', async () => {
+            await auth.signOut();
+            window.location.href = 'login.html';
+          });
+        }
+      } else {
+        window.location.href = 'login.html';
+      }
+    });
+
+    logoutButton && logoutButton.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+        window.location.href = 'login.html';
+      } catch (e) {
+        console.error(e);
+        showMessageModal('Erro de Logout', 'Erro ao fazer logout. Tente novamente.', 'error');
+      }
+    });
+
+    /* ==== Carregar Ateliês ==== */
+    async function loadAtelies() {
+      try {
+        const qs = await db.collection('atelies').where('setor', '==', 'costura').get();
+        const nomes = qs.docs.map(d => d.data().nome).filter(Boolean).sort();
+        if (filterAtelieResponsavel) {
+          filterAtelieResponsavel.innerHTML = '<option value=\"\">Todos</option>';
+          nomes.forEach(n => {
+            const o = document.createElement('option');
+            o.value = n;
+            o.textContent = n;
+            filterAtelieResponsavel.appendChild(o);
+          });
+        }
+        if (editAtelieResponsavel) {
+          editAtelieResponsavel.innerHTML = '<option value=\"\">Nenhum</option>';
+          nomes.forEach(n => {
+            const o = document.createElement('option');
+            o.value = n;
+            o.textContent = n;
+            editAtelieResponsavel.appendChild(o);
+          });
+        }
+      } catch (err) {
+        console.error('Erro ao carregar ateliês:', err);
+      }
+    }
+
+    /* ==== Snapshot em tempo real ==== */
+    function listenToTaloes() {
+      db.collection('taloes').onSnapshot(
+        (snapshot) => {
+          allTaloes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          if (hasAnyFilterActive()) {
+            applyFilters();
+          } else {
+            renderTable([]);
+            calculateTotalPares([]);
+          }
+        },
+        (error) => {
+          console.error('Erro ao escutar talões:', error);
+          taloesTableBody.innerHTML = '<tr><td colspan=\"16\" style=\"text-align:center;color:red;\">Erro ao carregar talões.</td></tr>';
+        }
+      );
+    }
+
+    /* ==== Filtros + Ordenação ==== */
+    function applyFilters() {
+      let current = [...allTaloes];
+      const start = filterDataCorteStart?.value;
+      const end = filterDataCorteEnd?.value;
+      if (start || end) {
+        let a = start || '';
+        let b = end || '';
+        if (a && b && a > b) [a, b] = [b, a];
+        current = current.filter(t => {
+          const dc = t.dataCorte || '';
+          if (!dc) return false;
+          if (a && b) return dc >= a && dc <= b;
+          if (a) return dc >= a;
+          if (b) return dc <= b;
+          return true;
+        });
+      }
+      const remessa = normalize(filterRemessa?.value);
+      const talao = normalize(filterTalao?.value);
+      const linha = normalize(filterLinha?.value);
+      const modelo = normalize(filterModelo?.value);
+      const cor = normalize(filterCor?.value);
+      const tipoCliente = filterTipoCliente?.value;
+      const statusGeral = filterStatusGeral?.value;
+      const atelieResponsavelVal = filterAtelieResponsavel?.value;
+      if (remessa) current = current.filter(t => normalize(String(t.numeroRemessa)).includes(remessa));
+      if (talao) current = current.filter(t => normalize(String(t.numeroTalaoSequencial)).includes(talao));
+      if (linha) current = current.filter(t => normalize(String(t.linha)).includes(linha));
+      if (modelo) current = current.filter(t => normalize(String(t.modelo)).includes(modelo));
+      if (cor) current = current.filter(t => normalize(String(t.corSapato)).includes(cor));
+      if (tipoCliente) current = current.filter(t => normalize(t.tipoCliente) === normalize(tipoCliente));
+      if (statusGeral) current = current.filter(t => normalize(t.statusGeral) === normalize(statusGeral));
+      if (atelieResponsavelVal) current = current.filter(t => t.idAtelieResponsavel === atelieResponsavelVal);
+      const wantNoAtelier = chkNoAtelier?.checked;
+      const wantNaFabrica = chkNaFabrica?.checked;
+      const wantMontado = chkMontado?.checked;
+      if (wantNoAtelier || wantNaFabrica || wantMontado) {
+        current = current.filter(t => {
+          const hasDistrib = !!t.dataEntradaDistribuicao;
+          const hasTalon = !!t.dataEntradaTalonagem;
+          const hasMontagem = !!t.dataEntradaMontagem;
+          const isNoAtelier = !hasDistrib && !hasTalon && !hasMontagem;
+          const isNaFabrica = (hasDistrib || hasTalon) && !hasMontagem;
+          const isMontado = hasMontagem;
+          return (wantNoAtelier && isNoAtelier) || (wantNaFabrica && isNaFabrica) || (wantMontado && isMontado);
+        });
+      }
+      filteredTaloes = current;
+      filteredTaloes.sort((a, b) => {
+        if (a.dataCorte !== b.dataCorte) return (a.dataCorte || '').localeCompare(b.dataCorte || '');
+        if (a.numeroRemessa !== b.numeroRemessa) return String(a.numeroRemessa || '').localeCompare(String(b.numeroRemessa || ''));
+        const ta = parseInt(a.numeroTalaoSequencial) || 0;
+        const tb = parseInt(b.numeroTalaoSequencial) || 0;
+        return ta - tb;
+      });
+      renderTable(filteredTaloes);
+      calculateTotalPares(filteredTaloes);
+    }
+    [
+      [filterDataCorteStart, 'change', 'filterDataCorteStart'],
+      [filterDataCorteEnd, 'change', 'filterDataCorteEnd'],
+      [filterRemessa, 'input', 'filterRemessa'],
+      [filterTalao, 'input', 'filterTalao'],
+      [filterLinha, 'input', 'filterLinha'],
+      [filterModelo, 'input', 'filterModelo'],
+      [filterCor, 'input', 'filterCor'],
+      [filterTipoCliente, 'change', 'filterTipoCliente'],
+      [filterStatusGeral, 'change', 'filterStatusGeral'],
+      [filterAtelieResponsavel, 'change', 'filterAtelieResponsavel'],
+      [chkNoAtelier, 'change', 'chkNoAtelier'],
+      [chkNaFabrica, 'change', 'chkNaFabrica'],
+      [chkMontado, 'change', 'chkMontado'],
+    ].forEach(([el, evt, name]) => addSafeListener(el, evt, applyFilters, name));
+
+    /* ==== Totalizador ==== */
+    function calculateTotalPares(taloes) {
+      const totalPares = taloes.reduce((sum, t) => sum + (t.pares || 0), 0);
+      const totalTaloes = taloes.length;
+      totalParesDisplay.textContent = `${totalPares} pares | ${totalTaloes} talões`;
+    }
+
+    /* ==== Render da Tabela ==== */
+    function renderTable(taloes) {
+      taloesTableBody.innerHTML = '';
+      if (taloes.length === 0) {
+        taloesTableBody.innerHTML = '<tr><td colspan=\"16\" style=\"text-align:center;\">Aguardando filtros…</td></tr>';
+        return;
+      }
+      taloes.forEach(talao => {
+        const row = document.createElement('tr');
+        const rowColorClass = corTalaoMapping[talao.tipoCliente] || '';
+        if (rowColorClass) row.classList.add(rowColorClass);
+        const formatDate = (dateString) => {
+          if (!dateString) return '';
+          const [year, month, day] = String(dateString).split('-');
+          if (!year || !month || !day) return dateString;
+          return `${day}/${month}/${year}`;
+        };
+        const getStatusClass = (status) => status ? normalize(status).replace(/\s+/g, '-') : '';
+        row.innerHTML = `
+          <td>${formatDate(talao.dataCorte)}</td>
+          <td>${talao.numeroRemessa || ''}</td>
+          <td>${talao.numeroTalaoSequencial || ''}</td>
+          <td>${talao.linha || ''}</td>
+          <td>${talao.modelo || ''}</td>
+          <td>${talao.corSapato || ''}</td>
+          <td>${talao.tipoCliente || ''}</td>
+          <td style="text-align:right;">${talao.pares || 0}</td>
+          <td><span class="status-badge ${getStatusClass(talao.statusGeral)}">${talao.statusGeral || 'N/A'}</span></td>
+          <td>${talao.idAtelieResponsavel || ''}</td>
+          <td>${formatDate(talao.costuraDataInicio) || ''}</td>
+          <td>${formatDate(talao.dataSaidaCostura) || ''}</td>
+          <td>${formatDate(talao.dataEntradaDistribuicao) || ''}</td>
+          <td>${formatDate(talao.dataEntradaTalonagem) || ''}</td>
+          <td>${formatDate(talao.dataEntradaMontagem) || ''}</td>
+          <td class="action-buttons">
+            <button ${window.Roma.canWrite('fechamento')?'':'disabled'} class="edit-btn" data-id="${talao.id}">Editar</button>
+            <button ${window.Roma.canWrite('fechamento')?'':'disabled'} class="delete-btn" data-id="${talao.id}">Excluir</button>
+          </td>
+        `;
+        taloesTableBody.appendChild(row);
+      });
+      document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => openEditModal(e.target.dataset.id)));
+      document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => confirmDeleteTalao(e.target.dataset.id)));
+    }
+
+    /* ==== Modal de Edição (mantido) ==== */
+    function openEditModal(talaoId) {
+      if(!window.Roma.canWrite('fechamento'))return;
+      const talao = allTaloes.find(t => t.id === talaoId);
+      if (!talao) {
+        showMessageModal('Erro', 'Talão não encontrado para edição.', 'error');
+        return;
+      }
+      editTalaoId.value = talao.id;
+      editNumeroRemessa.value = talao.numeroRemessa || '';
+      editNumeroTalaoSequencial.value = talao.numeroTalaoSequencial || '';
+      editLinha.value = talao.linha || '';
+      editModelo.value = talao.modelo || '';
+      editCorSapato.value = talao.corSapato || '';
+      editPares.value = talao.pares || 0;
+      editTipoCliente.value = talao.tipoCliente || '';
+      editStatusGeral.value = talao.statusGeral || '';
+      editAtelieResponsavel.value = talao.idAtelieResponsavel || '';
+      editMessage.textContent = '';
+      editMessage.className = 'modal-message';
+      editModal.style.display = 'flex';
+    }
+    addSafeListener(closeEditModalBtn, 'click', () => editModal.style.display = 'none', 'closeEditModal');
+    addSafeListener(cancelEditModalBtn, 'click', () => editModal.style.display = 'none', 'cancelEditModal');
+    addSafeListener(editTalaoForm, 'submit', async (e) => {
+      e.preventDefault();
+      const talaoId = editTalaoId.value;
+      const updates = {
+        numeroRemessa: editNumeroRemessa.value,
+        numeroTalaoSequencial: editNumeroTalaoSequencial.value,
+        linha: editLinha.value,
+        modelo: editModelo.value,
+        corSapato: editCorSapato.value,
+        pares: parseInt(editPares.value) || 0,
+        tipoCliente: editTipoCliente.value,
+        statusGeral: editStatusGeral.value,
+        idAtelieResponsavel: editAtelieResponsavel.value || ''
+      };
+      try {
+        await db.collection('taloes').doc(talaoId).update(updates);
+        editMessage.textContent = 'Talão atualizado com sucesso!';
+        editMessage.classList.add('success');
+        setTimeout(() => editModal.style.display = 'none', 1200);
+      } catch (error) {
+        console.error('Erro ao atualizar talão:', error);
+        editMessage.textContent = `Erro ao atualizar: ${error.message}`;
+        editMessage.classList.add('error');
+      }
+    }, 'editTalaoForm');
+
+   /* ==== Funções de Ação em Massa ==== */
+async function performMassUpdate(updates) {
+      if(!window.Roma.canWrite('fechamento'))return;
+  if (filteredTaloes.length === 0) {
+    showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
+    return;
+  }
+  const confirmationMessage = `Tem certeza que deseja aplicar esta ação a ${filteredTaloes.length} talões filtrados?`;
+  showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
+    let successCount = 0;
+    const today = getTodayDate();
+    try {
+      for (const talao of filteredTaloes) {
+        const docRef = db.collection('taloes').doc(talao.id);
+        const updateData = {};
+        for (const key in updates) {
+          // Remover a verificação para sempre aplicar a atualização
+          updateData[key] = updates[key];
+        }
+        if (Object.keys(updateData).length > 0) {
+          await docRef.update(updateData);
+          successCount++;
+        }
+      }
+      showMessageModal('Sucesso', `${successCount} talões atualizados.`, 'success');
+    } catch (error) {
+      console.error('Erro na atualização em massa:', error);
+      showMessageModal('Erro', `Erro na atualização em massa: ${error.message}`, 'error');
+    }
+  });
+}
+
+// Botão Fechar Corte
+addSafeListener(btnFecharCorte, 'click', () => {
+  performMassUpdate({
+    statusCorte: 'Cortado',
+    aviamentoData: getTodayDate(),
+    cabedalData: getTodayDate(),
+    forroData: getTodayDate(),
+    tirasData: getTodayDate(),
+    aviamentoConcluido: true,
+    cabedalConcluido: true,
+    forroConcluido: true,
+    tirasConcluido: true
+  });
+}, 'btnFecharCorte');
+
+// Botão Fechar Costura
+addSafeListener(btnFecharCostura, 'click', () => {
+  if (filteredTaloes.length === 0) {
+    showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
+    return;
+  }
+  const confirmationMessage = `Tem certeza que deseja fechar a Costura para ${filteredTaloes.length} talões filtrados? Apenas talões **sem data de saída** serão atualizados.`;
+
+  showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
+    let successCount = 0;
+    const today = getTodayDate();
+    try {
+      for (const talao of filteredTaloes) {
+        // Checa se a data de Saída da Costura está vazia
+        if (!talao.dataSaidaCostura) {
+          const docRef = db.collection('taloes').doc(talao.id);
+          const updateData = {
+            dataSaidaCostura: today,
+            statusCostura: 'Finalizado',
+            costuraDataInicio: today // Pode ser um campo redundante, mas mantido.
+          };
+          await docRef.update(updateData);
+          successCount++;
+        }
+      }
+      showMessageModal('Sucesso', `${successCount} talões atualizados (Saída Costura registrada).`, 'success');
+    } catch (error) {
+      console.error('Erro na atualização em massa da Costura:', error);
+      showMessageModal('Erro', `Erro na atualização da Costura: ${error.message}`, 'error');
+    }
+  });
+}, 'btnFecharCostura');
+
+// Botão Distribuição
+addSafeListener(btnFecharDistribuicao, 'click', () => {
+  if (filteredTaloes.length === 0) {
+    showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
+    return;
+  }
+  const confirmationMessage = `Tem certeza que deseja fechar a Distribuição para ${filteredTaloes.length} talões filtrados? Apenas talões **sem data de entrada** serão atualizados.`;
+
+  showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
+    let successCount = 0;
+    const today = getTodayDate();
+    try {
+      for (const talao of filteredTaloes) {
+        // Checa se a data de Entrada na Distribuição está vazia
+        if (!talao.dataEntradaDistribuicao) {
+          const docRef = db.collection('taloes').doc(talao.id);
+          const updateData = {
+            dataEntradaDistribuicao: today,
+            statusCostura: 'Finalizado' // Mantém a atualização do status
+          };
+          await docRef.update(updateData);
+          successCount++;
+        }
+      }
+      showMessageModal('Sucesso', `${successCount} talões atualizados (Entrada Distribuição registrada).`, 'success');
+    } catch (error) {
+      console.error('Erro na atualização em massa da Distribuição:', error);
+      showMessageModal('Erro', `Erro na atualização da Distribuição: ${error.message}`, 'error');
+    }
+  });
+}, 'btnFecharDistribuicao');
+
+// Botão Talonagem
+addSafeListener(btnFecharTalonagem, 'click', () => {
+  if (filteredTaloes.length === 0) {
+    showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
+    return;
+  }
+  const confirmationMessage = `Tem certeza que deseja fechar a Talonagem para ${filteredTaloes.length} talões filtrados? Apenas talões **sem data de entrada** serão atualizados.`;
+
+  showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
+    let successCount = 0;
+    const today = getTodayDate();
+    try {
+      for (const talao of filteredTaloes) {
+        // Checa se a data de Entrada na Talonagem está vazia
+        if (!talao.dataEntradaTalonagem) {
+          const docRef = db.collection('taloes').doc(talao.id);
+          const updateData = {
+            dataEntradaTalonagem: today
+          };
+          await docRef.update(updateData);
+          successCount++;
+        }
+      }
+      showMessageModal('Sucesso', `${successCount} talões atualizados (Entrada Talonagem registrada).`, 'success');
+    } catch (error) {
+      console.error('Erro na atualização em massa da Talonagem:', error);
+      showMessageModal('Erro', `Erro na atualização da Talonagem: ${error.message}`, 'error');
+    }
+  });
+}, 'btnFecharTalonagem');
+
+// Botão Montagem
+addSafeListener(btnFecharMontagem, 'click', () => {
+  if (filteredTaloes.length === 0) {
+    showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
+    return;
+  }
+  const confirmationMessage = `Tem certeza que deseja fechar a Montagem para ${filteredTaloes.length} talões filtrados? Apenas talões **sem data de montagem** serão atualizados.`;
+  
+  showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
+    let successCount = 0;
+    const today = getTodayDate();
+    try {
+      // Itera APENAS sobre os talões filtrados
+      for (const talao of filteredTaloes) {
+        // ** VERIFICAÇÃO CONDICIONAL **
+        // Se o talão NÃO tiver dataEntradaMontagem (é nulo ou vazio)
+        if (!talao.dataEntradaMontagem) {
+          const docRef = db.collection('taloes').doc(talao.id);
+          const updateData = {
+            dataEntradaMontagem: today, // Seta a data de hoje
+            statusGeral: 'Montado'      // Garante que o status é 'Montado'
+          };
+          await docRef.update(updateData);
+          successCount++;
+        }
+      }
+      showMessageModal('Sucesso', `${successCount} talões atualizados (Montagem registrada).`, 'success');
+    } catch (error) {
+      console.error('Erro na atualização em massa da Montagem:', error);
+      showMessageModal('Erro', `Erro na atualização da Montagem: ${error.message}`, 'error');
+    }
+  });
+}, 'btnFecharMontagem');
+
+// Adicione os novos listeners
+// Botão Status Corte
+addSafeListener(btnStatusCorte, 'click', () => {
+  performMassUpdate({
+    statusCorte: 'Cortado'
+  });
+}, 'btnStatusCorte');
+
+// Botão Status Costura
+addSafeListener(btnStatusCostura, 'click', () => {
+  performMassUpdate({
+    statusCostura: 'Finalizado'
+  });
+}, 'btnStatusCostura');
+
+
+    /* ==== Modal Mensagens (mantido) ==== */
+    function showMessageModal(title, text, type, confirmCallback = null, cancelCallback = null) {
+      messageModalTitle.textContent = title;
+      messageModalText.textContent = text;
+      messageModalButtons.innerHTML = '';
+      const okButton = document.createElement('button');
+      okButton.textContent = (type === 'confirm') ? 'Sim' : 'OK';
+      okButton.classList.add('save-btn');
+      okButton.addEventListener('click', () => {
+        messageModal.style.display = 'none';
+        if (confirmCallback && type === 'confirm') confirmCallback();
+      });
+      messageModalButtons.appendChild(okButton);
+      if (type === 'confirm') {
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = 'Não';
+        cancelButton.classList.add('cancel-btn');
+        cancelButton.addEventListener('click', () => {
+          messageModal.style.display = 'none';
+          if (cancelCallback) cancelCallback();
+        });
+        messageModalButtons.appendChild(cancelButton);
+      }
+      closeMessageModalBtn && (closeMessageModalBtn.onclick = () => {
+        messageModal.style.display = 'none';
+        if (type === 'confirm' && cancelCallback) cancelCallback();
+      });
+      messageModal.style.display = 'flex';
+    }
+
+    // A função confirmDeleteTalao foi removida, pois não é utilizada nessa página.
+    function confirmDeleteTalao(talaoId) {
+      if(!window.Roma.canWrite('fechamento'))return;
+      showMessageModal('Atenção', 'A função de exclusão de talões não está habilitada nesta página.', 'error');
+    }
+  </script>
+</body>
+</html>

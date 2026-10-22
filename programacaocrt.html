@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relatório Corte - Calçados Roma</title>
+  <style>
+    :root{
+      --bg:#f4f4f4; --ink:#333; --ink-2:#555; --card:#fff; --muted:#777;
+      --pri:#007bff; --pri-700:#0056b3; --danger:#dc3545; --danger-700:#c82333;
+      --bd:#ddd; --chip:#f0f0f0; --shadow:0 4px 14px rgba(0,0,0,.08);
+      --exp:#e8f3ff; --exp-head:#cfe4ff;
+      --esp:#ffe8f3; --esp-head:#ffd3e7;
+      --int:#ffffff; --int-head:#f4f4f4;
+      --est:#fff8d9; --est-head:#ffef9a;
+      --amo:#ebffe8; --amo-head:#c9f7c1;
+      --atr:#fff0f0; --atr-head:#ffd7d7;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;min-height:100vh;display:flex;flex-direction:column;color:var(--ink)}
+    header{background:#333;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,.2);gap:12px}
+    header h1{margin:0;font-size:22px}
+    .header-actions{display:flex;align-items:center;gap:10px}
+    .user-info{font-size:13px;text-align:right}
+    .user-info span{display:block;font-weight:700}
+    .btn{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;font-size:.95em;transition:background .2s,transform .02s;display:inline-flex;gap:.5rem;align-items:center}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:var(--pri);color:#fff}
+    .btn-primary:hover{background:var(--pri-700)}
+    .btn-secondary{background:#e9ecef;color:#111}
+    .btn-secondary:hover{background:#dde2e6}
+
+    .main-content{flex:1;padding:18px;display:flex;flex-direction:column;align-items:center;gap:16px}
+    .toolbar,.container{background:var(--card);padding:16px;border-radius:14px;box-shadow:var(--shadow);width:100%;max-width:1780px;overflow:visible}
+    .toolbar-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .toolbar h2{margin:0;font-size:1.8rem}
+    .toolbar p{margin:6px 0 0;color:var(--ink-2)}
+    .refresh-row{display:flex;justify-content:flex-end;margin-top:14px}
+
+    .filters-panel{margin-top:14px;border:1px solid #e8e8e8;border-radius:12px;padding:14px;background:#fafafa;display:flex;flex-direction:column;gap:12px}
+    .filters-grid{display:grid;grid-template-columns:1.1fr 1.1fr .9fr 1fr;gap:12px;align-items:start}
+    .filter-card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px}
+    .filter-title{font-weight:700;margin-bottom:10px}
+    .filter-options{display:grid;grid-template-columns:1fr;gap:8px}
+    .filter-options label{display:flex;align-items:center;gap:8px;font-size:.92em;cursor:pointer;padding:4px 0}
+    .date-range{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:320px}
+    .date-range label{display:flex;flex-direction:column;gap:6px;font-size:.92em;font-weight:700}
+    .date-range input{padding:8px 10px;border:1px solid var(--bd);border-radius:8px;font-size:.9em;height:38px}
+    .filter-select{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;font-size:.92em;background:#fff;margin-bottom:10px}
+    .atelier-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .filters-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .filters-summary{font-size:.92em;color:var(--ink-2)}
+
+    .status-line{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .status-badge{background:var(--chip);border:1px solid var(--bd);border-radius:999px;padding:8px 12px;font-size:.9em}
+
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:16px;align-items:start}
+    .summary-card{background:var(--card);border:1px solid var(--bd);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:340px;overflow:visible}
+    .summary-card.atraso .card-header{background:linear-gradient(180deg,var(--atr-head),#ffeaea)}
+    .summary-card.amostra .card-header{background:linear-gradient(180deg,var(--amo-head),#e6ffe1)}
+    .summary-card.semana .card-header{background:linear-gradient(180deg,#dbeeff,#cfe7ff)}
+    .summary-card.proxima .card-header{background:linear-gradient(180deg,#dbeeff,#cfe7ff)}
+    .card-header{padding:14px 16px;border-bottom:1px solid #ececec;background:linear-gradient(180deg,#fafafa,#f3f3f3)}
+    .card-title{margin:0 0 4px;font-size:1.15rem}
+    .card-subtitle{margin:0;color:var(--ink-2);font-size:.9em}
+    .card-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .meta-chip{background:#fff;border:1px solid var(--bd);border-radius:999px;padding:5px 10px;font-size:.82em}
+    .card-body{padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow:visible}
+
+    .totals-box{border:1px dashed #cfcfcf;border-radius:12px;padding:12px;background:#fafafa}
+    .totals-title{font-weight:700;margin:0 0 8px}
+    .totals-line{font-size:.93em;margin:4px 0}
+    .total-geral{margin-top:10px;font-weight:700;color:var(--pri-700)}
+
+    .remessa-block{border:1px solid #ececec;border-radius:14px;overflow:hidden}
+    .tipo-exportacao{background:var(--exp);border-color:#b8d5ff}
+    .tipo-exportacao .remessa-head{background:var(--exp-head)}
+    .tipo-cliente-especial{background:var(--esp);border-color:#f8bfd7}
+    .tipo-cliente-especial .remessa-head{background:var(--esp-head)}
+    .tipo-mercado-interno{background:var(--int);border-color:#dfdfdf}
+    .tipo-mercado-interno .remessa-head{background:var(--int-head)}
+    .tipo-estoque{background:var(--est);border-color:#f0da76}
+    .tipo-estoque .remessa-head{background:var(--est-head)}
+    .tipo-amostra{background:var(--amo);border-color:#a6df98}
+    .tipo-amostra .remessa-head{background:var(--amo-head)}
+
+    .remessa-head{padding:12px 14px;font-weight:700;color:#1f1f1f;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+    .remessa-body{padding:10px 12px}
+    .remessa-sub{font-size:.83em;color:#555;font-weight:600}
+
+    .remessa-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .btn-close-cut{background:#1f6f43;color:#fff;border:none;border-radius:8px;padding:7px 10px;font-size:.82em;font-weight:700;cursor:pointer;min-width:92px;text-align:center}
+    .btn-close-cut:hover{background:#185a36}
+    .btn-close-cut.done{background:#169846;min-width:42px;padding:7px 12px}
+    .btn-close-cut.done:hover{background:#169846}
+
+
+    .linha-head,.talhao-row{display:grid;grid-template-columns:130px 1fr 38px 38px 38px 38px;gap:8px;align-items:center}
+    .linha-head{padding:4px 6px 8px 6px;border-bottom:1px dashed rgba(0,0,0,.12);font-weight:700;color:#333;font-size:.9em}
+    .talhao-row{padding:6px;border-bottom:1px dashed rgba(0,0,0,.08)}
+    .talhao-row:last-child{border-bottom:none}
+    .atelier-col{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+    .desc-col{min-width:0}
+    .desc-col strong{font-size:1em}
+    .desc-col span{color:#444}
+    .status-col{text-align:center;font-weight:700;font-size:1.25rem;line-height:1}
+    .ok{color:#169846}.no{color:#d93025}
+    .empty-state{padding:30px 10px;text-align:center;color:var(--muted)}
+    .loading{padding:30px 10px;text-align:center;color:var(--ink-2)}
+    .footer-note{font-size:.9em;color:var(--ink-2)}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:9999}
+    .modal-card{background:#fff;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.25);width:min(920px,96vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+    .modal-header{padding:14px 18px;border-bottom:1px solid #ececec;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:#fafafa}
+    .modal-title{margin:0;font-size:1.2rem}
+    .modal-subtitle{margin:4px 0 0;color:var(--ink-2);font-size:.9em}
+    .modal-actions{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .btn-whatsapp{background:#1f8f4d;color:#fff}
+    .btn-whatsapp:hover{background:#18733d}
+    .btn-whatsapp:disabled{background:#9fcfaf;cursor:not-allowed}
+    .whatsapp-copy-box{border:1px dashed #9fd1b3;background:#f3fff7;border-radius:12px;padding:12px;margin:0 0 14px}
+    .whatsapp-copy-title{font-weight:700;margin-bottom:8px;color:#145f32}
+    .whatsapp-copy-preview{margin:0;white-space:pre-wrap;font-family:Arial,Helvetica,sans-serif;font-size:.95em;line-height:1.45;max-height:280px;overflow:auto}
+    .only-copy-box{margin:0}
+    .only-copy-box .whatsapp-copy-preview{max-height:62vh}
+    .modal-close{border:none;background:#e9ecef;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:1.2rem;line-height:1}
+    .modal-close:hover{background:#dde2e6}
+    .modal-body{padding:16px 18px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+    .atelier-modal-summary{background:#f8f9fa;border:1px solid #e1e1e1;border-radius:12px;padding:10px 12px;font-weight:700;color:#333}
+    .atelier-remessa{border:1px solid #e6e6e6;border-radius:14px;overflow:hidden;background:#fff}
+    .atelier-remessa-title{font-weight:700;padding:11px 13px;background:#f3f3f3;border-bottom:1px solid #e6e6e6}
+    .atelier-talhao-list{padding:8px 13px 12px;display:flex;flex-direction:column;gap:6px}
+    .atelier-talhao-line{font-size:.96em;color:#222;line-height:1.35}
+    .modal-overlay[hidden]{display:none}
+    body.modal-open{overflow:hidden}
+
+    @media (max-width:1180px){
+      .cards-grid{grid-template-columns:1fr}
+      .filters-grid{grid-template-columns:1fr}
+    }
+
+    @media (max-width:880px){
+      header{align-items:flex-start}
+      .header-actions{width:100%;justify-content:flex-end}
+      .toolbar h2{font-size:1.45rem}
+      .linha-head,.talhao-row{grid-template-columns:96px 1fr 28px 28px 28px 28px;font-size:.88em;gap:6px}
+      .status-col{font-size:1.1rem}
+    }
+  </style>
+  <script src="navegacao.js"></script>
+</head>
+<body>
+<div class="main-content">
+    <section class="toolbar">
+      <div class="toolbar-top">
+        <div>
+          <h2>Relatório Corte</h2>
+          <p>Mostra somente talões com pendência no corte ou sem entrada no ateliê.</p>
+        </div>
+      </div>
+      <div class="status-line">
+        <div class="status-badge">Setor logado: <strong id="setorBadge">...</strong></div>
+        <div class="status-badge">Última atualização: <strong id="lastUpdateBadge">-</strong></div>
+        <div class="status-badge">Fechamento da semana: <strong id="fechamentoBadge">-</strong></div>
+      </div>
+
+      <div class="filters-panel">
+        <div class="filters-grid">
+          <div class="filter-card">
+            <div class="filter-title">Tipo de cliente</div>
+            <div class="filter-options">
+              <label><input type="checkbox" class="tipo-filter" value="Exportacao"> Exportação</label>
+              <label><input type="checkbox" class="tipo-filter" value="Cliente especial"> Cliente especial</label>
+              <label><input type="checkbox" class="tipo-filter" value="Mercado interno"> Mercado interno</label>
+              <label><input type="checkbox" class="tipo-filter" value="Estoque"> Estoque</label>
+              <label><input type="checkbox" class="tipo-filter" value="Amostra"> Amostra</label>
+            </div>
+          </div>
+
+          <div class="filter-card">
+            <div class="filter-title">Mostrar somente pendências abertas em</div>
+            <div class="filter-options">
+              <label><input type="checkbox" class="pendencia-filter" value="cabedal"> Cabedal</label>
+              <label><input type="checkbox" class="pendencia-filter" value="forro"> Forro</label>
+              <label><input type="checkbox" class="pendencia-filter" value="tiras"> Tiras</label>
+              <label><input type="checkbox" class="pendencia-filter" value="aviamento"> Aviamentos</label>
+              <label><input type="checkbox" class="pendencia-filter" value="atelier"> Atelier</label>
+            </div>
+          </div>
+
+          <div class="filter-card" style="display:flex;flex-direction:column;justify-content:flex-start;">
+            <div class="filter-title">Data de corte</div>
+            <div class="date-range">
+              <label>De<input type="date" id="filtroDataDe"></label>
+              <label>Até<input type="date" id="filtroDataAte"></label>
+            </div>
+          </div>
+
+          <div class="filter-card" style="display:flex;flex-direction:column;justify-content:flex-start;">
+            <div class="filter-title">Atelier</div>
+            <select id="filtroAtelier" class="filter-select">
+              <option value="">Todos os ateliês</option>
+            </select>
+            <div class="atelier-actions">
+              <button id="openAtelierModalButton" class="btn btn-primary" type="button">Ver em aberto do atelier</button>
+              <button id="copyAtelierDirectButton" class="btn btn-whatsapp" type="button">Copiar WhatsApp</button>
+            </div>
+          </div>
+        </div>
+        <div class="filters-actions">
+          <div class="filters-summary" id="filtersSummary">Sem filtros ativos.</div>
+          <button id="clearFiltersButton" class="btn btn-secondary" type="button">Limpar filtros</button>
+        </div>
+      </div>
+
+      <div class="refresh-row">
+        <button id="refreshButton" class="btn btn-primary" type="button">Atualizar</button>
+      </div>
+    </section>
+
+    <section class="container">
+      <div id="cardsGrid" class="cards-grid">
+        <article class="summary-card amostra" id="articleAmostra">
+          <div class="card-header">
+            <h3 class="card-title">Amostra</h3>
+            <p class="card-subtitle">Lista todas as amostras em aberto, ignorando a data.</p>
+            <div class="card-meta"><span class="meta-chip" id="metaAmostra">Carregando...</span></div>
+          </div>
+          <div class="card-body" id="cardAmostra"><div class="loading">Carregando...</div></div>
+        </article>
+
+        <article class="summary-card atraso" id="articleAtraso">
+          <div class="card-header">
+            <h3 class="card-title" style="color:#dc3545;">Corte em atraso</h3>
+            <p class="card-subtitle">Tudo o que for menor que o corte da semana e ainda estiver pendente.</p>
+            <div class="card-meta"><span class="meta-chip" id="metaAtraso">Carregando...</span></div>
+          </div>
+          <div class="card-body" id="cardAtraso"><div class="loading">Carregando...</div></div>
+        </article>
+
+        <article class="summary-card semana" id="articleSemana">
+          <div class="card-header">
+            <h3 class="card-title" id="titleSemana">Corte da semana</h3>
+            <p class="card-subtitle">Cortes que precisam estar fechados até a próxima quarta.</p>
+            <div class="card-meta"><span class="meta-chip" id="metaSemana">Carregando...</span></div>
+          </div>
+          <div class="card-body" id="cardSemana"><div class="loading">Carregando...</div></div>
+        </article>
+
+        <article class="summary-card proxima" id="articleProxima" style="display:none;">
+          <div class="card-header">
+            <h3 class="card-title" id="titleProxima">Corte para próxima semana</h3>
+            <p class="card-subtitle">Só aparece na terça e quarta para antecipar o próximo fechamento.</p>
+            <div class="card-meta"><span class="meta-chip" id="metaProxima">Carregando...</span></div>
+          </div>
+          <div class="card-body" id="cardProxima"><div class="loading">Carregando...</div></div>
+        </article>
+      </div>
+    </section>
+
+    <div class="footer-note">Pendência de corte: falta de <strong>cabedalData</strong>, <strong>forroData</strong>, <strong>tirasData</strong>, <strong>aviamentoData</strong> ou ausência de <strong>costuraDataInicio</strong>.</div>
+  </div>
+
+  <div id="atelierModal" class="modal-overlay" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="atelierModalTitle">
+      <div class="modal-header">
+        <div>
+          <h3 id="atelierModalTitle" class="modal-title">Atelier</h3>
+          <p id="atelierModalSubtitle" class="modal-subtitle">Corte em atraso e corte da semana</p>
+        </div>
+        <div class="modal-actions">
+          <button id="copyAtelierWhatsAppButton" class="btn btn-whatsapp" type="button">Copiar para WhatsApp</button>
+          <button id="closeAtelierModalButton" class="modal-close" type="button" aria-label="Fechar">×</button>
+        </div>
+      </div>
+      <div id="atelierModalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+
+  <script type="module">
+    const firebaseConfig = window.FIREBASE_CONFIG;
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, query, getDocs, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const refreshButton = document.getElementById('refreshButton');
+    const setorBadge = document.getElementById('setorBadge');
+    const lastUpdateBadge = document.getElementById('lastUpdateBadge');
+    const fechamentoBadge = document.getElementById('fechamentoBadge');
+
+    const cardAmostra = document.getElementById('cardAmostra');
+    const cardAtraso = document.getElementById('cardAtraso');
+    const cardSemana = document.getElementById('cardSemana');
+    const cardProxima = document.getElementById('cardProxima');
+    const metaAmostra = document.getElementById('metaAmostra');
+    const metaAtraso = document.getElementById('metaAtraso');
+    const metaSemana = document.getElementById('metaSemana');
+    const metaProxima = document.getElementById('metaProxima');
+    const articleProxima = document.getElementById('articleProxima');
+    const titleSemana = document.getElementById('titleSemana');
+    const titleProxima = document.getElementById('titleProxima');
+
+    const filtroDataDe = document.getElementById('filtroDataDe');
+    const filtroDataAte = document.getElementById('filtroDataAte');
+    const filtroAtelier = document.getElementById('filtroAtelier');
+    const openAtelierModalButton = document.getElementById('openAtelierModalButton');
+    const copyAtelierDirectButton = document.getElementById('copyAtelierDirectButton');
+    const clearFiltersButton = document.getElementById('clearFiltersButton');
+    const filtersSummary = document.getElementById('filtersSummary');
+    const tipoFilterInputs = Array.from(document.querySelectorAll('.tipo-filter'));
+    const pendenciaFilterInputs = Array.from(document.querySelectorAll('.pendencia-filter'));
+    const atelierModal = document.getElementById('atelierModal');
+    const atelierModalTitle = document.getElementById('atelierModalTitle');
+    const atelierModalSubtitle = document.getElementById('atelierModalSubtitle');
+    const atelierModalBody = document.getElementById('atelierModalBody');
+    const closeAtelierModalButton = document.getElementById('closeAtelierModalButton');
+    const copyAtelierWhatsAppButton = document.getElementById('copyAtelierWhatsAppButton');
+
+
+    let currentUserData = null;
+    let taloes = [];
+    let atelierWhatsAppText = '';
+
+
+    function getActiveFilters() {
+      return {
+        tipos: tipoFilterInputs.filter(i => i.checked).map(i => i.value),
+        pendencias: pendenciaFilterInputs.filter(i => i.checked).map(i => i.value),
+        dataDe: filtroDataDe.value || '',
+        dataAte: filtroDataAte.value || '',
+        atelier: filtroAtelier.value || ''
+      };
+    }
+
+    function matchesPendenciaSelecionada(t, pendencias) {
+      if (!pendencias.length) return true;
+      const checks = {
+        cabedal: !hasDate(t.cabedalData),
+        forro: !hasDate(t.forroData),
+        tiras: !hasDate(t.tirasData),
+        aviamento: !hasDate(t.aviamentoData),
+        atelier: !hasEntradaAtelier(t)
+      };
+      return pendencias.some(p => checks[p]);
+    }
+
+    function applyGlobalFilters(lista) {
+      const filtros = getActiveFilters();
+      return lista.filter(t => {
+        const tipo = normalizeTipoCliente(t.tipoCliente);
+        const dataCorte = toISODateOnly(t.dataCorte);
+        const atelier = getAtelierResponsavel(t);
+
+        if (filtros.tipos.length && !filtros.tipos.includes(tipo)) return false;
+        if (filtros.dataDe && (!dataCorte || dataCorte < filtros.dataDe)) return false;
+        if (filtros.dataAte && (!dataCorte || dataCorte > filtros.dataAte)) return false;
+        if (filtros.atelier && atelier !== filtros.atelier) return false;
+        if (!matchesPendenciaSelecionada(t, filtros.pendencias)) return false;
+        return true;
+      });
+    }
+
+    function updateFiltersSummary() {
+      const filtros = getActiveFilters();
+      const partes = [];
+      if (filtros.tipos.length) partes.push(`Tipo: ${filtros.tipos.join(', ')}`);
+      if (filtros.pendencias.length) partes.push(`Pendências: ${filtros.pendencias.join(', ')}`);
+      if (filtros.dataDe || filtros.dataAte) partes.push(`Corte: ${filtros.dataDe || '...'} até ${filtros.dataAte || '...'}`);
+      if (filtros.atelier) partes.push(`Atelier: ${filtros.atelier}`);
+      filtersSummary.textContent = partes.length ? partes.join(' • ') : 'Sem filtros ativos.';
+    }
+
+    function getAtelierResponsavel(t) {
+      return String(t.idAtelieResponsavel || '').trim();
+    }
+
+    function populateAtelierOptions() {
+      const selected = filtroAtelier.value;
+      const ateliers = Array.from(new Set(taloes.filter(isPendenteCorte).map(getAtelierResponsavel).filter(Boolean)))
+        .sort((a,b) => a.localeCompare(b, 'pt-BR', { numeric:true, sensitivity:'base' }));
+
+      filtroAtelier.innerHTML = '';
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'Todos os ateliês';
+      filtroAtelier.appendChild(defaultOption);
+
+      ateliers.forEach(nome => {
+        const opt = document.createElement('option');
+        opt.value = nome;
+        opt.textContent = nome;
+        filtroAtelier.appendChild(opt);
+      });
+
+      filtroAtelier.value = ateliers.includes(selected) ? selected : '';
+      openAtelierModalButton.disabled = !ateliers.length;
+    }
+
+    function hasDate(v) {
+      return v !== undefined && v !== null && String(v).trim() !== '';
+    }
+
+    function toISODateOnly(v) {
+      if (!v) return '';
+      if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      try {
+        const dt = new Date(v);
+        if (isNaN(dt)) return '';
+        return dt.toISOString().slice(0,10);
+      } catch {
+        return '';
+      }
+    }
+
+    function formatDateShortBR(v) {
+      const iso = toISODateOnly(v);
+      if (!iso) return '';
+      const [y,m,d] = iso.split('-');
+      return `${d}/${m}`;
+    }
+
+    function formatDateTimeNow() {
+      return new Date().toLocaleString('pt-BR');
+    }
+
+    function getTodayLocal() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+
+    function formatLocalISO(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function getNextWeekday(targetWeekday) {
+      const today = getTodayLocal();
+      const current = today.getDay();
+      let diff = targetWeekday - current;
+      if (diff <= 0) diff += 7;
+      const result = new Date(today);
+      result.setDate(today.getDate() + diff);
+      return result;
+    }
+
+    function getWednesdayGroup(deadlineWednesday) {
+      const wed = new Date(deadlineWednesday.getFullYear(), deadlineWednesday.getMonth(), deadlineWednesday.getDate());
+      const d1 = new Date(wed); d1.setDate(wed.getDate() - 9);
+      const d2 = new Date(wed); d2.setDate(wed.getDate() - 6);
+      return [formatLocalISO(d1), formatLocalISO(d2)].sort();
+    }
+
+    function normalizeTipoCliente(tipo) {
+      const t = String(tipo || '').trim().toLowerCase();
+      if (['exportacao','exportação','exportacoes','exportações'].includes(t)) return 'Exportacao';
+      if (['cliente especial','especial'].includes(t)) return 'Cliente especial';
+      if (['mercado interno','interno'].includes(t)) return 'Mercado interno';
+      if (['estoque'].includes(t)) return 'Estoque';
+      if (['amostra','amostras'].includes(t)) return 'Amostra';
+      return String(tipo || '').trim() || 'Mercado interno';
+    }
+
+    function getTipoClass(tipoCliente) {
+      const t = normalizeTipoCliente(tipoCliente);
+      if (t === 'Exportacao') return 'tipo-exportacao';
+      if (t === 'Cliente especial') return 'tipo-cliente-especial';
+      if (t === 'Estoque') return 'tipo-estoque';
+      if (t === 'Amostra') return 'tipo-amostra';
+      return 'tipo-mercado-interno';
+    }
+
+    function hasEntradaAtelier(t) {
+      return hasDate(t.costuraDataInicio);
+    }
+
+    function isPendenteCorte(t) {
+      const faltaCabedal = !hasDate(t.cabedalData);
+      const faltaForro = !hasDate(t.forroData);
+      const faltaTiras = !hasDate(t.tirasData);
+      const faltaAviamento = !hasDate(t.aviamentoData);
+      const semEntradaAtelier = !hasEntradaAtelier(t);
+      return faltaCabedal || faltaForro || faltaTiras || faltaAviamento || semEntradaAtelier;
+    }
+
+    function getUniqueSortedCutDates(items) {
+      return Array.from(new Set(items.map(t => toISODateOnly(t.dataCorte)).filter(Boolean))).sort();
+    }
+
+    function joinCutDatesLabel(dateList) {
+      const formatted = dateList.map(formatDateShortBR);
+      if (!formatted.length) return '';
+      if (formatted.length === 1) return formatted[0];
+      if (formatted.length === 2) return `${formatted[0]} e ${formatted[1]}`;
+      return `${formatted.slice(0,-1).join(', ')} e ${formatted[formatted.length - 1]}`;
+    }
+
+    function buildCardHtml(lista) {
+      const filtered = lista.filter(isPendenteCorte);
+      const grouped = new Map();
+      const totalPorModelo = new Map();
+      let totalGeral = 0;
+
+      filtered.forEach(t => {
+        const remessa = String(t.numeroRemessa || '').trim();
+        const linha = String(t.linha || '').trim();
+        const dataCorte = toISODateOnly(t.dataCorte);
+        const dataEntrega = toISODateOnly(t.dataEntrega);
+        const numeroTalao = String(t.numeroTalaoSequencial || t.numeroTalao || '').trim();
+        const modeloNum = String(t.modelo || t.referencia || '').trim();
+        const modelo = `${linha}.${modeloNum || 'S/Modelo'}`;
+        const pares = Number(t.pares) || 0;
+        const atelierNome = String(t.idAtelieResponsavel || t.nomeAtelieResponsavel || '-').trim();
+        const tipoCliente = normalizeTipoCliente(t.tipoCliente);
+
+        if (!remessa || !linha || !numeroTalao) return;
+
+        const remessaKey = `${remessa}__${linha}__${dataCorte}__${dataEntrega}__${tipoCliente}`;
+        if (!grouped.has(remessaKey)) {
+          grouped.set(remessaKey, {
+            remessaKey, remessa, linha, dataCorte, dataEntrega, tipoCliente,
+            itens: []
+          });
+        }
+
+        grouped.get(remessaKey).itens.push({
+          atelierNome,
+          numeroTalao,
+          modelo,
+          pares,
+          cabedalOk: hasDate(t.cabedalData),
+          forroOk: hasDate(t.forroData),
+          tirasOk: hasDate(t.tirasData),
+          aviamentoOk: hasDate(t.aviamentoData),
+          atelierOk: hasEntradaAtelier(t),
+          docId: t.id
+        });
+
+        totalPorModelo.set(modelo, (totalPorModelo.get(modelo) || 0) + pares);
+        totalGeral += pares;
+      });
+
+      const blocks = Array.from(grouped.values()).sort((a,b) => {
+        if (a.dataCorte !== b.dataCorte) return String(a.dataCorte).localeCompare(String(b.dataCorte));
+        if (a.linha !== b.linha) return a.linha.localeCompare(b.linha, undefined, { numeric:true });
+        return a.remessa.localeCompare(b.remessa, undefined, { numeric:true });
+      });
+
+      if (!blocks.length) {
+        return { html: '<div class="empty-state">Nenhum talão pendente neste card.</div>', meta: '0 remessas · 0 talões · 0 pares', totalGeral: 0 };
+      }
+
+      const totalsHtml = Array.from(totalPorModelo.entries())
+        .sort((a,b) => a[0].localeCompare(b[0], undefined, { numeric:true }))
+        .map(([modelo, pares]) => `<div class="totals-line">Mod. ${escapeHtml(modelo)} - Pares ${pares}</div>`)
+        .join('');
+
+      const blockHtml = blocks.map(block => {
+        const itensHtml = block.itens
+          .sort((a,b) => a.numeroTalao.localeCompare(b.numeroTalao, undefined, { numeric:true }))
+          .map(item => `
+            <div class="talhao-row">
+              <div class="atelier-col">${icon(item.atelierOk)} ${escapeHtml(item.atelierNome)}</div>
+              <div class="desc-col"><strong>T - ${escapeHtml(item.numeroTalao)}</strong> <span>- Mod. ${escapeHtml(item.modelo)} - Prs. ${item.pares}</span></div>
+              <div class="status-col ${item.cabedalOk ? 'ok' : 'no'}">${item.cabedalOk ? '✔' : '✘'}</div>
+              <div class="status-col ${item.forroOk ? 'ok' : 'no'}">${item.forroOk ? '✔' : '✘'}</div>
+              <div class="status-col ${item.tirasOk ? 'ok' : 'no'}">${item.tirasOk ? '✔' : '✘'}</div>
+              <div class="status-col ${item.aviamentoOk ? 'ok' : 'no'}">${item.aviamentoOk ? '✔' : '✘'}</div>
+            </div>
+          `).join('');
+
+        const closeBtn = currentUserData && String(currentUserData.nivelAcesso) === '09'
+          ? `<button class="btn-close-cut" data-close-remessa="${escapeHtml(block.remessaKey)}">Fechar corte</button>`
+          : '';
+
+        return `
+          <div class="remessa-block ${getTipoClass(block.tipoCliente)}">
+            <div class="remessa-head">
+              <div>R. ${escapeHtml(block.remessa)} - Crt ${formatDateShortBR(block.dataCorte)} - Entr. ${formatDateShortBR(block.dataEntrega)}</div>
+              <div class="remessa-actions"><div class="remessa-sub">${escapeHtml(block.tipoCliente)}</div>${closeBtn}</div>
+            </div>
+            <div class="remessa-body">
+              <div class="linha-head">
+                <div>Atelier</div>
+                <div>Talão / Modelo / Pares</div>
+                <div>C</div>
+                <div>F</div>
+                <div>T</div>
+                <div>A</div>
+              </div>
+              ${itensHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return {
+        html: `
+          <div class="totals-box">
+            <div class="totals-title">Total de pares</div>
+            ${totalsHtml}
+            <div class="total-geral">Total ${totalGeral} pares</div>
+          </div>
+          ${blockHtml}
+        `,
+        meta: `${blocks.length} remessas · ${filtered.length} talões · ${totalGeral} pares`,
+        totalGeral
+      };
+    }
+
+    function icon(ok) {
+      return `<span class="${ok ? 'ok' : 'no'}">${ok ? '✔' : '✘'}</span>`;
+    }
+
+
+    function displayTipoCliente(tipo) {
+      const normalized = normalizeTipoCliente(tipo);
+      return normalized === 'Exportacao' ? 'Exportação' : normalized;
+    }
+
+    function isCorteAtrasoOuSemana(t) {
+      const nextWednesday = getNextWeekday(3);
+      const semanaDates = getWednesdayGroup(nextWednesday);
+      const semanaMinDate = semanaDates[0] || '';
+      const dataCorte = toISODateOnly(t.dataCorte);
+      const tipo = normalizeTipoCliente(t.tipoCliente);
+
+      if (!dataCorte || tipo === 'Amostra') return false;
+      return (semanaMinDate && dataCorte < semanaMinDate) || semanaDates.includes(dataCorte);
+    }
+
+    function getAtelierOpenData(atelierNome) {
+      const lista = applyGlobalFilters(taloes.filter(isPendenteCorte))
+        .filter(t => getAtelierResponsavel(t) === atelierNome)
+        .filter(isCorteAtrasoOuSemana);
+
+      const grouped = new Map();
+      let totalPares = 0;
+
+      lista.forEach(t => {
+        const remessa = String(t.numeroRemessa || '').trim();
+        const linha = String(t.linha || '').trim();
+        const dataCorte = toISODateOnly(t.dataCorte);
+        const dataEntrega = toISODateOnly(t.dataEntrega);
+        const tipoCliente = displayTipoCliente(t.tipoCliente);
+        const numeroTalao = String(t.numeroTalaoSequencial || t.numeroTalao || '').trim();
+        const modeloNum = String(t.modelo || t.referencia || '').trim();
+        const modelo = `${linha}.${modeloNum || 'S/Modelo'}`;
+        const pares = Number(t.pares) || 0;
+
+        if (!remessa || !numeroTalao) return;
+
+        const key = `${remessa}__${dataCorte}__${dataEntrega}__${tipoCliente}`;
+        if (!grouped.has(key)) {
+          grouped.set(key, { remessa, dataCorte, dataEntrega, tipoCliente, itens: [] });
+        }
+
+        grouped.get(key).itens.push({ numeroTalao, modelo, pares });
+        totalPares += pares;
+      });
+
+      const remessas = Array.from(grouped.values()).sort((a,b) => {
+        if (a.dataCorte !== b.dataCorte) return String(a.dataCorte).localeCompare(String(b.dataCorte));
+        return a.remessa.localeCompare(b.remessa, undefined, { numeric:true });
+      });
+
+      remessas.forEach(r => {
+        r.itens.sort((a,b) => a.numeroTalao.localeCompare(b.numeroTalao, undefined, { numeric:true }));
+      });
+
+      const totalTaloes = remessas.reduce((acc, r) => acc + r.itens.length, 0);
+      return { remessas, totalTaloes, totalPares };
+    }
+
+    function buildAtelierModalHtml(atelierNome) {
+      const { remessas } = getAtelierOpenData(atelierNome);
+
+      if (!remessas.length) {
+        return '<div class="empty-state">Nenhuma remessa em atraso ou da semana para este atelier com os filtros atuais.</div>';
+      }
+
+      const textoWhatsApp = buildAtelierWhatsAppText(atelierNome);
+      return `
+        <div class="whatsapp-copy-box only-copy-box">
+          <div class="whatsapp-copy-title">Talões que falta entrada no atelier</div>
+          <pre class="whatsapp-copy-preview">${escapeHtml(textoWhatsApp)}</pre>
+        </div>
+      `;
+    }
+
+    function buildAtelierWhatsAppText(atelierNome) {
+      const { remessas, totalTaloes, totalPares } = getAtelierOpenData(atelierNome);
+      if (!remessas.length) return '';
+
+      const linhas = [atelierNome, ''];
+
+      remessas.forEach((r, index) => {
+        linhas.push(`R. ${r.remessa} - Crt ${formatDateShortBR(r.dataCorte)} - Entr. ${formatDateShortBR(r.dataEntrega)} - ${r.tipoCliente}`);
+        r.itens.forEach(item => {
+          linhas.push(`❌ T ${item.numeroTalao} - ${item.modelo} - ${item.pares} pares`);
+        });
+        if (index < remessas.length - 1) linhas.push('');
+      });
+
+      linhas.push('');
+      linhas.push(`Total: ${remessas.length} remessas · ${totalTaloes} talões · ${totalPares} pares`);
+
+      return linhas.join('\n');
+    }
+
+    async function copiarTextoWhatsApp() {
+      if (!atelierWhatsAppText.trim()) {
+        alert('Não há texto para copiar.');
+        return;
+      }
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(atelierWhatsAppText);
+        } else {
+          const textarea = document.createElement('textarea');
+          textarea.value = atelierWhatsAppText;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'fixed';
+          textarea.style.left = '-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+        }
+
+        const originalText = copyAtelierWhatsAppButton.textContent;
+        copyAtelierWhatsAppButton.textContent = 'Copiado ✓';
+        setTimeout(() => {
+          copyAtelierWhatsAppButton.textContent = originalText;
+        }, 1600);
+      } catch (error) {
+        console.error('Erro ao copiar texto:', error);
+        alert('Não consegui copiar automaticamente. Selecione o texto do modal e copie manualmente.');
+      }
+    }
+
+    function openAtelierModal() {
+      const atelierNome = filtroAtelier.value;
+      if (!atelierNome) {
+        alert('Selecione um atelier para ver as remessas em aberto.');
+        return;
+      }
+
+      atelierWhatsAppText = buildAtelierWhatsAppText(atelierNome);
+      copyAtelierWhatsAppButton.disabled = !atelierWhatsAppText.trim();
+      copyAtelierWhatsAppButton.textContent = 'Copiar para WhatsApp';
+
+      atelierModalTitle.textContent = atelierNome;
+      atelierModalSubtitle.textContent = 'Copie somente corte em atraso e corte da semana';
+      atelierModalBody.innerHTML = buildAtelierModalHtml(atelierNome);
+      atelierModal.hidden = false;
+      document.body.classList.add('modal-open');
+    }
+
+    async function copiarAtelierDiretoWhatsApp() {
+      const atelierNome = filtroAtelier.value;
+      if (!atelierNome) {
+        alert('Selecione um atelier para copiar as remessas em aberto.');
+        return;
+      }
+
+      openAtelierModal();
+      await copiarTextoWhatsApp();
+
+      const originalText = copyAtelierDirectButton.textContent;
+      copyAtelierDirectButton.textContent = 'Copiado ✓';
+      setTimeout(() => {
+        copyAtelierDirectButton.textContent = originalText;
+      }, 1600);
+    }
+
+    function closeAtelierModal() {
+      atelierModal.hidden = true;
+      document.body.classList.remove('modal-open');
+    }
+
+
+    function getTodayIso() {
+      return formatLocalISO(getTodayLocal());
+    }
+
+    function attachCloseButtons() {
+      document.querySelectorAll('[data-close-remessa]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const remessaKey = btn.getAttribute('data-close-remessa');
+          await fecharRemessa(remessaKey, btn);
+        });
+      });
+    }
+
+    async function fecharRemessa(remessaKey, btnEl) {
+      if (!currentUserData || String(currentUserData.nivelAcesso) !== '09') return;
+
+      const pendentes = applyGlobalFilters(taloes.filter(isPendenteCorte));
+      const grupo = new Map();
+      pendentes.forEach(t => {
+        const remessa = String(t.numeroRemessa || '').trim();
+        const linha = String(t.linha || '').trim();
+        const dataCorte = toISODateOnly(t.dataCorte);
+        const dataEntrega = toISODateOnly(t.dataEntrega);
+        const tipoCliente = normalizeTipoCliente(t.tipoCliente);
+        const key = `${remessa}__${linha}__${dataCorte}__${dataEntrega}__${tipoCliente}`;
+        if (key === remessaKey) grupo.set(t.id, t);
+      });
+
+      if (!grupo.size) {
+        alert('Nenhum talão pendente encontrado nessa remessa.');
+        return;
+      }
+
+      if (!confirm(`Fechar corte de ${grupo.size} talões desta remessa?`)) return;
+
+      const hoje = getTodayIso();
+      const batch = writeBatch(db);
+      grupo.forEach((t, id) => {
+        const payload = { atualizadoEm: serverTimestamp() };
+        if (!hasDate(t.cabedalData)) payload.cabedalData = hoje;
+        if (!hasDate(t.forroData)) payload.forroData = hoje;
+        if (!hasDate(t.tirasData)) payload.tirasData = hoje;
+        if (!hasDate(t.aviamentoData)) payload.aviamentoData = hoje;
+        if (!hasDate(t.costuraDataInicio)) payload.costuraDataInicio = hoje;
+        batch.update(doc(db, 'taloes', id), payload);
+      });
+
+      try {
+        btnEl.disabled = true;
+        btnEl.textContent = 'Fechando...';
+        await batch.commit();
+
+        grupo.forEach((t, id) => {
+          const idx = taloes.findIndex(item => item.id === id);
+          if (idx >= 0) {
+            taloes[idx] = {
+              ...taloes[idx],
+              cabedalData: taloes[idx].cabedalData || hoje,
+              forroData: taloes[idx].forroData || hoje,
+              tirasData: taloes[idx].tirasData || hoje,
+              aviamentoData: taloes[idx].aviamentoData || hoje,
+              costuraDataInicio: taloes[idx].costuraDataInicio || hoje
+            };
+          }
+        });
+
+        btnEl.textContent = '✔';
+        btnEl.classList.add('done');
+        btnEl.title = 'Corte fechado nesta sessão';
+      } catch (error) {
+        console.error('Erro ao fechar remessa:', error);
+        alert('Erro ao fechar corte da remessa.');
+        btnEl.disabled = false;
+        btnEl.textContent = 'Fechar corte';
+      }
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#039;');
+    }
+
+    function setCardsMessage(message, metaText = '-') {
+      const html = `<div class="empty-state">${escapeHtml(message)}</div>`;
+      [cardAmostra, cardAtraso, cardSemana, cardProxima].forEach(el => el.innerHTML = html);
+      [metaAmostra, metaAtraso, metaSemana, metaProxima].forEach(el => el.textContent = metaText);
+      lastUpdateBadge.textContent = formatDateTimeNow();
+    }
+
+    function getPaginaAtual() {
+      const path = window.location.pathname || '';
+      return path.split('/').pop() || 'programacaocrt.html';
+    }
+
+    function renderCards() {
+      const today = getTodayLocal();
+      const nextWednesday = getNextWeekday(3);
+      const nextNextWednesday = new Date(nextWednesday);
+      nextNextWednesday.setDate(nextNextWednesday.getDate() + 7);
+      const semanaDates = getWednesdayGroup(nextWednesday);
+      const proximaDates = getWednesdayGroup(nextNextWednesday);
+      const semanaMinDate = semanaDates[0] || '';
+      const day = today.getDay();
+      const showProxima = day === 2 || day === 3;
+
+      const pendentes = applyGlobalFilters(taloes.filter(isPendenteCorte));
+      const amostras = pendentes.filter(t => normalizeTipoCliente(t.tipoCliente) === 'Amostra');
+      const atraso = pendentes.filter(t => {
+        const dc = toISODateOnly(t.dataCorte);
+        return dc && semanaMinDate && dc < semanaMinDate && normalizeTipoCliente(t.tipoCliente) !== 'Amostra';
+      });
+      const semana = pendentes.filter(t => {
+        const dc = toISODateOnly(t.dataCorte);
+        return semanaDates.includes(dc) && normalizeTipoCliente(t.tipoCliente) !== 'Amostra';
+      });
+      const proxima = pendentes.filter(t => {
+        const dc = toISODateOnly(t.dataCorte);
+        return proximaDates.includes(dc) && normalizeTipoCliente(t.tipoCliente) !== 'Amostra';
+      });
+
+      titleSemana.textContent = `Corte da semana (${joinCutDatesLabel(semanaDates)}) fecha ${formatDateShortBR(formatLocalISO(nextWednesday))}`;
+      titleProxima.textContent = `Corte para próxima semana (${joinCutDatesLabel(proximaDates)}) fecha ${formatDateShortBR(formatLocalISO(nextNextWednesday))}`;
+      fechamentoBadge.textContent = `${joinCutDatesLabel(semanaDates)} → ${formatDateShortBR(formatLocalISO(nextWednesday))}`;
+
+      const amostraRes = buildCardHtml(amostras);
+      const atrasoRes = buildCardHtml(atraso);
+      const semanaRes = buildCardHtml(semana);
+      const proximaRes = buildCardHtml(proxima);
+
+      cardAmostra.innerHTML = amostraRes.html;
+      cardAtraso.innerHTML = atrasoRes.html;
+      cardSemana.innerHTML = semanaRes.html;
+      cardProxima.innerHTML = proximaRes.html;
+      metaAmostra.textContent = amostraRes.meta;
+      metaAtraso.textContent = atrasoRes.meta;
+      metaSemana.textContent = semanaRes.meta;
+      metaProxima.textContent = proximaRes.meta;
+      articleProxima.style.display = showProxima ? '' : 'none';
+      attachCloseButtons();
+      lastUpdateBadge.textContent = formatDateTimeNow();
+    }
+
+    async function loadRelatorioCorte() {
+      [cardAmostra, cardAtraso, cardSemana, cardProxima].forEach(el => el.innerHTML = '<div class="loading">Carregando...</div>');
+      [metaAmostra, metaAtraso, metaSemana, metaProxima].forEach(el => el.textContent = 'Carregando...');
+
+      try {
+        setorBadge.textContent = 'Corte';
+        const ref = collection(db, 'taloes');
+        const snap = await getDocs(query(ref));
+        taloes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        populateAtelierOptions();
+        updateFiltersSummary();
+        renderCards();
+      } catch (error) {
+        console.error('Erro ao carregar relatório do corte:', error);
+        const errorHtml = '<div class="empty-state">Erro ao carregar os dados.</div>';
+        [cardAmostra, cardAtraso, cardSemana, cardProxima].forEach(el => el.innerHTML = errorHtml);
+        [metaAmostra, metaAtraso, metaSemana, metaProxima].forEach(el => el.textContent = 'Erro');
+      }
+    }
+
+    refreshButton.addEventListener('click', () => {
+      loadRelatorioCorte();
+    });
+
+
+    [...tipoFilterInputs, ...pendenciaFilterInputs].forEach(input => {
+      input.addEventListener('change', () => {
+        updateFiltersSummary();
+        renderCards();
+      });
+    });
+
+    [filtroDataDe, filtroDataAte, filtroAtelier].forEach(input => {
+      input.addEventListener('change', () => {
+        updateFiltersSummary();
+        renderCards();
+      });
+    });
+
+    openAtelierModalButton.addEventListener('click', openAtelierModal);
+    copyAtelierDirectButton.addEventListener('click', copiarAtelierDiretoWhatsApp);
+    copyAtelierWhatsAppButton.addEventListener('click', copiarTextoWhatsApp);
+    closeAtelierModalButton.addEventListener('click', closeAtelierModal);
+    atelierModal.addEventListener('click', (event) => {
+      if (event.target === atelierModal) closeAtelierModal();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !atelierModal.hidden) closeAtelierModal();
+    });
+
+    clearFiltersButton.addEventListener('click', () => {
+      [...tipoFilterInputs, ...pendenciaFilterInputs].forEach(input => input.checked = false);
+      filtroDataDe.value = '';
+      filtroDataAte.value = '';
+      filtroAtelier.value = '';
+      updateFiltersSummary();
+      renderCards();
+    });
+    onAuthStateChanged(auth, async (user) => {
+      try {
+        if (!user) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const snap = await getDoc(doc(db, 'Usuario', user.email));
+        if (!snap.exists()) {
+          alert('Dados do usuário não encontrados. Faça login novamente.');
+          await signOut(auth);
+          window.location.href = 'login.html';
+          return;
+        }
+
+        currentUserData = { email: user.email, ...snap.data() }; window.Roma.validateProfile(user,currentUserData);
+        const nivelAcesso = String(currentUserData.nivelAcesso || '').padStart(2, '0');
+        const Nome = currentUserData.Nome || currentUserData.nome || 'Usuário';
+        currentUserData.nivelAcesso = nivelAcesso;
+        currentUserData.Nome = Nome;
+
+        localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+        localStorage.setItem('calcadosroma-65ac6:userName', Nome);
+
+        const nav = window.SistemaNavegacao;
+        if (nav && typeof nav.init === 'function') {
+          nav.init({
+            userLevel: nivelAcesso,
+            userName: Nome,
+            title: 'Controle de produção Calçados Roma',
+            onLogout: async () => {
+              try {
+                await signOut(auth);
+                localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                localStorage.removeItem('calcadosroma-65ac6:userName');
+                window.location.href = 'login.html';
+              } catch (e) {
+                console.error(e);
+                alert('Erro ao fazer logout. Tente novamente.');
+              }
+            }
+          });
+        } else {
+          console.warn('navegacao.js não carregou ou window.SistemaNavegacao não foi encontrado. A página continuará carregando os dados.');
+        }
+
+        const niveisPermitidosFallback = ['02', '06', '07', '08', '09'];
+        if (nav && typeof nav.podeAcessar === 'function') {
+          const paginaAtual = getPaginaAtual();
+          const liberadoNaNavegacao = nav.podeAcessar(nivelAcesso, paginaAtual) || nav.podeAcessar(nivelAcesso, 'relatoriocrt.html') || nav.podeAcessar(nivelAcesso, 'programacaocrt.html');
+          const liberadoFallback = niveisPermitidosFallback.includes(nivelAcesso);
+
+          if (!liberadoNaNavegacao && !liberadoFallback) {
+            setCardsMessage('Usuário sem permissão para acessar esta página.', 'Sem acesso');
+            return;
+          }
+        }
+
+        await loadRelatorioCorte();
+      } catch (error) {
+        console.error('Erro na inicialização da página:', error);
+        const detalhe = error?.message || 'Erro desconhecido';
+        setCardsMessage(`Erro na inicialização da página: ${detalhe}`, 'Erro');
+      }
+    });
+  </script>
+</body>
+</html>

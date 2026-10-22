@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<!-- distribuicao_montagem.html - leitura de PDF de corte, conferência e gravação da distribuição por data de corte -->
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+<script src="roma-modelos.js"></script>
+<script src="roma-cadastro-modelos.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Distribuição Montagem - Calçados Roma</title>
+<style>
+:root{--bg:#f4f4f4;--card:#fff;--ink:#222;--muted:#666;--bd:#ddd;--pri:#007bff;--ok:#198754;--danger:#dc3545;--warn:#ffc107;--chip:#f8f8f8;--shadow:0 4px 14px rgba(0,0,0,.08)}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;color:var(--ink)}body.auth-loading main,body.auth-loading .modal-backdrop{display:none!important}header{background:#333;color:#fff;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}header h1{margin:0;font-size:25px}.user-info{text-align:right;font-size:13px;line-height:1.25}.user-info span{display:block;font-weight:700}.header-actions{display:flex;gap:8px}button{font-family:inherit}#menuToggleButton,#logoutButton{border:0;color:#fff;padding:8px 14px;border-radius:7px;cursor:pointer}#menuToggleButton{background:#6c757d}#logoutButton{background:var(--danger)}nav{background:#555;padding:10px 20px;font-size:.8em}nav ul{list-style:none;margin:0;padding:0;display:flex;gap:12px;flex-wrap:wrap}nav a{color:#fff;text-decoration:none;padding:7px 12px;border-radius:7px;display:block}nav a:hover,nav a.active{background:#777}.nav-collapsed{display:none}main{padding:18px 0 28px;display:flex;flex-direction:column;align-items:center;gap:14px}.card{width:95%;background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:18px 20px}.page-title{margin:0 0 6px;font-size:1.55rem}.page-subtitle{margin:0 0 16px;color:var(--muted);font-size:.98rem;line-height:1.35}.section-title{margin:0 0 12px;font-size:1.18rem}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;align-items:end}.form-group{display:flex;flex-direction:column;gap:6px}.form-group label{font-weight:700;color:#4b5563;font-size:.9rem}.form-group input,.form-group select{padding:10px 12px;border:1px solid #cfcfcf;border-radius:8px;font-size:.95rem;background:#fff;width:100%}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}.btn{padding:10px 16px;border:0;border-radius:8px;cursor:pointer;font-size:.95rem}.btn-primary{background:var(--pri);color:#fff}.btn-secondary{background:#e9ecef;color:#222}.btn-success{background:var(--ok);color:#fff}.btn-warning{background:#ffc107;color:#111}.btn-danger{background:var(--danger);color:#fff}.btn:disabled{opacity:.55;cursor:not-allowed}.message{margin-top:14px;padding:12px;border-radius:8px;font-size:.95rem;display:none}.message.show{display:block}.message.info{background:#d1ecf1;color:#0c5460}.message.success{background:#d4edda;color:#155724}.message.error{background:#f8d7da;color:#721c24}.message.warning{background:#fff3cd;color:#664d03}.hidden{display:none!important}.summary-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px}.summary-item{background:var(--chip);border:1px solid var(--bd);border-radius:10px;padding:11px 12px;text-align:center;min-height:72px;display:flex;flex-direction:column;justify-content:center}.summary-item strong{font-size:1.08rem;margin-bottom:4px;color:#000;word-break:break-word}.summary-item small{font-weight:700;color:#111;font-size:.76rem}.table-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}.table-actions-right{display:flex;gap:10px;flex-wrap:wrap}.viewer-warning{background:#fff3cd;border:1px solid #ffe69c;color:#664d03;border-radius:10px;padding:10px 12px;font-size:.9rem;margin-bottom:12px}.table-info-panel{background:#eaf7ee;border:1px solid #cfead8;border-radius:12px;padding:12px;margin-bottom:12px;color:#155724;font-size:.9rem}.table-wrap{width:100%;overflow:auto;border:1px solid var(--bd);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:980px}th,td{border:1px solid var(--bd);padding:8px 10px;text-align:center;white-space:nowrap}thead th{background:#f2f2f2;position:sticky;top:0;z-index:2}tbody tr:nth-child(even){background:#fafafa}.cell-left{text-align:left}.small-input{max-width:120px;text-align:center}.tag{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #d8d8d8;background:#fff}.mini-help{font-size:.82rem;color:var(--muted);line-height:1.35}.distribution-sheet{background:#fff;border-radius:12px;border:1px solid #d9d9d9;padding:16px;overflow:auto}.sheet-top{display:grid;grid-template-columns:minmax(260px,1.4fr) repeat(3,minmax(170px,.7fr));gap:12px;margin-bottom:18px}.sheet-info,.sheet-date-box{border:2px solid #111;background:#eee;display:grid;grid-template-columns:1.1fr 1fr;min-height:50px}.sheet-info strong,.sheet-date-box strong{display:flex;align-items:center;justify-content:center;border-right:2px solid #111;font-size:1.2rem}.sheet-info span,.sheet-date-box span{display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;background:#f7f7f7}.sheet-date-box{grid-template-columns:1fr}.sheet-date-box strong{border-right:0;border-bottom:2px solid #111;font-size:1.05rem}.sheet-date-box span{font-size:1rem;background:#fff}.line-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}.line-card{border:2px solid #111;background:#fff;min-height:236px;display:flex;flex-direction:column}.line-card table{min-width:0;width:100%;font-size:.9rem}.line-card th,.line-card td{border:1px solid #111;padding:5px 7px}.line-card thead th{background:#d9d9d9;position:static}.line-card .blank-row td{height:24px}.line-card tfoot td{background:#d9d9d9;font-weight:700}.total-pares-box{margin-left:auto;margin-top:20px;width:min(390px,100%);display:grid;grid-template-columns:1.4fr 1fr;border:2px solid #111;background:#d9d9d9}.total-pares-box strong,.total-pares-box span{padding:18px 14px;text-align:center;font-size:1.25rem}.total-pares-box strong{border-right:2px solid #111}.total-pares-box span{font-weight:800;background:#efefef}.remessa-list{max-width:360px;white-space:normal;line-height:1.35}.remessa-list details{cursor:pointer}.remessa-list summary{font-weight:700;color:#0c5460}.remessa-list div{margin-top:4px}.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:999}.modal-backdrop.show{display:flex}.modal{background:#fff;width:min(900px,96vw);max-height:92vh;overflow:auto;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);padding:18px}.modal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:14px}.modal-header h3{margin:0}.modal-close{border:0;background:#e9ecef;border-radius:8px;cursor:pointer;padding:8px 12px}.sistema-menu-lista{background:transparent!important;box-shadow:none!important;font-size:inherit!important}.sistema-menu-lista a{font-weight:500!important}.permission-banner{background:#e7f1ff;border:1px solid #b6d4fe;color:#084298;border-radius:10px;padding:10px 12px;font-size:.9rem;margin:12px 0}.list-table{min-width:720px}.list-table td,.list-table th{white-space:nowrap}.readonly-date input[readonly]{background:#f8f9fa;color:#555}.access-denied{background:#f8d7da;border:1px solid #f5c2c7;color:#842029;border-radius:10px;padding:12px;margin-top:12px}.modal .table-wrap{max-height:62vh}.editor-details{border:1px solid #e6e6e6;border-radius:12px;background:#fff}.editor-details>summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:700;font-size:1.05rem;background:#f7f7f7;border-radius:12px}.editor-details>summary::-webkit-details-marker{display:none}.editor-details[open]>summary{border-bottom:1px solid #e6e6e6;border-radius:12px 12px 0 0}.editor-summary-hint{font-size:.86rem;color:var(--muted);font-weight:400}.editor-content{padding:16px}.editor-content .table-actions{margin-bottom:10px}@media print{@page{size:A4 landscape;margin:8mm}html,body{background:#fff!important;margin:0!important;padding:0!important}body *{visibility:hidden!important}#distributionSheet,#distributionSheet *{visibility:visible!important}#distributionSheet{position:absolute!important;left:0!important;top:0!important;width:100%!important;border:0!important;border-radius:0!important;padding:0!important;overflow:visible!important;background:#fff!important}.sheet-top{grid-template-columns:minmax(210px,1.4fr) repeat(3,minmax(130px,.7fr))!important;gap:8px!important;margin-bottom:12px!important}.line-card-grid{grid-template-columns:repeat(3,1fr)!important;gap:8px!important}.line-card{break-inside:avoid!important;page-break-inside:avoid!important;min-height:210px!important}.line-card table{font-size:10pt!important}.line-card th,.line-card td{padding:3px 5px!important}.total-pares-box{break-inside:avoid!important;page-break-inside:avoid!important;margin-top:14px!important}.sheet-info strong,.sheet-date-box strong{font-size:13pt!important}.sheet-info span,.sheet-date-box span{font-size:12pt!important}}@media(max-width:768px){header h1{font-size:20px}.card{width:96%;padding:14px}.summary-bar{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}.table-actions{flex-direction:column;align-items:flex-start}.sheet-top{grid-template-columns:1fr}.sheet-info{grid-template-columns:1fr}.sheet-info strong{border-right:0;border-bottom:2px solid #111}.total-pares-box{margin-left:0}}
+</style>
+<script src="navegacao.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body class="auth-loading">
+<main>
+<section class="card">
+  <h2 class="page-title">Distribuição de Montagem</h2>
+  <p class="page-subtitle">Leia o PDF de corte, confira os modelos e pares por linha e salve a distribuição. Os modelos ainda não cadastrados serão criados automaticamente pela referência completa, como <strong>8560.417</strong>. As datas previstas são calculadas pela data de corte.</p>
+  <div class="grid" id="creationGrid">
+    <div class="form-group">
+      <label for="pdfFileInput">PDF de Corte</label>
+      <input type="file" id="pdfFileInput" accept="application/pdf" />
+    </div>
+    <div class="form-group">
+      <label for="dataCorteInput">Data de Corte</label>
+      <input type="date" id="dataCorteInput" />
+    </div>
+    <div class="form-group readonly-date">
+      <label for="dataCorteProgramadaInput">Corte previsto</label>
+      <input type="date" id="dataCorteProgramadaInput" readonly />
+    </div>
+    <div class="form-group readonly-date">
+      <label for="dataCosturaInput">Costura prevista</label>
+      <input type="date" id="dataCosturaInput" readonly />
+    </div>
+    <div class="form-group readonly-date">
+      <label for="dataEmbarqueInput">Embarque previsto</label>
+      <input type="date" id="dataEmbarqueInput" readonly />
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-warning" id="listDistributionsButton" type="button">Abrir distribuição salva</button>
+    <button class="btn btn-primary" id="readPdfButton" type="button">Ler PDF</button>
+    <button class="btn btn-success" id="saveButton" type="button" disabled>Salvar distribuição</button>
+    <button class="btn btn-secondary" id="clearButton" type="button">Limpar tela</button>
+  </div>
+  <div id="messageBox" class="message"></div>
+</section>
+
+
+<section id="summaryCard" class="card hidden">
+  <h3 class="section-title">Resumo da distribuição</h3>
+  <div class="summary-bar" id="summaryBar"></div>
+</section>
+
+<section id="sheetCard" class="card hidden">
+  <div class="table-actions">
+    <h3 class="section-title" style="margin:0">Visual igual à folha de distribuição</h3>
+    <div class="table-actions-right">
+      <button class="btn btn-secondary" id="printButton" type="button">Imprimir / Salvar PDF</button>
+    </div>
+  </div>
+  <div class="distribution-sheet" id="distributionSheet"></div>
+</section>
+
+<section id="editorCard" class="card hidden">
+  <details class="editor-details" id="editorDetails">
+    <summary>
+      <span>Conferência, edição e adição de modelos</span>
+      <span class="editor-summary-hint">Clique para abrir ou fechar</span>
+    </summary>
+    <div class="editor-content">
+      <div class="table-actions">
+        <h3 class="section-title" style="margin:0">Itens da distribuição</h3>
+        <div class="table-actions-right">
+          <button class="btn btn-secondary" id="addRowButton" type="button">Adicionar modelo</button>
+        </div>
+      </div>
+      <div id="viewerWarning" class="viewer-warning hidden">Seu nível de acesso permite somente consultar distribuições salvas. Para criar, ler PDF ou salvar alterações, use nível 07 ou 08.</div>
+      <div class="table-info-panel" id="tableInfoPanel"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Linha</th>
+              <th>Modelo</th>
+              <th>Pares</th>
+              <th>Remessas do modelo</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="editorTableBody"></tbody>
+        </table>
+      </div>
+      <p class="mini-help" style="margin-top:10px">Quando alterar o total de pares manualmente, as remessas originais continuam salvas apenas como referência de origem do PDF.</p>
+    </div>
+  </details>
+</section>
+</main>
+
+<div class="modal-backdrop" id="addModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h3>Adicionar modelo manualmente</h3>
+      <button class="modal-close" id="closeAddModalButton" type="button">Fechar</button>
+    </div>
+    <div class="grid">
+      <div class="form-group"><label for="addLinhaInput">Linha</label><input type="text" id="addLinhaInput" placeholder="Ex: 4134" /></div>
+      <div class="form-group"><label for="addModeloInput">Modelo</label><input type="text" id="addModeloInput" placeholder="Ex: 1017" /></div>
+      <div class="form-group"><label for="addParesInput">Pares</label><input type="number" id="addParesInput" min="0" step="1" placeholder="Ex: 1152" /></div>
+    </div>
+    <div class="actions"><button class="btn btn-success" id="confirmAddRowButton" type="button">Adicionar</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="listModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h3>Distribuições salvas</h3>
+      <button class="modal-close" id="closeListModalButton" type="button">Fechar</button>
+    </div>
+    <div class="table-info-panel" id="listModalInfo">Clique em abrir para carregar uma distribuição já criada.</div>
+    <div class="table-wrap">
+      <table class="list-table">
+        <thead>
+          <tr>
+            <th>Data de Corte</th>
+            <th>Total de Pares</th>
+            <th>Linhas</th>
+            <th>Modelos</th>
+            <th>Arquivo origem</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="distributionsListBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+<script type="module">
+const firebaseConfig = window.FIREBASE_CONFIG;
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,getDocFromServer,setDoc,serverTimestamp,collection,getDocs,getDocsFromServer,runTransaction}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+if(typeof window.RomaCadastroModelos?.create!=="function"){
+  const panel=document.createElement("section");
+  panel.className="card";panel.style.margin="24px auto";panel.setAttribute("role","alert");
+  panel.innerHTML='<h2>Não foi possível abrir Criar Distribuição</h2><p>Atualize juntos os arquivos <strong>distribuicao_montagem.html</strong> e <strong>roma-cadastro-modelos.js</strong> na mesma pasta do sistema e recarregue a página.</p>';
+  document.body.prepend(panel);
+  throw new Error("O arquivo roma-cadastro-modelos.js está ausente ou desatualizado.");
+}
+const{normalizarReferencia,prepararReferenciasDistribuicao,cadastrarModelosDaDistribuicao}=window.RomaCadastroModelos.create({collection,doc,getDocFromServer,getDocsFromServer,runTransaction,serverTimestamp});
+
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const FULL_ACCESS_LEVELS=new Set(["07","08","09"]);
+const VIEW_ACCESS_LEVELS=new Set(["07","08","09"]);
+let currentUserLevel="",currentUserName="",currentUserEmail="",currentUserCanEdit=false,currentUserCanView=false;
+let currentDistribution=null;
+let savingDistribution=false;
+
+const $=id=>document.getElementById(id);
+const pdfFileInput=$("pdfFileInput"),creationGrid=$("creationGrid"),dataCorteInput=$("dataCorteInput"),dataCorteProgramadaInput=$("dataCorteProgramadaInput"),dataCosturaInput=$("dataCosturaInput"),dataEmbarqueInput=$("dataEmbarqueInput"),readPdfButton=$("readPdfButton"),saveButton=$("saveButton"),clearButton=$("clearButton"),listDistributionsButton=$("listDistributionsButton"),messageBox=$("messageBox"),summaryCard=$("summaryCard"),summaryBar=$("summaryBar"),sheetCard=$("sheetCard"),distributionSheet=$("distributionSheet"),editorCard=$("editorCard"),editorTableBody=$("editorTableBody"),viewerWarning=$("viewerWarning"),tableInfoPanel=$("tableInfoPanel"),printButton=$("printButton"),addRowButton=$("addRowButton"),addModalBackdrop=$("addModalBackdrop"),closeAddModalButton=$("closeAddModalButton"),confirmAddRowButton=$("confirmAddRowButton"),addLinhaInput=$("addLinhaInput"),addModeloInput=$("addModeloInput"),addParesInput=$("addParesInput"),listModalBackdrop=$("listModalBackdrop"),closeListModalButton=$("closeListModalButton"),distributionsListBody=$("distributionsListBody"),listModalInfo=$("listModalInfo");
+
+function initPdfJs(){if(!window.pdfjsLib){showMessage("PDF.js não carregou. Verifique a conexão com a internet e recarregue a página.","error");return false}window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";return true}
+function showMessage(text,type="info"){messageBox.textContent=text;messageBox.className=`message show ${type}`}
+function clearMessage(){messageBox.className="message";messageBox.textContent=""}
+function onlyDigits(v){return String(v??"").replace(/\D/g,"")}
+function parsePdfNumber(v){const s=onlyDigits(v);return s?Number(s):0}
+function isNumberToken(v){return /^\d{1,3}([.,]\d{3})*$|^\d+$/.test(String(v||"").trim())}
+function isModelToken(v){return /^\d{2,4}$/.test(String(v||"").trim())}
+function isRemessaToken(v){return /^\d{2}-\d{6,}$/.test(String(v||"").trim())}
+function isDateToken(v){return /^\d{2}\/\d{2}\/\d{4}$/.test(String(v||"").trim())}
+function formatNumber(n){return Number(n||0).toLocaleString("pt-BR",{maximumFractionDigits:0})}
+function pad2(v){return String(v).padStart(2,"0")}
+function isoToDocId(iso){if(!iso)return"";const [y,m,d]=iso.split("-");return `${d}-${m}-${y}`}
+function isoToBR(iso){if(!iso)return"";const [y,m,d]=iso.split("-");return `${d}/${m}/${y}`}
+function brToISO(br){if(!br)return"";const [d,m,y]=br.split("/");return `${y}-${m}-${d}`}
+function docIdToISO(docId){if(!docId)return"";const [d,m,y]=docId.split("-");return `${y}-${m}-${d}`}
+function docIdToBR(docId){return docId?docId.replaceAll("-","/"):""}
+function addDaysISO(iso,days){if(!iso)return"";const d=new Date(`${iso}T12:00:00`);d.setDate(d.getDate()+Number(days||0));return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`}
+function recalcPredictedDates(){const base=dataCorteInput.value||currentDistribution?.dataCorteISO||docIdToISO(currentDistribution?.dataCorte||"");if(!base)return;dataCorteProgramadaInput.value=addDaysISO(base,9);dataCosturaInput.value=addDaysISO(base,15);dataEmbarqueInput.value=addDaysISO(base,18)}
+function formatMonthDay(isoOrDoc){if(!isoOrDoc)return"";let iso=isoOrDoc.includes("-")&&isoOrDoc.split("-")[0].length===4?isoOrDoc:docIdToISO(isoOrDoc);const d=new Date(`${iso}T12:00:00`);return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}).replace(".","")}
+function normalizeKey(v){return String(v??"").trim()}
+function numericSort(a,b){return Number(a)-Number(b)}
+function escapeHtml(s){return String(s??"").replace(/[&<>'"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[m]))}
+
+function getTokensFromTextItem(item,viewport){
+  const raw=String(item.str||"").trim();
+  if(!raw)return[];
+  let tx;
+  try{tx=window.pdfjsLib.Util.transform(viewport.transform,item.transform)}catch(e){tx=item.transform}
+  const x=tx[4]||0;
+  const y=tx[5]||0;
+  const width=Math.max(Number(item.width||0),raw.length*3.6);
+  const parts=raw.split(/\s+/).filter(Boolean);
+  if(parts.length===1)return[{text:raw,x,y,cx:x+width/2,w:width}];
+  const totalChars=parts.reduce((acc,p)=>acc+p.length,0)+Math.max(0,parts.length-1);
+  const spaceW=width/Math.max(1,totalChars);
+  let cursor=x;
+  return parts.map(part=>{const w=width*(part.length/Math.max(1,totalChars));const tok={text:part,x:cursor,y,cx:cursor+w/2,w};cursor+=w+spaceW;return tok});
+}
+function uniqueYs(tokens,tolerance=3){const ys=[];tokens.map(t=>t.y).sort((a,b)=>a-b).forEach(y=>{if(!ys.some(v=>Math.abs(v-y)<=tolerance))ys.push(y)});return ys}
+function getSameLine(tokens,y,tol=4.5){return tokens.filter(t=>Math.abs(t.y-y)<=tol)}
+function mostCommon(values){const map=new Map();values.filter(Boolean).forEach(v=>map.set(v,(map.get(v)||0)+1));let best="",count=0;map.forEach((c,v)=>{if(c>count){best=v;count=c}});return best}
+function nearestHeader(headers,cx){let best=null,dist=Infinity;headers.forEach(h=>{const d=Math.abs(h.x-cx);if(d<dist){dist=d;best=h}});return{best,dist}}
+function addModelValue(result,linha,modelo,pares){linha=normalizeKey(linha);modelo=normalizeKey(modelo);if(!linha||!modelo||!pares)return;if(!result.linhas[linha])result.linhas[linha]={total:0,modelos:{},remessas:{}};result.linhas[linha].modelos[modelo]=(Number(result.linhas[linha].modelos[modelo]||0)+Number(pares||0));}
+function addRemessaValue(result,linha,modelo,remessa){linha=normalizeKey(linha);modelo=normalizeKey(modelo);if(!linha||!modelo||!remessa?.pares)return;if(!result.linhas[linha])result.linhas[linha]={total:0,modelos:{},remessas:{}};if(!result.linhas[linha].remessas[modelo])result.linhas[linha].remessas[modelo]=[];result.linhas[linha].remessas[modelo].push(remessa);}
+
+// Leitura por remessa/modelo: nao depende de o subtotal estar na mesma pagina.
+// Os dados de conferencia abaixo sao temporarios e nao alteram o payload do Firebase.
+function collectPdfReferenceTotals(tokens,reference){
+  const registerGeneral=value=>{
+    if(value<=0)return;
+    if(reference.totalGeral!==null&&reference.totalGeral!==value){
+      reference.avisos.push("O PDF apresenta totais gerais diferentes. Confira o arquivo selecionado.");
+    }else reference.totalGeral=value;
+  };
+  tokens.filter(t=>/^Geral:?$/i.test(t.text)&&t.x<180).forEach(label=>{
+    const value=getSameLine(tokens,label.y,3).filter(t=>t.x>label.x+label.w-2&&t.x<200&&isNumberToken(t.text)).sort((a,b)=>a.x-b.x)[0];
+    if(value)registerGeneral(parsePdfNumber(value.text));
+  });
+  const titles=tokens.filter(t=>/^Resumo$/i.test(t.text)&&getSameLine(tokens,t.y,3).some(v=>/^Linha$/i.test(v.text)));
+  titles.forEach(title=>{
+    const linhaHeader=tokens.filter(t=>/^Linha$/i.test(t.text)&&t.y>title.y+3&&t.y<title.y+25&&t.x<90).sort((a,b)=>a.y-b.y)[0];
+    if(!linhaHeader)return;
+    const columns=getSameLine(tokens,linhaHeader.y,3).sort((a,b)=>a.x-b.x);
+    const corteHeader=columns.find(t=>/^Corte$/i.test(t.text));
+    const afterLinha=columns.find(t=>t.x>linhaHeader.x+10);
+    const afterCorte=corteHeader&&columns.find(t=>t.x>corteHeader.x+10);
+    if(!corteHeader||!afterLinha||!afterCorte)return;
+    const ys=uniqueYs(tokens.filter(t=>t.y>linhaHeader.y+3&&t.x>=linhaHeader.x-5&&t.x<afterCorte.x),2);
+    let foundRows=false;
+    for(const y of ys){
+      const cells=getSameLine(tokens,y,2.5);
+      const value=cells.find(t=>t.cx>corteHeader.x&&t.cx<afterCorte.x&&isNumberToken(t.text));
+      const linha=cells.find(t=>t.x>=linhaHeader.x-5&&t.x<afterLinha.x-3&&/^\d{4}$/.test(t.text));
+      if(!linha){
+        // A ultima linha do resumo nao tem codigo e contem o total geral.
+        if(foundRows){if(value)registerGeneral(parsePdfNumber(value.text));break;}
+        continue;
+      }
+      if(!value)continue;
+      foundRows=true;
+      const expected=parsePdfNumber(value.text);
+      if(reference.linhas[linha.text]!==undefined&&reference.linhas[linha.text]!==expected){
+        reference.avisos.push(`A linha ${linha.text} aparece com totais diferentes no resumo do PDF.`);
+      }else reference.linhas[linha.text]=expected;
+    }
+  });
+}
+
+function checkPdfDistribution(result,reference,records){
+  const issues=[...reference.avisos];
+  const totalsFromRows={};
+  records.forEach(row=>{
+    totalsFromRows[row.linha]=(totalsFromRows[row.linha]||0)+row.pares;
+    const found=Object.values(row.modelos).reduce((sum,value)=>sum+Number(value||0),0);
+    if(found!==row.pares){
+      issues.push(`Remessa ${row.remessa}, linha ${row.linha}: ${formatNumber(row.pares)} pares no PDF, mas ${formatNumber(found)} identificados nos modelos.`);
+    }
+  });
+  // O resumo e independente dos itens extraidos: detecta inclusive linhas omitidas.
+  const expectedLines=Object.keys(reference.linhas).length?reference.linhas:totalsFromRows;
+  const lineKeys=new Set([...Object.keys(expectedLines),...Object.keys(result.linhas)]);
+  lineKeys.forEach(linha=>{
+    const expected=Number(expectedLines[linha]||0);
+    const actual=Number(result.linhas[linha]?.total||0);
+    if(expected!==actual){
+      issues.push(`Linha ${linha}: esperado ${formatNumber(expected)} pares; lido ${formatNumber(actual)} pares.`);
+    }
+  });
+  const expectedTotal=reference.totalGeral??Object.values(expectedLines).reduce((sum,value)=>sum+value,0);
+  if(expectedTotal!==result.totalPares){
+    issues.push(`Total do PDF: ${formatNumber(expectedTotal)} pares. Total lido: ${formatNumber(result.totalPares)} pares. Diferen\u00e7a: ${formatNumber(expectedTotal-result.totalPares)} pares.`);
+  }
+  if(!records.size)issues.push("Nenhuma remessa foi identificada. Verifique se este PDF possui texto e segue o formato de corte por modelo.");
+  return [...new Set(issues)];
+}
+
+async function extractDistributionFromPdf(file){
+  if(!initPdfJs())throw new Error("PDF.js n\u00e3o dispon\u00edvel.");
+  const arrayBuffer=await file.arrayBuffer();
+  const pdf=await window.pdfjsLib.getDocument({data:arrayBuffer}).promise;
+  const result={arquivoOrigem:file.name||"",dataCorte:"",dataCorteISO:"",linhas:{},itens:[],totalPares:0,totalModelos:0,totalRemessas:0};
+  const records=new Map();
+  const reference={linhas:{},totalGeral:null,avisos:[]};
+  try{
+    for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber++){
+      const page=await pdf.getPage(pageNumber);
+      const viewport=page.getViewport({scale:1});
+      const textContent=await page.getTextContent();
+      const tokens=textContent.items.flatMap(item=>getTokensFromTextItem(item,viewport)).filter(t=>t.text);
+      if(!result.dataCorte){
+        const dateTok=tokens.find(t=>t.x<170&&t.y<80&&isDateToken(t.text));
+        if(dateTok){result.dataCorte=dateTok.text.replaceAll("/","-");result.dataCorteISO=brToISO(dateTok.text);}
+      }
+      collectPdfReferenceTotals(tokens,reference);
+      const adm=tokens.filter(t=>t.text==="Adm-Rem").sort((a,b)=>a.y-b.y);
+      if(!adm.length){
+        if(tokens.some(t=>isRemessaToken(t.text)))reference.avisos.push(`P\u00e1gina ${pageNumber}: remessas encontradas sem cabe\u00e7alho reconhecido.`);
+        continue;
+      }
+      const headerY=adm[0].y;
+      const headers=tokens.filter(t=>Math.abs(t.y-headerY)<=6&&t.x>510&&isModelToken(t.text)).map(t=>({model:t.text,x:t.cx})).sort((a,b)=>a.x-b.x);
+      if(!headers.length){
+        if(tokens.some(t=>isRemessaToken(t.text)))reference.avisos.push(`P\u00e1gina ${pageNumber}: n\u00e3o foi poss\u00edvel identificar as colunas dos modelos.`);
+        continue;
+      }
+      const firstModelX=headers[0].x-18;
+      const rows=tokens.filter(t=>t.y>headerY+5&&t.x>80&&t.x<165&&isRemessaToken(t.text)).sort((a,b)=>a.y-b.y);
+      const occurrences=new Map();
+      rows.forEach(remTok=>{
+        const line=getSameLine(tokens,remTok.y).sort((a,b)=>a.x-b.x);
+        const linha=(line.find(t=>t.x<38&&/^\d{4}$/.test(t.text))||{}).text||"";
+        if(!linha){reference.avisos.push(`P\u00e1gina ${pageNumber}, remessa ${remTok.text}: linha n\u00e3o identificada.`);return;}
+        const lote=(line.find(t=>t.x>35&&t.x<92&&/^[\w.-]+$/.test(t.text))||{}).text||"";
+        const paresTok=line.find(t=>t.x>145&&t.x<195&&isNumberToken(t.text));
+        const pares=parsePdfNumber(paresTok?.text||"0");
+        if(!paresTok)reference.avisos.push(`Remessa ${remTok.text}: total de pares n\u00e3o identificado.`);
+        const dataCorte=(line.find(t=>t.x>180&&t.x<210&&/^\d{2}\/\d{2}$/.test(t.text))||{}).text||"";
+        const cliente=line.filter(t=>t.x>395&&t.x<firstModelX).map(t=>t.text).join(" ");
+        const baseKey=JSON.stringify([linha,lote,remTok.text,dataCorte]);
+        const occurrence=occurrences.get(baseKey)||0;
+        occurrences.set(baseKey,occurrence+1);
+        const key=JSON.stringify([baseKey,occurrence]);
+        let record=records.get(key);
+        if(!record){
+          record={linha,lote,remessa:remTok.text,pares,cliente,modelos:{}};
+          records.set(key,record);
+        }else if(record.pares!==pares){
+          reference.avisos.push(`Remessa ${remTok.text}, linha ${linha}: total de pares diferente entre as p\u00e1ginas.`);
+        }
+        // As paginas horizontais repetem a remessa, mas mostram outros modelos.
+        // Cada par remessa/modelo entra uma unica vez; subtotais nao sao somados.
+        const rowValues=getSameLine(tokens,remTok.y,5).filter(t=>t.x>firstModelX&&isNumberToken(t.text));
+        rowValues.forEach(tok=>{
+          const {best,dist}=nearestHeader(headers,tok.cx);
+          const value=parsePdfNumber(tok.text);
+          if(!value)return;
+          if(!best||dist>=18){
+            reference.avisos.push(`Remessa ${remTok.text}, p\u00e1gina ${pageNumber}: quantidade ${formatNumber(value)} sem coluna de modelo reconhecida.`);
+            return;
+          }
+          if(record.modelos[best.model]===undefined)record.modelos[best.model]=value;
+          else if(record.modelos[best.model]!==value){
+            reference.avisos.push(`Remessa ${remTok.text}, modelo ${best.model}: quantidades diferentes nas p\u00e1ginas do PDF.`);
+          }
+        });
+      });
+    }
+    records.forEach(row=>{
+      Object.entries(row.modelos).forEach(([modelo,pares])=>{
+        addModelValue(result,row.linha,modelo,pares);
+        addRemessaValue(result,row.linha,modelo,{remessa:row.remessa,lote:row.lote,pares,paresTalhao:row.pares,cliente:row.cliente||""});
+      });
+    });
+    rebuildItems(result);
+    result.avisosLeitura=checkPdfDistribution(result,reference,records);
+    return result;
+  }finally{
+    // Libera o documento/worker ao final de cada leitura, inclusive em caso de erro.
+    try{await pdf.destroy();}catch(e){console.warn("Falha ao liberar o PDF",e);}
+  }
+}
+
+
+function rebuildItems(distribution){
+  const itens=[];let totalPares=0,totalRemessas=0;
+  Object.keys(distribution.linhas||{}).sort(numericSort).forEach(linha=>{
+    const lineData=distribution.linhas[linha]||{modelos:{},remessas:{}};
+    const modelos=lineData.modelos||{};
+    Object.keys(modelos).sort(numericSort).forEach(modelo=>{
+      const pares=Number(modelos[modelo]||0);
+      totalPares+=pares;
+      const remessas=(lineData.remessas&&lineData.remessas[modelo])?lineData.remessas[modelo]:[];
+      totalRemessas+=remessas.length;
+      itens.push({linha,modelo,pares,remessas});
+    });
+    lineData.total=Object.values(modelos).reduce((a,b)=>a+Number(b||0),0);
+  });
+  distribution.itens=itens;
+  distribution.totalPares=totalPares;
+  distribution.totalModelos=itens.length;
+  distribution.totalRemessas=totalRemessas;
+  return distribution;
+}
+function rebuildLinesFromItems(){
+  if(!currentDistribution)return;
+  const linhas={};
+  currentDistribution.itens.forEach(item=>{
+    const linha=normalizeKey(item.linha),modelo=normalizeKey(item.modelo),pares=Number(item.pares||0);
+    if(!linha||!modelo)return;
+    if(!linhas[linha])linhas[linha]={total:0,modelos:{},remessas:{}};
+    linhas[linha].modelos[modelo]=(linhas[linha].modelos[modelo]||0)+pares;
+    linhas[linha].remessas[modelo]=[...(linhas[linha].remessas[modelo]||[]),...(Array.isArray(item.remessas)?item.remessas:[])];
+    linhas[linha].total+=pares;
+  });
+  currentDistribution.linhas=linhas;
+  rebuildItems(currentDistribution);
+}
+
+function renderSummary(){
+  if(!currentDistribution)return;
+  const linhas=Object.keys(currentDistribution.linhas||{}).length;
+  summaryBar.innerHTML=`
+    <div class="summary-item"><strong>${docIdToBR(currentDistribution.dataCorte||"")}</strong><small>DATA DE CORTE</small></div>
+    <div class="summary-item"><strong>${formatNumber(linhas)}</strong><small>LINHAS</small></div>
+    <div class="summary-item"><strong>${formatNumber(currentDistribution.totalModelos)}</strong><small>MODELOS</small></div>
+    <div class="summary-item"><strong>${formatNumber(currentDistribution.totalRemessas)}</strong><small>REMESSAS COM MODELO</small></div>
+    <div class="summary-item"><strong>${formatNumber(currentDistribution.totalPares)}</strong><small>TOTAL DE PARES</small></div>`;
+  summaryCard.classList.remove("hidden");
+}
+function renderSheet(){
+  if(!currentDistribution)return;
+  const dataDoc=currentDistribution.dataCorte||isoToDocId(dataCorteInput.value);
+  const cortePrev=dataCorteProgramadaInput.value?formatMonthDay(dataCorteProgramadaInput.value):"";
+  const costuraPrev=dataCosturaInput.value?formatMonthDay(dataCosturaInput.value):"";
+  const embarquePrev=dataEmbarqueInput.value?formatMonthDay(dataEmbarqueInput.value):"";
+  const cards=Object.keys(currentDistribution.linhas||{}).sort(numericSort).map(linha=>renderLineCard(linha,currentDistribution.linhas[linha])).join("");
+  distributionSheet.innerHTML=`
+    <div class="sheet-top">
+      <div class="sheet-info"><strong>Data de Corte</strong><span>${formatMonthDay(dataDoc)}</span></div>
+      <div class="sheet-date-box"><strong>Corte</strong><span>${cortePrev||"—"}</span></div>
+      <div class="sheet-date-box"><strong>Costura</strong><span>${costuraPrev||"—"}</span></div>
+      <div class="sheet-date-box"><strong>Embarque</strong><span>${embarquePrev||"—"}</span></div>
+    </div>
+    <div class="line-card-grid">${cards||"<p>Nenhuma linha carregada.</p>"}</div>
+    <div class="total-pares-box"><strong>Total de Pares</strong><span>${formatNumber(currentDistribution.totalPares)}</span></div>`;
+  sheetCard.classList.remove("hidden");
+}
+function renderLineCard(linha,lineData){
+  const modelos=Object.entries(lineData.modelos||{}).sort((a,b)=>numericSort(a[0],b[0]));
+  const rows=modelos.map(([modelo,pares])=>`<tr><td>${escapeHtml(modelo)}</td><td>${formatNumber(pares)}</td></tr>`).join("");
+  const blanks=Math.max(0,10-modelos.length);
+  const blankRows=Array.from({length:blanks}).map(()=>`<tr class="blank-row"><td>&nbsp;</td><td>&nbsp;</td></tr>`).join("");
+  return `<div class="line-card"><table><thead><tr><th>Linha</th><th>${escapeHtml(linha)}</th></tr><tr><th>Mod</th><th>Pares</th></tr></thead><tbody>${rows}${blankRows}</tbody><tfoot><tr><td>Total</td><td>${formatNumber(lineData.total||0)}</td></tr></tfoot></table></div>`;
+}
+function renderEditor(){
+  if(!currentDistribution)return;
+  const disabledAttr=currentUserCanEdit?"":"disabled";
+  const actionHeader=document.querySelector('#editorCard thead th:last-child');
+  if(actionHeader)actionHeader.classList.toggle("hidden",!currentUserCanEdit);
+  addRowButton.classList.toggle("hidden",!currentUserCanEdit);
+  editorTableBody.innerHTML=currentDistribution.itens.map((item,index)=>{
+    const remessas=item.remessas||[];
+    const remessasHtml=remessas.length?`<div class="remessa-list"><details><summary>${remessas.length} remessa(s)</summary><div>${remessas.map(r=>`${escapeHtml(r.remessa)} • ${formatNumber(r.pares)} pares${r.lote?` • lote ${escapeHtml(r.lote)}`:""}`).join("<br>")}</div></details></div>`:"<span class='tag'>manual/sem remessa</span>";
+    return `<tr data-index="${index}">
+      <td><input class="small-input edit-linha" type="text" value="${escapeHtml(item.linha)}" ${disabledAttr} /></td>
+      <td><input class="small-input edit-modelo" type="text" value="${escapeHtml(item.modelo)}" ${disabledAttr} /></td>
+      <td><input class="small-input edit-pares" type="number" min="0" step="1" value="${Number(item.pares||0)}" ${disabledAttr} /></td>
+      <td class="cell-left">${remessasHtml}</td>
+      <td class="${currentUserCanEdit?"":"hidden"}"><button class="btn btn-danger btn-remove-row" type="button">Remover</button></td>
+    </tr>`;
+  }).join("");
+  editorTableBody.querySelectorAll("input").forEach(input=>input.addEventListener("change",syncEditorRows));
+  editorTableBody.querySelectorAll(".btn-remove-row").forEach(btn=>btn.addEventListener("click",e=>{const tr=e.target.closest("tr");const index=Number(tr.dataset.index);currentDistribution.itens.splice(index,1);rebuildLinesFromItems();renderAll();}));
+  tableInfoPanel.textContent=`${formatNumber(currentDistribution.itens.length)} modelo(s) carregado(s). Confira os pares antes de salvar.`;
+  viewerWarning.classList.toggle("hidden",currentUserCanEdit);
+  saveButton.disabled=!currentUserCanEdit||!currentDistribution.itens.length;
+  editorCard.classList.remove("hidden");
+}
+function syncEditorRows(){
+  if(!currentDistribution)return;
+  currentDistribution.itens=[...editorTableBody.querySelectorAll("tr")].map((tr,i)=>({
+    linha:normalizeKey(tr.querySelector(".edit-linha").value),
+    modelo:normalizeKey(tr.querySelector(".edit-modelo").value),
+    pares:Number(tr.querySelector(".edit-pares").value||0),
+    remessas:currentDistribution.itens[i]?.remessas||[]
+  })).filter(i=>i.linha&&i.modelo&&i.pares>=0);
+  rebuildLinesFromItems();
+  renderSummary();renderSheet();
+}
+function renderAll(){renderSummary();renderSheet();renderEditor();setPermissionUI();}
+function hideResults(){summaryCard.classList.add("hidden");sheetCard.classList.add("hidden");editorCard.classList.add("hidden");saveButton.disabled=true;distributionSheet.innerHTML="";editorTableBody.innerHTML="";summaryBar.innerHTML="";tableInfoPanel.textContent=""}
+
+async function readPdf(){
+  if(!currentUserCanEdit){showMessage("Seu nível de acesso não permite ler PDF. Use o botão Abrir distribuição salva para consultar.","warning");return}
+  clearMessage();hideResults();
+  const file=pdfFileInput.files?.[0];
+  if(!file){showMessage("Selecione um PDF de corte para ler.","error");return}
+  if(file.type&&file.type!=="application/pdf"){showMessage("O arquivo selecionado não parece ser PDF.","error");return}
+  try{
+    readPdfButton.disabled=true;showMessage("Lendo PDF e montando distribuição...","info");
+    const dist=await extractDistributionFromPdf(file);
+    if(!dist.dataCorte){
+      const fromInput=dataCorteInput.value;
+      if(fromInput){dist.dataCorte=isoToDocId(fromInput);dist.dataCorteISO=fromInput}
+    }
+    if(!dist.dataCorte){showMessage("Não consegui identificar a data de corte no PDF. Informe a data manualmente e tente salvar depois.","warning")}
+    if(dist.dataCorteISO)dataCorteInput.value=dist.dataCorteISO;
+    currentDistribution=dist;
+    recalcPredictedDates();
+    renderAll();
+    const avisos=[...(dist.avisosLeitura||[])];
+    if(!dist.dataCorte)avisos.unshift("Data de corte n\u00e3o identificada. Informe a data antes de salvar.");
+    if(!dist.itens.length)avisos.unshift("Nenhum modelo carregado. N\u00e3o salve esta leitura como uma distribui\u00e7\u00e3o completa.");
+    if(avisos.length){
+      console.warn("Confer\u00eancia do PDF:",avisos);
+      const detalhes=avisos.slice(0,6).join(" ");
+      const outros=avisos.length>6?` Mais ${avisos.length-6} aviso(s) no console do navegador.`:"";
+      showMessage(`Leitura com diverg\u00eancias: ${formatNumber(dist.totalPares)} pares em ${Object.keys(dist.linhas).length} linha(s). ${detalhes}${outros} Confira antes de salvar.`,"warning");
+    }else{
+      showMessage(`PDF lido e conferido: ${formatNumber(dist.totalPares)} pares em ${Object.keys(dist.linhas).length} linha(s) e ${formatNumber(dist.totalModelos)} modelo(s).`,"success");
+    }
+  }catch(e){console.error(e);showMessage(`Erro ao ler PDF: ${e.message}`,"error")}
+  finally{readPdfButton.disabled=false}
+}
+function buildSavePayload(existingSnap){
+  syncEditorRows();
+  currentDistribution.itens=currentDistribution.itens.map(item=>{const reference=normalizarReferencia(item.linha,item.modelo);return {...item,linha:reference.linha,modelo:reference.modelo};});
+  const dataISO=dataCorteInput.value||currentDistribution.dataCorteISO||docIdToISO(currentDistribution.dataCorte||"");
+  const docId=isoToDocId(dataISO)||currentDistribution.dataCorte;
+  if(!docId)throw new Error("Informe a data de corte antes de salvar.");
+  currentDistribution.dataCorte=docId;currentDistribution.dataCorteISO=dataISO;
+  recalcPredictedDates();
+  rebuildLinesFromItems();
+  return{docId,payload:{
+    dataCorte:docId,
+    dataCorteBR:docIdToBR(docId),
+    dataCorteISO:dataISO,
+    arquivoOrigem:currentDistribution.arquivoOrigem||"",
+    datasProgramacao:{corte:dataCorteProgramadaInput.value||"",costura:dataCosturaInput.value||"",embarque:dataEmbarqueInput.value||""},
+    totalPares:currentDistribution.totalPares,
+    totalLinhas:Object.keys(currentDistribution.linhas||{}).length,
+    totalModelos:currentDistribution.totalModelos,
+    totalRemessas:currentDistribution.totalRemessas,
+    linhas:currentDistribution.linhas,
+    itens:currentDistribution.itens,
+    atualizadoPor:currentUserEmail,
+    atualizadoPorNome:currentUserName,
+    atualizadoEm:serverTimestamp(),
+    criadoEm:existingSnap?.exists()?existingSnap.data().criadoEm||serverTimestamp():serverTimestamp()
+  }};
+}
+async function saveDistribution(){
+  if(savingDistribution)return;
+  if(!currentUserCanEdit){showMessage("Seu nível de acesso não permite salvar distribuição.","warning");return}
+  if(!currentDistribution||!currentDistribution.itens.length){showMessage("Leia um PDF ou abra uma distribuição antes de salvar.","error");return}
+  savingDistribution=true;
+  const controls=[...document.querySelectorAll('main input, main button, main select')].map(element=>({element,disabled:element.disabled}));
+  controls.forEach(({element})=>{element.disabled=true;});
+  let distributionSaved=false,savedDocId="";
+  try{
+    showMessage("Conferindo as referências dos modelos...","info");
+    const {docId,payload}=buildSavePayload();
+    const references=prepararReferenciasDistribuicao(payload.itens);
+    const ref=doc(db,"Distribuicao",docId);
+    const snap=await getDoc(ref);
+    if(snap.exists()&&!confirm(`Já existe uma distribuição salva para ${docIdToBR(docId)}. Deseja substituir?`)){showMessage("Salvamento cancelado.","warning");return}
+    payload.criadoEm=snap.exists()?snap.data().criadoEm||serverTimestamp():serverTimestamp();
+    await setDoc(ref,payload,{merge:false});
+    distributionSaved=true;savedDocId=docId;
+    showMessage("Distribuição salva. Verificando os modelos cadastrados...","info");
+    const result=await cadastrarModelosDaDistribuicao(db,references,{onProgress:progress=>showMessage(`Distribuição salva. Conferindo modelos: ${progress.concluidos}/${progress.total}; ${progress.criados.length} criado(s).`,"info")});
+    const summary=`Distribuição ${docIdToBR(docId)} salva. ${result.verificados} modelo(s) verificado(s): ${result.criados.length} criado(s) e ${result.existentes.length} já cadastrado(s).`;
+    const review=result.criados.length?(currentUserLevel==='07'?' Os novos modelos estão sem preço. Peça ao Financeiro ou ao Admin para revisar os componentes e valores em Modelos.':' Os novos modelos estão sem preço. Revise os componentes e valores em Modelos.') : '';
+    if(result.pendentes.length){
+      const details=result.pendentes.slice(0,3).map(item=>`${item.chave}: ${item.motivo}`).join(' ');
+      showMessage(`${summary} ${result.pendentes.length} modelo(s) pendente(s). ${details}${review}`,"warning");
+    }else showMessage(summary+review,"success");
+  }catch(e){console.error(e);showMessage(distributionSaved?`Distribuição ${docIdToBR(savedDocId)} salva, mas a verificação automática dos modelos não foi concluída. ${e.message} Confira a conexão e as regras atualizadas, depois salve novamente.`:`Erro ao salvar distribuição: ${e.message}`,distributionSaved?"warning":"error")}
+  finally{savingDistribution=false;controls.forEach(({element,disabled})=>{element.disabled=disabled;});renderAll();}
+}
+async function loadDistributionByDocId(docId){
+  clearMessage();hideResults();
+  if(!docId){showMessage("Data da distribuição inválida.","error");return}
+  try{
+    showMessage("Buscando distribuição salva...","info");
+    const snap=await getDoc(doc(db,"Distribuicao",docId));
+    if(!snap.exists()){showMessage(`Nenhuma distribuição encontrada para ${docIdToBR(docId)}.`,"error");return}
+    const data=snap.data();
+    currentDistribution={arquivoOrigem:data.arquivoOrigem||"",dataCorte:data.dataCorte||docId,dataCorteISO:data.dataCorteISO||docIdToISO(docId),linhas:data.linhas||{},itens:Array.isArray(data.itens)?data.itens:[],totalPares:0,totalModelos:0,totalRemessas:0};
+    if(!currentDistribution.itens.length)rebuildItems(currentDistribution);else rebuildLinesFromItems();
+    dataCorteInput.value=currentDistribution.dataCorteISO||docIdToISO(docId);
+    recalcPredictedDates();
+    renderAll();
+    showMessage(`Distribuição ${docId} aberta com sucesso.`, "success");
+  }catch(e){console.error(e);showMessage(`Erro ao abrir distribuição: ${e.message}`,"error")}
+}
+async function openDistributionsModal(){
+  clearMessage();
+  listModalBackdrop.classList.add("show");
+  distributionsListBody.innerHTML='<tr><td colspan="6">Carregando distribuições salvas...</td></tr>';
+  listModalInfo.textContent="Buscando documentos da coleção Distribuicao...";
+  try{
+    const snap=await getDocs(collection(db,"Distribuicao"));
+    const rows=snap.docs.map(d=>({id:d.id,data:d.data()})).sort((a,b)=>docIdToISO(b.id).localeCompare(docIdToISO(a.id)));
+    if(!rows.length){distributionsListBody.innerHTML='<tr><td colspan="6">Nenhuma distribuição criada ainda.</td></tr>';listModalInfo.textContent="Nenhuma distribuição encontrada.";return}
+    listModalInfo.textContent=`${rows.length} distribuição(ões) encontrada(s).`;
+    distributionsListBody.innerHTML=rows.map(row=>{
+      const data=row.data||{};
+      return `<tr>
+        <td><strong>${docIdToBR(data.dataCorte||row.id)}</strong></td>
+        <td>${formatNumber(data.totalPares||0)}</td>
+        <td>${formatNumber(data.totalLinhas||Object.keys(data.linhas||{}).length)}</td>
+        <td>${formatNumber(data.totalModelos||0)}</td>
+        <td class="cell-left">${escapeHtml(data.arquivoOrigem||"—")}</td>
+        <td><button class="btn btn-primary btn-open-saved" type="button" data-doc-id="${escapeHtml(row.id)}">Abrir</button></td>
+      </tr>`;
+    }).join("");
+    distributionsListBody.querySelectorAll(".btn-open-saved").forEach(btn=>btn.addEventListener("click",async()=>{const docId=btn.dataset.docId;listModalBackdrop.classList.remove("show");await loadDistributionByDocId(docId)}));
+  }catch(e){console.error(e);distributionsListBody.innerHTML='<tr><td colspan="6">Erro ao carregar distribuições.</td></tr>';listModalInfo.textContent=`Erro: ${e.message}`;}
+}
+function clearPage(){pdfFileInput.value="";dataCorteInput.value="";dataCorteProgramadaInput.value="";dataCosturaInput.value="";dataEmbarqueInput.value="";currentDistribution=null;clearMessage();hideResults()}
+function addRow(){if(!currentUserCanEdit){showMessage("Seu nível de acesso não permite adicionar modelos.","warning");return}addLinhaInput.value="";addModeloInput.value="";addParesInput.value="";addModalBackdrop.classList.add("show");setTimeout(()=>addLinhaInput.focus(),50)}
+function confirmAddRow(){
+  const linha=normalizeKey(addLinhaInput.value),modelo=normalizeKey(addModeloInput.value),pares=Number(addParesInput.value||0);
+  if(!linha||!modelo||!pares){showMessage("Informe linha, modelo e pares para adicionar.","error");return}
+  if(!currentDistribution){currentDistribution={arquivoOrigem:"manual",dataCorte:isoToDocId(dataCorteInput.value),dataCorteISO:dataCorteInput.value,linhas:{},itens:[],totalPares:0,totalModelos:0,totalRemessas:0}}
+  const existing=currentDistribution.itens.find(i=>i.linha===linha&&i.modelo===modelo);
+  if(existing){existing.pares+=pares}else currentDistribution.itens.push({linha,modelo,pares,remessas:[]});
+  rebuildLinesFromItems();renderAll();addModalBackdrop.classList.remove("show");showMessage("Modelo adicionado. Confira antes de salvar.","success")
+}
+function printSheet(){if(!currentDistribution){showMessage("Abra ou leia uma distribuição antes de imprimir.","warning");return}window.print()}
+function setPermissionUI(){
+  currentUserCanEdit=FULL_ACCESS_LEVELS.has(currentUserLevel);
+  currentUserCanView=VIEW_ACCESS_LEVELS.has(currentUserLevel);
+  if(!currentUserCanView){redirectUnauthorized();return}
+  creationGrid.classList.toggle("hidden",!currentUserCanEdit);
+  readPdfButton.classList.toggle("hidden",!currentUserCanEdit);
+  saveButton.classList.toggle("hidden",!currentUserCanEdit);
+  addRowButton.classList.toggle("hidden",!currentUserCanEdit);
+  clearButton.classList.remove("hidden");
+  listDistributionsButton.classList.remove("hidden");
+  viewerWarning.classList.toggle("hidden",currentUserCanEdit);
+  saveButton.disabled=!currentUserCanEdit||!currentDistribution?.itens?.length;
+  if(!currentUserCanEdit&&!currentDistribution)showMessage("Seu acesso é somente consulta. Clique em Abrir distribuição salva para visualizar as distribuições já criadas.","info");
+}
+function initNavigationSafe(nivel,nome){
+  try{
+    if(window.SistemaNavegacao && typeof window.SistemaNavegacao.init === "function"){
+      window.SistemaNavegacao.init({
+        userLevel:nivel,
+        userName:nome,
+        title:"Distribuição Montagem",
+        onLogout:async()=>{
+          try{
+            await signOut(auth);
+            localStorage.removeItem("calcadosroma-65ac6:userNivelAcesso");
+            localStorage.removeItem("calcadosroma-65ac6:userName");
+            window.location.href="login.html";
+          }catch(error){
+            console.error("Erro ao fazer logout:",error);
+            alert("Erro ao fazer logout. Tente novamente.");
+          }
+        }
+      });
+    }else{
+      console.warn("navegacao.js não foi carregado ou SistemaNavegacao.init não está disponível.");
+    }
+  }catch(e){
+    console.warn("Falha ao iniciar navegação",e);
+  }
+}
+function redirectUnauthorized(){
+  alert("Seu nível de acesso não permite abrir esta página. Você será redirecionado para o início.");
+  window.location.replace("index.html");
+}
+
+readPdfButton.addEventListener("click",readPdf);
+saveButton.addEventListener("click",saveDistribution);
+clearButton.addEventListener("click",clearPage);
+listDistributionsButton.addEventListener("click",openDistributionsModal);
+closeListModalButton.addEventListener("click",()=>listModalBackdrop.classList.remove("show"));
+listModalBackdrop.addEventListener("click",e=>{if(e.target===listModalBackdrop)listModalBackdrop.classList.remove("show")});
+printButton.addEventListener("click",printSheet);
+addRowButton.addEventListener("click",addRow);
+closeAddModalButton.addEventListener("click",()=>addModalBackdrop.classList.remove("show"));
+confirmAddRowButton.addEventListener("click",confirmAddRow);
+addModalBackdrop.addEventListener("click",e=>{if(e.target===addModalBackdrop)addModalBackdrop.classList.remove("show")});
+[dataCorteInput].forEach(input=>input.addEventListener("change",()=>{recalcPredictedDates();if(currentDistribution){currentDistribution.dataCorte=isoToDocId(input.value);currentDistribution.dataCorteISO=input.value;renderSummary();renderSheet();setPermissionUI()}}));
+
+onAuthStateChanged(auth,async user=>{
+  if(!user){window.location.href="login.html";return}
+  try{
+    currentUserEmail=user.email||"";
+    const userSnap=await getDoc(doc(db,"Usuario",user.email));
+    if(!userSnap.exists()){alert("Dados do usuário não encontrados. Faça login novamente.");await signOut(auth);window.location.href="login.html";return}
+    const data=userSnap.data(); window.Roma.validateProfile(user,data);currentUserLevel=String(data.nivelAcesso||"");currentUserName=data.Nome||"Usuário";
+    localStorage.setItem("calcadosroma-65ac6:userNivelAcesso",currentUserLevel);localStorage.setItem("calcadosroma-65ac6:userName",currentUserName);
+    if(!VIEW_ACCESS_LEVELS.has(currentUserLevel)){redirectUnauthorized();return}
+    document.body.classList.remove("auth-loading");
+    initNavigationSafe(currentUserLevel,currentUserName);setPermissionUI();
+  }catch(e){console.error(e);alert("Erro ao validar usuário. Faça login novamente.");await signOut(auth);window.location.href="login.html"}
+});
+</script>
+</body>
+</html>

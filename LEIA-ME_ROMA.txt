@@ -1,0 +1,493 @@
+CALÇADOS ROMA — INSTALAÇÃO E OPERAÇÃO DA VERSÃO 2
+Preparado em 22/10/2026
+Projeto Firebase: calcadosroma-65ac6
+Banco: Cloud Firestore, instância (default)
+
+1. O QUE ESTA ENTREGA CONTÉM
+
+A versão 2 inclui os nove perfis, os setores Costura, Palmilha e Sola, a
+composição dos modelos, a distribuição dos ateliês em três abas e as regras
+de acesso correspondentes. São 44 páginas HTML: as 33 páginas da base,
+dez páginas dos novos setores e a página Preparação da Roma.
+
+A configuração principal está centralizada em firebase-config.js:
+
+  projectId:          calcadosroma-65ac6
+  authDomain:         calcadosroma-65ac6.firebaseapp.com
+  storageBucket:      calcadosroma-65ac6.firebasestorage.app
+  messagingSenderId:  300436616156
+  appId:              1:300436616156:web:21062559e44abda60f9519
+
+A apiKey e os demais valores informados já estão no mesmo arquivo. As
+páginas principais usam essa configuração. A identidade visual é Calçados
+Roma, e os dados locais do navegador usam a identificação desse projeto.
+
+Esta é uma entrega de arquivos para instalação. Nenhum registro da Factor
+foi copiado para o banco da Roma nesta preparação. Não foram publicados
+arquivos na hospedagem, regras ou índices no projeto real; também não foram
+criadas contas reais no Authentication. Os nove perfis representam tipos
+de acesso, e não nove contas já cadastradas.
+
+2. ORDEM DE INSTALAÇÃO
+
+Siga esta sequência para que telas, permissões e cadastros fiquem alinhados:
+
+1) Confira o projeto calcadosroma-65ac6 no console do Firebase. Habilite
+   Authentication por e-mail/senha e confira o Firestore (default).
+2) Crie o primeiro Admin no Authentication e o perfil 09 no Firestore,
+   exatamente como descrito na seção 3.
+3) Publique as regras e os índices do Firestore desta versão.
+4) Publique todos os arquivos da versão 2 na hospedagem da Roma.
+5) Entre como Admin e cadastre ou revise os usuários, seus níveis e UIDs.
+6) Cadastre ou revise os modelos, incluindo os seis componentes e os preços.
+7) Se houver dados de uma versão anterior no banco da Roma, use Preparação
+   da Roma para analisar e aplicar os ajustes conferidos.
+8) Confira os responsáveis no Corte e valide o fluxo de cada setor antes
+   de iniciar a operação com talões reais.
+
+Em um banco novo, cadastre usuários e modelos antes de importar os talões.
+O cadastro de talões exige o cadastro operacional do modelo, publicado
+junto com o salvamento do modelo ou pela Preparação da Roma.
+
+Se o projeto já tiver uma versão anterior, prepare o primeiro perfil 09
+pelo console antes de trocar as regras. Publique o conjunto completo e
+encerre as sessões antigas; cada usuário deve entrar novamente após a
+revisão do seu perfil pelo Admin.
+
+2.1. Projeto, regras e índices
+
+Console: https://console.firebase.google.com/
+Projeto: calcadosroma-65ac6
+
+No Authentication, habilite o provedor E-mail/senha. Confira também os
+Domínios autorizados para o endereço em que o aplicativo será hospedado.
+No Cloud Firestore, use a instância (default).
+
+Para publicar pelo console, copie firestore.rules para a aba Regras do
+Firestore. Regras_Firestore_Roma.txt é a cópia em texto das mesmas regras.
+Regras e índices são configurações diferentes: publicar as regras não cria
+os índices compostos.
+
+Se usar a Firebase CLI, abra o terminal na pasta extraída que contém
+firebase.json e execute:
+
+  firebase login
+  firebase deploy --only firestore --project calcadosroma-65ac6
+
+Esse comando publica somente as regras e os índices do Firestore definidos
+no pacote. O projeto está explícito para evitar publicar em outra instalação.
+O comando não publica a hospedagem, não cria usuários e não publica Storage.
+
+O arquivo firestore.indexes.json contém 29 índices compostos: 28 em taloes
+e um em DistribuicaoAtelier. Ele inclui os filtros por UID do ateliê e a
+consulta das distribuições salvas por setor e atualização. Os campos e as
+ordens exatas estão no JSON; há índices com ordenação decrescente.
+
+Aguarde os índices ficarem prontos no console antes de usar os filtros.
+Combinações adicionais de filtros podem exigir outro índice. Quando o
+Firebase indicar que falta um índice, use o link apresentado pelo erro
+para criar a combinação solicitada no projeto da Roma.
+
+2.2. Hospedagem
+
+Extraia o ZIP e publique o conjunto completo de arquivos. Preserve os nomes,
+as maiúsculas/minúsculas e a posição dos HTMLs e scripts. Além dos arquivos
+anteriores, esta versão depende dos helpers roma-*.js: não envie somente
+as páginas HTML nem mantenha scripts da versão anterior na mesma instalação.
+
+Na instalação publicada, abra login.html pelo endereço HTTP/HTTPS do site.
+A página Criar Distribuição também permite abertura direta pela pasta do
+computador: o cadastro automático carrega roma-cadastro-modelos.js como
+script clássico, sem importar esse arquivo local como módulo JavaScript.
+Mantenha todos os arquivos juntos. O acesso ao Firebase continua exigindo
+internet, autenticação e as permissões do usuário.
+
+firebase.json configura Firestore e Storage; este pacote não define um
+site no Firebase Hosting. Pode ser usada a hospedagem de páginas estáticas
+escolhida para a Roma. O workflow .github/workflows/blank.yml veio na base
+original e é demonstrativo; ele não publica esta aplicação automaticamente.
+
+3. CRIAR O PRIMEIRO ADMINISTRADOR
+
+No Authentication do projeto da Roma, crie a conta do responsável. Anote o
+e-mail exibido e copie o UID dessa conta. Configure a senha no Authentication.
+
+Pelo console do Firestore, crie o seguinte documento:
+
+  Coleção: Usuario
+  ID do documento: o mesmo e-mail da conta do Authentication
+
+  Campo              Tipo      Valor
+  Nome               string    Nome do responsável
+  Email              string    Mesmo e-mail do Authentication e do documento
+  uid                string    UID copiado da conta no projeto da Roma
+  nivelAcesso        string    09
+  ativo              boolean   true
+  permissoesVersao   int64     2
+
+Use Usuario com U maiúsculo, no singular. Nome e Email também começam com
+maiúscula. O ID do documento é o e-mail; o UID fica no campo uid.
+
+nivelAcesso é texto com dois dígitos: "09". Não use o número 9.
+permissoesVersao é o número inteiro 2 (tipo int64 no console). Não use o texto "2".
+ativo é o booleano true. Um campo ativo ausente não libera acesso nesta versão.
+
+O e-mail e o UID devem pertencer à mesma conta no Authentication da Roma.
+Não reutilize o UID de uma conta de outro projeto. criadoEm e atualizadoEm
+podem ser omitidos no primeiro cadastro feito pelo console.
+
+Depois do primeiro login, somente o Admin 09 abre Cadastro de Usuários.
+O formulário cria a conta no Authentication e o perfil em Usuario, mantendo
+a sessão do Admin. Para usuários dos setores, também grava o vínculo no
+diretório atelies, identificado pelo UID.
+
+Os dados reais de cada conta — nome, e-mail, senha inicial e perfil — devem
+ser preenchidos nesse formulário. Pode haver vários usuários/ateliês com o
+mesmo tipo de acesso. Senhas não são armazenadas nos perfis do Firestore.
+Para bloquear o acesso ao aplicativo, desmarque Acesso ativo no cadastro.
+
+4. OS NOVE PERFIS E SUAS RESTRIÇÕES
+
+01 — Cadastro
+Cadastro de Talões por CSV, Cadastro Manual, Edição de Talões, Cronograma,
+Cronograma Celular e Giro de Produção. A edição permite corrigir metadados
+e excluir os talões selecionados. Os campos de leitura de produção não
+ficam disponíveis para alteração por esse perfil.
+
+02 — Corte
+Corte, Talões Perdidos, Programação de Corte, Cronograma, Cronograma Celular
+e Giro de Produção. Controla os componentes do Corte e pode definir ou
+alterar os três ateliês responsáveis, inclusive por talões selecionados.
+
+03 — Costura
+Relatório Ateliê, Controle, Programação, Entrada Ateliê e Saída Ateliê da
+Costura. Consulta e opera somente os talões atribuídos ao seu UID na Costura.
+
+04 — Sola
+Os mesmos cinco fluxos, no setor Sola. Consulta e opera somente os talões
+atribuídos ao seu UID na Sola e em que esse componente se aplica.
+
+05 — Palmilha
+Os mesmos cinco fluxos, no setor Palmilha. Consulta e opera somente os
+talões atribuídos ao seu UID na Palmilha e em que esse componente se aplica.
+
+06 — Montagem
+Distribuição, Talonagem, Montagem, Talões Perdidos, Programação de Corte,
+Cronograma, Cronograma Celular e Giro de Produção. Executa os registros
+operacionais da fábrica permitidos para esse setor.
+
+07 — Programação
+Acesso às páginas de planejamento, criação de distribuições, Distribuição
+de Ateliês e consultas operacionais previstas no menu. Não acessa Cadastro
+de Usuários, Edição de Talões, Modelos nem as páginas de Faturamento.
+Na Distribuição de Ateliês recebe somente preços de Costura, Palmilha e Sola
+e os cálculos desses serviços. O preço total do modelo e os valores dos
+demais serviços não são carregados por esse perfil.
+Ao salvar Criar Distribuição, também pode gerar automaticamente o cadastro
+inicial dos modelos ausentes, com valores zerados e componentes padrão.
+Essa operação não libera a página Modelos nem a edição financeira para07.
+
+08 — Financeiro
+Acesso a Modelos, preços completos, Faturamento e às demais páginas de
+consulta e planejamento previstas no menu, incluindo Cronogramas, Giro,
+Romaneio e Movimentações. Não acessa Cadastro de Usuários nem Edição de
+Talões. Não registra entradas e saídas operacionais.
+
+09 — Admin
+Acesso a todas as páginas operacionais implementadas, gestão de usuários,
+Modelos, Faturamento e Preparação da Roma. Pode operar os três setores e
+corrigir os dados necessários à administração do sistema.
+
+Restrições que valem em todas as telas:
+
+- Somente 09 administra usuários.
+- Somente 01 e 09 acessam Edição de Talões, antigo Relatório Geral.
+  O arquivo continua sendo relatoriogeral.html para preservar as referências.
+- Entradas e saídas de ateliê são reservadas ao perfil do respectivo setor
+  e ao Admin: 03/09 Costura, 04/09 Sola e 05/09 Palmilha.
+- 07 e 08 não fazem bipagens nem registros de entrada/saída de produção.
+  Nas telas operacionais que podem consultar, os controles de gravação
+  reservados ao Corte ou à Montagem ficam bloqueados para esses perfis.
+- O lançamento de responsáveis na Distribuição de Ateliês é planejamento;
+  ele não registra entrada, saída ou conclusão de produção.
+- Ter uma página no menu não libera qualquer alteração nessa página. As
+  operações são verificadas novamente pelo aplicativo e pelas regras.
+- Ateliês não recebem todos os talões para depois esconder parte na tela:
+  as consultas e as regras de leitura exigem o UID responsável do setor.
+- Um setor não toma para si um talão sem responsável. O vínculo deve ser
+  definido na distribuição ou pelo Corte antes da leitura.
+
+ACESSOS_ROMA.txt contém a relação completa das 43 páginas do menu e os
+perfis de cada página, além dos limites de operação.
+
+5. MODELOS, COMPONENTES E PREÇOS
+
+Em Modelos, marque os componentes que cada modelo contém:
+
+  Cabedal, Forro, Tiras e Aviamentos: controlados pelo Corte.
+  Palmilha: controlada pelo setor Palmilha.
+  Sola: controlada pelo setor Sola, no fluxo de pré-fabricado.
+
+Um componente não selecionado não gera pendência de produção. Costura
+mantém seu próprio fluxo de entrada e saída. As situações de Costura,
+Palmilha e Sola são independentes: a conclusão de uma não conclui as outras.
+
+Cada talão novo guarda uma cópia da composição do modelo no momento do
+cadastro. Isso permite acompanhar sua composição sem mudar silenciosamente
+um talão já em produção quando o cadastro do modelo for alterado depois.
+Para atualizar talões ainda não iniciados, existe a opção específica da
+Preparação da Roma. Talões já iniciados preservam sua composição.
+
+Modelos e talões antigos sem composição explícita usam como referência
+legada os quatro componentes do Corte, com Palmilha e Sola desmarcadas.
+Revise os modelos antes de atualizar os talões pendentes se esses dois
+componentes fizerem parte da produção da Roma.
+
+A composição participa do histórico de alterações. Reajustes de preços
+preservam os componentes. Ao salvar um modelo, o sistema grava no mesmo
+lote o documento completo e as duas projeções necessárias à operação:
+
+  modelos: cadastro completo, inclusive preço total e demais valores;
+  modelosOperacionais: composição e dados operacionais, sem preços;
+  precosAtelier: somente os preços de Costura, Palmilha e Sola.
+
+Programação não lê a coleção modelos. Essa separação protege os preços no
+banco, além de controlar o que aparece na interface.
+
+Compatibilidade de preços: o nome legado "Pré" é tratado como Sola na
+projeção. Se houver um preço explícito "Sola", ele tem prioridade. Confira
+esses campos ao revisar os modelos antigos.
+
+5.1. Cadastro automático ao salvar a distribuição
+
+Em Criar Distribuição (distribuicao_montagem.html), Salvar distribuição
+confere todos os modelos da tabela e cria os que ainda não estiverem
+cadastrados. A referência completa é sempre linha.modelo, por exemplo
+8560.417. Esse é o ID do documento e o campo chave. Os campos linha e
+modelo permanecem separados internamente para manter a compatibilidade
+com importações e relatórios: linha "8560" e modelo "417".
+
+As referências curta, completa e com zeros iniciais são comparadas pela
+mesma chave, sem duplicar cadastros. Um modelo completo cujo prefixo seja
+de outra linha é recusado antes do salvamento. A tabela de Modelos mostra
+a referência completa. Referências equivalentes na distribuição têm os
+pares somados e as remessas preservadas.
+
+Cadastros encontrados, inclusive inativos e os IDs legados reconhecidos,
+mantêm seus valores, componentes, histórico e estado. Os novos começam
+SEM PREÇO, com os quatro componentes do Corte selecionados e Palmilha/Sola
+desmarcadas, conforme o padrão atual. Financeiro ou Admin deve revisar a
+composição e preencher os valores em Modelos antes de usar esses dados
+para a produção e o faturamento.
+
+O perfil07 pode criar somente esse cadastro inicial, com as três cópias
+coerentes no mesmo commit. Não recebe acesso ao cadastro financeiro já
+existente. Os perfis08/09 continuam com seu acesso normal a Modelos.
+
+A mensagem final informa modelos verificados, criados e já cadastrados.
+Se houver uma falha depois de salvar a distribuição, a tela informa que
+a distribuição foi salva e identifica os modelos pendentes. Salve novamente
+após resolver a falha para concluir a verificação; cadastros já criados são
+preservados. Cancelar a substituição não inicia o cadastro automático.
+
+Dados financeiros legados sem projeção operacional precisam passar pela
+Preparação da Roma. Programação não lê esses documentos; um conflito com
+cadastro antigo incompleto é informado para revisão pelo Admin.
+
+Para instalar este ajuste, atualize os arquivos do sistema e publique as
+regras Firestore entregues junto dele. O helper roma-cadastro-modelos.js
+precisa ficar na mesma pasta de distribuicao_montagem.html. Não há novos
+índices para esta alteração.
+
+Correção de abertura pela pasta do computador (22/10/2026): substitua
+juntos distribuicao_montagem.html e roma-cadastro-modelos.js. Essa correção
+remove o import local que era bloqueado pelo navegador em file:// e mantém
+a lógica de cadastro automático. Se o helper estiver ausente ou ainda for
+a versão antiga, a página mostra uma orientação para atualizar os dois
+arquivos. Não há mudança nas regras nem nos dados para esta correção.
+
+6. DISTRIBUIÇÃO DOS ATELIÊS E DEFINIÇÃO DOS RESPONSÁVEIS
+
+Distribuição de Ateliês possui três abas independentes: Costura, Palmilha
+e Sola. Cada aba tem suas alocações, observações e salvamento automático.
+Use ateliês ativos cadastrados no setor correspondente. O botão Atualizar
+ateliês recarrega esse diretório; a criação de contas continua com o Admin.
+
+Fluxo de trabalho:
+
+1) Crie e confira as distribuições de corte nas datas correspondentes.
+2) Em Distribuição de Ateliês, selecione uma ou duas distribuições da semana.
+3) Abra a aba do setor, monte a distribuição e ajuste os modelos entre os
+   ateliês. É possível arrastar, dividir e acrescentar observações.
+4) Clique em Lançar distribuição.
+5) Confira o resultado e resolva no Corte os modelos divididos ou pendentes.
+
+Se houver somente uma data de corte na semana, selecione apenas essa
+origem em Selecionar distribuição. Também é possível preencher Corte 1
+e deixar Corte 2 (opcional) vazio. A distribuição individual será montada,
+salva e lançada usando somente os modelos e talões da data escolhida.
+Com duas datas diferentes, as origens continuam sendo somadas em conjunto.
+
+A data única é preservada ao mudar entre Costura, Palmilha e Sola. Cada
+setor mantém sua própria distribuição. Abrir salvas também permite retomar
+uma individual, com as movimentações, divisões e observações preservadas.
+Os resumos e a impressão mostram somente a data selecionada. As médias
+de pares/dia e valor/dia continuam considerando cinco dias de trabalho.
+
+Para aplicar somente este ajuste sobre o pacote anterior já instalado,
+substitua distribuicaoatt.html e recarregue a página. Esta alteração de
+seleção de datas não exige novas regras, índices ou migração do banco.
+
+Quando um modelo tem um único destino válido, o lançamento atribui o
+ateliê responsável aos talões desse modelo nas origens/datas de corte
+selecionadas. Cada talão pode ter responsáveis diferentes para Costura,
+Palmilha e Sola, sempre com IDs separados.
+
+Quando o modelo está dividido entre destinos, o lançamento não escolhe
+quais talões vão para cada ateliê. O Corte seleciona os talões e aplica o
+responsável de cada setor. Use o botão Dividir ou SHIFT ao arrastar para
+montar a divisão na programação; a seleção física dos talões fica no Corte.
+
+Atribuições manuais do Corte, vínculos preservados pela preparação e etapas
+já iniciadas não são sobrescritos automaticamente pelo lançamento. Se uma
+distribuição já lançada for dividida depois, revise os responsáveis no
+Corte: o lançamento não redistribui automaticamente os talões existentes.
+
+O resultado informa os talões atribuídos, os já lançados e os casos que
+exigem revisão. Repetir o lançamento não duplica o registro. Se ocorrer
+uma interrupção, a mensagem informa o que foi confirmado; resolva a causa
+e lance novamente. Os dados são relidos antes da gravação para preservar
+alterações concorrentes.
+
+As datas operacionais dos novos talões são salvas em formato ISO,
+AAAA-MM-DD. Datas antigas em outro formato precisam de normalização pelo
+Admin antes de participar do lançamento. O lançamento também preserva
+nomes antigos ainda sem vínculo confirmado de UID.
+
+7. PREPARAÇÃO DE DADOS DE UMA VERSÃO ANTERIOR
+
+Página: configuracao_roma.html
+Menu: Preparação da Roma
+Acesso: somente Admin 09
+
+Essa página atua sobre os dados que já estiverem no banco da Roma. Ela não
+acessa o banco da Factor, não copia registros entre projetos, não cria
+contas no Authentication e não converte os níveis de acesso automaticamente.
+
+Antes de utilizá-la:
+
+- Revise cada usuário em Cadastro de Usuários: nome, e-mail, UID, perfil e
+  Acesso ativo. O salvamento utiliza permissoesVersao: 2.
+- Confira especialmente os códigos antigos: 04 agora é Sola, 05 agora é
+  Palmilha, 06 agora é Montagem e 07 agora é Programação. Não atribua a
+  versão 2 a um perfil antigo sem revisar o significado do nível.
+- Para o primeiro responsável que usava o antigo nível 07/Super, configure
+  o novo perfil 09/Admin pelo console conforme a seção 3. Não há conversão
+  automática de Super para Admin.
+- Revise os componentes e os preços de cada modelo.
+
+Depois clique em Analisar cadastros e talões. Confira a prévia e as
+pendências antes de Aplicar preparação conferida. A preparação:
+
+- publica o diretório de ateliês dos usuários revisados;
+- publica as projeções operacionais e os preços permitidos dos modelos;
+- prepara os componentes e os estados necessários dos talões antigos;
+- vincula um nome antigo a um UID somente quando existir um único ateliê
+  ativo, revisado e com nome correspondente no mesmo setor;
+- preserva os vínculos já definidos e sinaliza nomes sem correspondência
+  ou ambíguos para revisão no Corte;
+- não faz bipagens nem registra entradas ou saídas de produção.
+
+A opção Atualizar também os componentes dos talões ainda não iniciados
+permite copiar para esses talões a composição atual do modelo. Ela não
+altera a composição dos talões já iniciados. Confira essa opção na análise
+antes de aplicá-la.
+
+Um nome de ateliê é apenas a identificação exibida. A autorização de acesso
+usa o UID. Não tente liberar um ateliê apenas escrevendo o nome no talão.
+Use os responsáveis do Corte ou a preparação com correspondência única.
+
+Se algum cadastro mudar depois da análise, a preparação informa a falha e
+preserva esse item para nova análise. Ao terminar, confira as pendências e
+os responsáveis no Corte antes das primeiras leituras.
+
+8. IMPORTAÇÕES, PDFS E BACKUPS
+
+Cadastro de Talões mantém o leitor CSV da base recebida, com o formato de
+colunas e separador por ponto e vírgula já utilizado. A importação agora
+consulta o modelo operacional e copia os componentes para cada talão.
+Os modelos precisam estar cadastrados/publicados antes da importação.
+
+Criar Distribuição mantém a leitura do PDF de corte e a conferência das
+quantidades antes do salvamento. Em programacao_montagem.html, a importação
+identificada como "PDF Factor Geral" mantém o formato original de leitura,
+incluindo a comparação dos três PDFs indicada nessa tela. Alterar o nome
+da empresa ou o projeto Firebase não altera o formato desses relatórios.
+Para adaptar o leitor a outro layout de PDF/CSV da Roma, será necessário
+um arquivo de exemplo desse layout.
+
+O projeto secundário de backup da Roma não foi informado. Por isso,
+migracaotaloes.html e cronogramaBackup.html permanecem desabilitados:
+exibem o aviso correspondente e não iniciam conexões com um banco de backup.
+Não há cópia automática para a Factor nem para outro projeto antigo.
+A ativação desse arquivamento depende de um segundo projeto da Roma e da
+configuração de acesso correspondente.
+
+9. CLOUD STORAGE
+
+O aplicativo recebido não usa a API de Cloud Storage; os PDFs são lidos ou
+gerados no navegador. storage.rules mantém leitura e gravação fechadas.
+Regras_Storage_Roma.txt contém a mesma regra em texto simples.
+
+Não é necessário ativar Storage para as funcionalidades atuais. Se ele já
+estiver habilitado e for necessário aplicar essas regras, publique-as na
+aba Regras do Storage no projeto da Roma. O comando CLI da seção 2 publica
+somente Firestore e não altera Storage.
+
+10. DIAGNÓSTICO E VERIFICAÇÃO APÓS A INSTALAÇÃO
+
+Perfil não encontrado:
+Confira Usuario/<e-mail>, a grafia e o e-mail da conta no Authentication.
+
+Perfil incompatível ou sem acesso:
+Confira UID, nivelAcesso como string de dois dígitos, ativo boolean true e
+permissoesVersao como número 2. O perfil e a conta precisam ser da Roma.
+
+Usuário antigo bloqueado:
+Um Admin precisa revisar seu perfil para os nove níveis. Não basta trocar
+o rótulo exibido no menu nem alterar valores no armazenamento do navegador.
+
+Modelo sem cadastro operacional:
+Salve/revise o modelo em Modelos ou publique os modelos antigos pela
+Preparação da Roma. Confira linha e modelo antes de repetir a importação.
+
+Ateliê não encontra um talão:
+Confira o UID responsável no setor correto, o cadastro ativo do ateliê e
+se Palmilha/Sola se aplicam à composição. Um talão sem responsável, ou
+atribuído a outro UID naquele setor, não aparece para esse usuário.
+
+Permission denied:
+Confira o projeto, as regras v2 publicadas, o perfil autenticado e a operação
+permitida ao nível. Nome de ateliê ou menu visível não substituem a regra.
+
+Requires an index:
+Crie/aguarde o índice indicado na mensagem do Firebase. Consulte o JSON
+entregue para os índices previstos nas consultas da versão 2.
+
+Falha ao carregar SDK, PDF.js ou outros recursos:
+Confira a conexão com a internet, a publicação completa dos scripts e as
+mensagens do navegador. As bibliotecas utilizadas pela base são carregadas
+pelos endereços definidos nos arquivos.
+
+A validação local é descrita em VERIFICACAO_ROMA.txt. Ela não representa
+publicação nem teste do login, dos índices ou dos dados no projeto real.
+Após a instalação, confira o primeiro login, as consultas com os índices
+prontos, os vínculos dos ateliês e os fluxos autorizados de cada perfil.
+
+REFERÊNCIAS OFICIAIS
+
+https://firebase.google.com/docs/auth/web/password-auth
+https://firebase.google.com/docs/auth/web/manage-users
+https://firebase.google.com/docs/firestore/security/get-started
+https://firebase.google.com/docs/firestore/query-data/indexing
+https://firebase.google.com/docs/firestore/security/test-rules-emulator

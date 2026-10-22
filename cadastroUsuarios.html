@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administração de Usuários</title>
+  <style>
+    :root{
+      --bg:#f3f5f7;--card:#fff;--line:#d9e1e7;--text:#1c2b36;--muted:#6b7a88;
+      --green:#198754;--green2:#157347;--blue:#0d6efd;--blue2:#0b5ed7;--gray:#e9eef3;
+      --shadow:0 10px 26px rgba(0,0,0,.08);--radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    .page{max-width:1200px;margin:0 auto;padding:24px}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+    h1{margin:0;font-size:30px}
+    .sub{color:var(--muted);margin-top:6px}
+    .statusbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .pill{background:#eef3f7;border:1px solid var(--line);padding:10px 12px;border-radius:999px;font-size:13px}
+    .layout{display:grid;grid-template-columns:360px 1fr;gap:18px}
+    .card{background:var(--card);border:1px solid #edf2f5;border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .card h2{margin:0 0 16px;font-size:22px}
+    .group{margin-bottom:12px}
+    label{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+    input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fff;outline:none}
+    input:focus,select:focus{border-color:#8cb6ff;box-shadow:0 0 0 3px rgba(13,110,253,.12)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+    button{border:none;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .btn-green{background:var(--green);color:#fff}.btn-green:hover:not(:disabled){background:var(--green2)}
+    .btn-blue{background:var(--blue);color:#fff}.btn-blue:hover:not(:disabled){background:var(--blue2)}
+    .btn-gray{background:var(--gray);color:var(--text)}.btn-gray:hover:not(:disabled){background:#dde5ec}
+    .message{display:none;margin-top:14px;padding:12px;border-radius:10px;font-size:14px;border:1px solid transparent}
+    .message.show{display:block}.success{background:#d1e7dd;color:#0f5132;border-color:#badbcc}.error{background:#f8d7da;color:#842029;border-color:#f5c2c7}.info{background:#e2f0ff;color:#084298;border-color:#b6d4fe}
+    .toolbar{display:grid;grid-template-columns:1fr 190px 160px;gap:10px;margin-bottom:14px}
+    .list{display:grid;gap:10px;max-height:72vh;overflow:auto;padding-right:4px}
+    .item{border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:#fff}
+    .item.active{border-color:#8cb6ff;box-shadow:0 0 0 3px rgba(13,110,253,.12)}
+    .name{font-weight:700;font-size:16px;margin-bottom:5px}.email,.meta{font-size:13px;color:var(--muted);word-break:break-word}
+    .tag{display:inline-block;margin-top:6px;background:#eef3f7;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}
+    .empty{text-align:center;color:var(--muted);padding:30px 12px;border:1px dashed var(--line);border-radius:12px;background:#fafbfd}
+    .hint{font-size:13px;color:var(--muted);line-height:1.45;margin-top:14px}
+    .hidden{display:none!important}
+    @media (max-width:960px){.layout{grid-template-columns:1fr}.toolbar,.actions,.row{grid-template-columns:1fr}.list{max-height:none}}
+  </style>
+  <script src="navegacao.js"></script>
+</head>
+<body>
+  <div class="page">
+    <div class="top">
+      <div>
+        <h1>Administração de Usuários</h1>
+        <div class="sub">Crie usuários e ajuste os níveis de acesso da Calçados Roma.</div>
+      </div>
+      <div class="statusbar">
+        <div class="pill" id="authStatus">Não autenticado</div>
+        <button class="btn-gray" id="refreshBtn">Atualizar lista</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="card">
+        <div id="loginBox">
+          <h2>Entrar como admin</h2>
+          <div class="group">
+            <label for="loginEmail">E-mail</label>
+            <input type="email" id="loginEmail" placeholder="seuemail@empresa.com" />
+          </div>
+          <div class="group">
+            <label for="loginSenha">Senha</label>
+            <input type="password" id="loginSenha" placeholder="Senha do admin" />
+          </div>
+          <div class="actions">
+            <button class="btn-blue" id="loginBtn">Entrar</button>
+            <button class="btn-gray" id="logoutBtn" disabled>Sair</button>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #edf2f5;margin:18px 0">
+
+        <div id="userBox">
+          <h2 id="formTitle">Novo usuário</h2>
+          <form id="userForm">
+            <div class="group">
+              <label for="nome">Nome</label>
+              <input type="text" id="nome" required>
+            </div>
+            <div class="group">
+              <label for="email">E-mail</label>
+              <input type="email" id="email" required>
+            </div>
+            <div class="group" id="senhaGroup">
+              <label for="senha">Senha</label>
+              <input type="password" id="senha" minlength="6" placeholder="Mínimo 6 caracteres">
+            </div>
+            <div class="group">
+              <label for="nivelAcesso">Nível de acesso</label>
+              <select id="nivelAcesso" required>
+                <option value="">Selecione</option>
+                <option value="01">01 - Cadastro</option>
+                <option value="02">02 - Corte</option>
+                <option value="03">03 - Costura</option>
+                <option value="04">04 - Sola</option>
+                <option value="05">05 - Palmilha</option>
+                <option value="06">06 - Montagem</option>
+                <option value="07">07 - Programação</option>
+                <option value="08">08 - Financeiro</option>
+                <option value="09">09 - Admin</option>
+              </select>
+            </div>
+            <div class="group" id="uidGroup" hidden><label for="perfilUid">UID do Authentication</label><input id="perfilUid" type="text" autocomplete="off"><small>Use o UID da mesma conta de e-mail. A senha é gerenciada no Authentication.</small></div>
+            <div class="group"><label><input id="perfilAtivo" type="checkbox" checked> Acesso ativo</label></div>
+            <div class="actions">
+              <button type="submit" class="btn-green" id="saveBtn" disabled>Cadastrar usuário</button>
+              <button type="button" class="btn-gray" id="clearBtn">Limpar / novo</button>
+            </div>
+          </form>
+          <div class="message" id="message"></div>
+          <div class="hint">
+            Use uma conta de nível 09 (Admin) para administrar os acessos. As senhas são protegidas pelo Firebase Authentication.
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Usuários cadastrados</h2>
+        <div class="toolbar">
+          <input type="text" id="searchInput" placeholder="Buscar por nome ou e-mail">
+          <select id="nivelFiltro">
+            <option value="">Todos os níveis</option>
+            <option value="01">01 - Cadastro</option>
+            <option value="02">02 - Corte</option>
+            <option value="03">03 - Costura</option>
+            <option value="04">04 - Sola</option>
+            <option value="05">05 - Palmilha</option>
+            <option value="06">06 - Montagem</option>
+            <option value="07">07 - Programação</option>
+                <option value="08">08 - Financeiro</option>
+                <option value="09">09 - Admin</option>
+          </select>
+          <button class="btn-blue" id="closeEditBtn">Fechar edição</button>
+        </div>
+        <div class="list" id="usersList">
+          <div class="empty">Faça login para carregar os usuários.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps, getApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      signOut,
+      createUserWithEmailAndPassword,
+      setPersistence,
+      inMemoryPersistence,
+      deleteUser
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      getDoc,
+      doc,
+      setDoc,
+      updateDoc,
+      serverTimestamp,
+      query,
+      where,
+      writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = window.FIREBASE_CONFIG;
+
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const authStatus = document.getElementById('authStatus');
+    const loginEmail = document.getElementById('loginEmail');
+    const loginSenha = document.getElementById('loginSenha');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    const formTitle = document.getElementById('formTitle');
+    const userForm = document.getElementById('userForm');
+    const nome = document.getElementById('nome');
+    const email = document.getElementById('email');
+    const senha = document.getElementById('senha');
+    const senhaGroup = document.getElementById('senhaGroup');
+    const nivelAcesso = document.getElementById('nivelAcesso');
+    const saveBtn = document.getElementById('saveBtn');
+    const perfilUid = document.getElementById('perfilUid');
+    const perfilAtivo = document.getElementById('perfilAtivo');
+    const uidGroup = document.getElementById('uidGroup');
+    const clearBtn = document.getElementById('clearBtn');
+    const message = document.getElementById('message');
+
+    const searchInput = document.getElementById('searchInput');
+    const nivelFiltro = document.getElementById('nivelFiltro');
+    const closeEditBtn = document.getElementById('closeEditBtn');
+    const usersList = document.getElementById('usersList');
+
+    let currentUser = null;
+    let usuarios = [];
+    let editingEmail = null;
+
+    const nivelMap = window.Roma.ROLES;
+
+    function iniciarNavegacaoPadrao(nivelUsuario, nomeUsuario) {
+      if (!window.SistemaNavegacao) return;
+
+      window.SistemaNavegacao.init({
+        userLevel: String(nivelUsuario || ''),
+        userName: nomeUsuario || 'Usuário',
+        title: 'Controle de produção Calçados Roma',
+        onLogout: async () => {
+          try {
+            await signOut(auth);
+          } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+          } finally {
+            localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+            localStorage.removeItem('calcadosroma-65ac6:userName');
+            localStorage.removeItem('calcadosroma-65ac6:userEmail');
+            window.location.href = 'login.html';
+          }
+        }
+      });
+    }
+
+    // O menu administrativo é exibido somente após validar o perfil no Firebase.
+
+    function showMessage(text, type='info') {
+      message.textContent = text;
+      message.className = `message show ${type}`;
+    }
+    function clearMessage(){ message.textContent=''; message.className='message'; }
+    function escapeHtml(v){ return String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
+    function toggleAdminArea(enabled){ saveBtn.disabled = !enabled; refreshBtn.disabled = !enabled; }
+
+    function resetForm(){
+      userForm.reset();
+      editingEmail = null;
+      uidGroup.hidden = true; perfilUid.value=''; perfilUid.required=false; perfilAtivo.checked=true;
+      email.disabled = false;
+      senha.required = true;
+      senhaGroup.classList.remove('hidden');
+      formTitle.textContent = 'Novo usuário';
+      saveBtn.textContent = 'Cadastrar usuário';
+      clearMessage();
+      document.querySelectorAll('.item').forEach(x=>x.classList.remove('active'));
+    }
+
+    function fillForm(usuario){
+      editingEmail = usuario.email;
+      nome.value = usuario.nome || '';
+      email.value = usuario.email || '';
+      email.disabled = true;
+      senha.value = '';
+      senha.required = false;
+      senhaGroup.classList.add('hidden');
+      nivelAcesso.value = usuario.permissoesVersao === 2 ? usuario.nivelAcesso : '';
+      perfilUid.value=usuario.uid||''; perfilUid.required=true; uidGroup.hidden=false; perfilAtivo.checked=usuario.ativo!==false;
+      formTitle.textContent = 'Editar usuário';
+      saveBtn.textContent = 'Salvar alterações';
+      document.querySelectorAll('.item').forEach(x=>x.classList.remove('active'));
+      const el = document.querySelector(`[data-email="${CSS.escape(usuario.email)}"]`);
+      if (el) el.classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    async function carregarUsuarios(){
+      if (!currentUser) {
+        usersList.innerHTML = '<div class="empty">Faça login para carregar os usuários.</div>';
+        return;
+      }
+      usersList.innerHTML = '<div class="empty">Carregando usuários...</div>';
+      try {
+        const snap = await getDocs(collection(db, 'Usuario'));
+        usuarios = snap.docs.map(d => ({
+          email: d.id,
+          nome: d.data().Nome || '',
+          nivelAcesso: d.data().nivelAcesso || '',
+          uid: d.data().uid || '',
+          ativo: d.data().ativo !== false,
+          permissoesVersao: d.data().permissoesVersao || 1
+        })).sort((a,b)=>(a.nome||'').localeCompare((b.nome||''),'pt-BR'));
+        renderUsuarios();
+      } catch (err) {
+        console.error('Erro ao carregar usuários:', err);
+        usersList.innerHTML = '<div class="empty">Erro ao carregar usuários.</div>';
+        showMessage('Erro ao carregar usuários: ' + (err.message || err), 'error');
+      }
+    }
+
+    function renderUsuarios(){
+      const termo = searchInput.value.trim().toLowerCase();
+      const nf = nivelFiltro.value;
+      const filtrados = usuarios.filter(u => {
+        const okBusca = !termo || (u.nome||'').toLowerCase().includes(termo) || (u.email||'').toLowerCase().includes(termo);
+        const okNivel = !nf || u.nivelAcesso === nf;
+        return okBusca && okNivel;
+      });
+      if (!filtrados.length) {
+        usersList.innerHTML = '<div class="empty">Nenhum usuário encontrado.</div>';
+        return;
+      }
+      usersList.innerHTML = filtrados.map(u => `
+        <div class="item ${editingEmail===u.email?'active':''}" data-email="${escapeHtml(u.email)}">
+          <div>
+            <div class="name">${escapeHtml(u.nome || '(sem nome)')}</div>
+            <div class="email">${escapeHtml(u.email)}</div>
+            <div class="tag">${escapeHtml(u.nivelAcesso || '--')} - ${escapeHtml(u.permissoesVersao===2 ? (nivelMap[u.nivelAcesso] || 'Não informado') : 'Perfil antigo — revisar o novo nível')} ${u.ativo ? '' : '• Desativado'}</div>
+            ${u.uid ? `<div class="meta">UID: ${escapeHtml(u.uid)}</div>` : ''}
+          </div>
+          <div><button class="btn-blue editBtn" data-edit="${escapeHtml(u.email)}">Editar</button></div>
+        </div>
+      `).join('');
+      document.querySelectorAll('.editBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const alvo = usuarios.find(u => u.email === btn.dataset.edit);
+          if (alvo) fillForm(alvo);
+        });
+      });
+    }
+
+
+    async function atualizarNomesDosTaloes(uid, novoNome) {
+      let total=0;
+      for (const setor of Object.values(window.Roma.SECTORS)) {
+        const snap=await getDocs(query(collection(db,'taloes'),where(setor.ownerField,'==',uid)));
+        const changed=snap.docs.filter(d=>d.data()[setor.nameField]!==novoNome);
+        for(let i=0;i<changed.length;i+=400){
+          const batch=writeBatch(db);
+          changed.slice(i,i+400).forEach(d=>batch.update(d.ref,{[setor.nameField]:novoNome}));
+          await batch.commit(); total+=Math.min(400,changed.length-i);
+        }
+      }
+      return total;
+    }
+    function directoryData(nomeValor,nivelValor,ativo){
+      const setor=Object.values(window.Roma.SECTORS).find(s=>s.level===nivelValor);
+      return setor ? {nome:nomeValor,setor:setor.key,nivelAcesso:nivelValor,ativo:!!ativo} : null;
+    }
+    async function salvarPerfil(emailCanonico,uid,nomeValor,nivelValor,ativo,novo=false){
+      if(!uid) throw new Error('Informe o UID desta conta no Authentication.');
+      if(currentUser?.uid===uid && (nivelValor!=='09' || !ativo)) throw new Error('Mantenha seu próprio acesso Admin ativo. Outro Admin pode alterar este perfil.');
+      const directory=directoryData(nomeValor,nivelValor,ativo);
+      if(directory && ativo){
+        const existentes=await getDocs(query(collection(db,'atelies'),where('setor','==',directory.setor)));
+        const normal=v=>String(v||'').trim().toLocaleLowerCase('pt-BR');
+        if(existentes.docs.some(d=>d.id!==uid&&d.data().ativo!==false&&normal(d.data().nome)===normal(nomeValor))) throw new Error('Já existe um ateliê ativo com esse nome neste setor. Use um nome diferente.');
+      }
+      const batch=writeBatch(db);
+      const perfil={Nome:nomeValor,Email:emailCanonico,uid,nivelAcesso:nivelValor,ativo:!!ativo,permissoesVersao:2,atualizadoEm:serverTimestamp()};
+      if(novo)perfil.criadoEm=serverTimestamp();
+      batch.set(doc(db,'Usuario',emailCanonico),perfil,{merge:true});
+      if(directory) batch.set(doc(db,'atelies',uid),directory);
+      else batch.delete(doc(db,'atelies',uid));
+      await batch.commit();
+    }
+
+    async function criarUsuarioSemPerderSessaoAdmin({nomeValor,emailValor,senhaValor,nivelValor}){
+      const secondaryName = 'roma-cadastro-' + Date.now();
+      const secondaryApp = initializeApp(firebaseConfig, secondaryName);
+      const secondaryAuth = getAuth(secondaryApp);
+      let novoUsuario = null;
+      try {
+        // A conta recém-criada nunca substitui nem persiste a sessão do Admin.
+        await setPersistence(secondaryAuth, inMemoryPersistence);
+        const cred = await createUserWithEmailAndPassword(secondaryAuth, emailValor, senhaValor);
+        novoUsuario = cred.user;
+        const emailCanonico = novoUsuario.email;
+        await salvarPerfil(emailCanonico,novoUsuario.uid,nomeValor,nivelValor,perfilAtivo.checked,true);
+      } catch (err) {
+        // Evita deixar uma conta sem perfil se a gravação do cadastro falhar.
+        if (novoUsuario) {
+          try {
+            await deleteUser(novoUsuario);
+          } catch (rollbackError) {
+            console.error('Falha ao desfazer conta sem perfil:', rollbackError.code || rollbackError.message);
+            throw new Error('Não foi possível concluir o cadastro. A conta foi criada no Authentication, mas o perfil não foi salvo. Revise essa conta no console do Firebase antes de tentar novamente.');
+          }
+        }
+        throw err;
+      } finally {
+        try { await signOut(secondaryAuth); } catch (err) { console.error('Erro ao encerrar sessão auxiliar:', err.code || err.message); }
+        await deleteApp(secondaryApp);
+      }
+    }
+
+    loginBtn.addEventListener('click', async () => {
+      clearMessage();
+      const em = loginEmail.value.trim().toLowerCase();
+      const se = loginSenha.value;
+      if (!em || !se) {
+        showMessage('Informe o e-mail e a senha do admin.', 'error');
+        return;
+      }
+      loginBtn.disabled = true;
+      try {
+        await signInWithEmailAndPassword(auth, em, se);
+        loginSenha.value = '';
+      } catch (err) {
+        console.error(err);
+        showMessage('Erro no login: ' + (err.message || err), 'error');
+      } finally {
+        loginBtn.disabled = false;
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        showMessage('Sessão encerrada.', 'info');
+      } catch (err) {
+        showMessage('Erro ao sair: ' + (err.message || err), 'error');
+      }
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = null;
+      toggleAdminArea(false);
+      if (user) {
+        try {
+          const userDocSnap = await getDoc(doc(db, 'Usuario', user.email));
+          if (auth.currentUser?.uid !== user.uid) return;
+          if (!userDocSnap.exists()) {
+            throw new Error('Seu perfil ainda não foi cadastrado. Contate o responsável pelo sistema.');
+          }
+          const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+          if (userData.uid !== user.uid || userData.ativo !== true) {
+            throw new Error('Acesso desativado ou cadastro incompatível. Contate o responsável pelo sistema.');
+          }
+          const nivelUsuario = userData.nivelAcesso;
+          const nomeUsuario = userData.Nome || user.email || 'Usuário';
+          if (nivelUsuario !== '09') {
+            alert('Somente o nível 09 (Admin) pode administrar usuários.');
+            window.location.href = 'index.html';
+            return;
+          }
+
+          currentUser = user;
+          localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelUsuario);
+          localStorage.setItem('calcadosroma-65ac6:userName', nomeUsuario);
+          localStorage.setItem('calcadosroma-65ac6:userEmail', user.email);
+          iniciarNavegacaoPadrao(nivelUsuario, nomeUsuario);
+          authStatus.textContent = 'Logado: ' + user.email;
+          logoutBtn.disabled = false;
+          toggleAdminArea(true);
+          await carregarUsuarios();
+        } catch (err) {
+          currentUser = null;
+          toggleAdminArea(false);
+          console.error('Erro ao validar acesso:', err.code || err.message);
+          showMessage('Erro ao validar acesso: ' + (err.message || err), 'error');
+          await signOut(auth);
+        }
+      } else {
+        ['userNivelAcesso', 'userName', 'userEmail'].forEach(chave => {
+          localStorage.removeItem(`calcadosroma-65ac6:${chave}`);
+        });
+        authStatus.textContent = 'Não autenticado';
+        logoutBtn.disabled = true;
+        usuarios = [];
+        usersList.innerHTML = '<div class="empty">Faça login para carregar os usuários.</div>';
+        document.querySelectorAll('[data-sistema-navegacao]').forEach(elemento => elemento.remove());
+        document.body.classList.remove('sistema-menu-aberto');
+      }
+    });
+
+    userForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessage();
+      if (!currentUser) {
+        showMessage('Faça login antes de cadastrar ou editar usuários.', 'error');
+        return;
+      }
+      const nomeValor = nome.value.trim();
+      const emailValor = email.value.trim().toLowerCase();
+      const senhaValor = senha.value;
+      const nivelValor = nivelAcesso.value;
+
+      if (!nomeValor || !emailValor || !Object.hasOwn(nivelMap, nivelValor)) {
+        showMessage('Preencha nome, e-mail e nível de acesso.', 'error');
+        return;
+      }
+      if (!editingEmail && (!senhaValor || senhaValor.length < 6)) {
+        showMessage('A senha deve ter pelo menos 6 caracteres.', 'error');
+        return;
+      }
+
+      saveBtn.disabled = true;
+      try {
+        if (editingEmail) {
+          const usuarioAnterior = usuarios.find(u => u.email === editingEmail);
+          const uid=perfilUid.value.trim();
+          if(usuarioAnterior?.uid && uid!==usuarioAnterior.uid) throw new Error('O UID vinculado não pode ser trocado aqui. Revise a conta no console do Firebase.');
+          await salvarPerfil(editingEmail,uid,nomeValor,nivelValor,perfilAtivo.checked);
+          let msg='Usuário atualizado com sucesso.';
+          try {
+            const total=await atualizarNomesDosTaloes(uid,nomeValor);
+            if(total) msg+=` Nome atualizado em ${total} talão(ões).`;
+          } catch(err) {
+            msg+=' O perfil foi salvo, mas alguns nomes de talões não foram sincronizados. Salve este usuário novamente para tentar concluir.';
+            console.error(err);
+          }
+          if(usuarioAnterior?.nivelAcesso!==nivelValor) msg+=' Confira no Corte as atribuições anteriores deste usuário.';
+          showMessage(msg, 'success');
+        } else {
+          await criarUsuarioSemPerderSessaoAdmin({ nomeValor, emailValor, senhaValor, nivelValor });
+          showMessage('Usuário criado com sucesso.', 'success');
+        }
+        const mensagemSucesso = message.textContent;
+        resetForm();
+        showMessage(mensagemSucesso, 'success');
+        await carregarUsuarios();
+      } catch (err) {
+        console.error(err);
+        showMessage('Erro ao salvar: ' + (err.message || err), 'error');
+      } finally {
+        saveBtn.disabled = !currentUser;
+      }
+    });
+
+    clearBtn.addEventListener('click', resetForm);
+    closeEditBtn.addEventListener('click', resetForm);
+    refreshBtn.addEventListener('click', carregarUsuarios);
+    searchInput.addEventListener('input', renderUsuarios);
+    nivelFiltro.addEventListener('change', renderUsuarios);
+
+    resetForm();
+    toggleAdminArea(false);
+  </script>
+</body>
+</html>

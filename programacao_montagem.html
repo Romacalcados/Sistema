@@ -1,0 +1,2421 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programação por Linha - Calçados Roma</title>
+  <script src="navegacao.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root{
+      --bg:#f4f4f4; --card:#fff; --ink:#111; --ink-2:#555; --muted:#777; --bd:#d7d7d7;
+      --pri:#007bff; --pri-700:#0056b3; --ok:#28a745; --ok-700:#1e7e34; --danger:#dc3545; --danger-700:#bd2130;
+      --soft:#e9ecef; --head:#d9d9d9; --exp:#eaf4ff; --normal:#fff; --warn:#fff6d8; --bad:#ffe4e4; --good:#e9f8ee;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;color:var(--ink);min-height:100vh}
+    .main-content{padding:16px;display:flex;flex-direction:column;align-items:center;gap:14px}
+    .panel{background:var(--card);width:100%;max-width:1380px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.08);padding:14px}
+    .panel-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+    h1,h2,h3{margin:0} h1{font-size:23px} h2{font-size:18px}
+    .hint{font-size:13px;color:var(--muted);line-height:1.35;margin-top:3px;max-width:1120px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+    .btn{border:none;border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.15s;background:var(--soft);color:#111;text-decoration:none;white-space:nowrap;font-size:14px}
+    .btn:hover{filter:brightness(.97)} .btn-primary{background:var(--pri);color:#fff}.btn-primary:hover{background:var(--pri-700)}
+    .btn-ok{background:var(--ok);color:#fff}.btn-ok:hover{background:var(--ok-700)} .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:var(--danger-700)}
+    .btn-mini{padding:4px 7px;font-size:12px;border-radius:6px}
+    .file-picker-hidden{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+    .selected-files{font-size:13px;color:var(--ink-2);margin:8px 0 6px;line-height:1.35}
+    .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:6px}
+    .form-group{display:flex;flex-direction:column;gap:4px;min-width:130px}
+    label{font-size:12px;font-weight:700;color:var(--ink-2)}
+    input,select,textarea{font-family:Arial,Helvetica,sans-serif;border:1px solid #cfcfcf;border-radius:8px;padding:8px;font-size:14px;background:#fff}
+    .date-small{width:150px}
+    .status{font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.45}.status strong{color:#000}
+    .summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .summary-card{border:1px solid var(--bd);border-radius:10px;background:#fafafa;padding:8px 10px;min-width:132px;text-align:center}
+    .summary-card span{display:block;color:var(--muted);font-size:12px}.summary-card strong{font-size:18px}
+    .summary-card.good{background:var(--good)} .summary-card.warn{background:var(--warn)} .summary-card.bad{background:var(--bad)}
+    button.summary-card{font-family:inherit;color:inherit;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease;border:1px solid var(--bd)}
+    button.summary-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.10)}
+    button.summary-card:focus-visible{outline:3px solid rgba(0,123,255,.25);outline-offset:2px}
+    button.summary-card:disabled{cursor:default;transform:none;box-shadow:none;opacity:.72}
+    .comparison-details{display:none;margin-top:10px;border:1px solid var(--bd);border-radius:10px;background:#fff;overflow:hidden}
+    .comparison-details.open{display:block}
+    .comparison-details-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:10px 12px;background:#f5f5f5;border-bottom:1px solid var(--bd)}
+    .comparison-details-head h3{font-size:15px;margin:0 0 2px}.comparison-details-head p{font-size:12px;color:var(--ink-2);margin:0}
+    .comparison-details-close{border:0;background:#e2e6ea;border-radius:7px;width:30px;height:28px;font-size:18px;cursor:pointer}
+    .comparison-details-wrap{overflow:auto;max-height:360px}
+    .comparison-details-table{width:100%;border-collapse:collapse;min-width:850px;font-size:12px}
+    .comparison-details-table th,.comparison-details-table td{border:1px solid var(--bd);padding:7px;vertical-align:top;text-align:left}
+    .comparison-details-table th{position:sticky;top:0;background:#d9d9d9;z-index:1;text-align:center}
+    .comparison-details-table td.num{text-align:right;font-weight:700;white-space:nowrap}
+    .comparison-field{font-weight:800;color:#8a5b00;white-space:nowrap}
+    .comparison-empty{padding:18px;text-align:center;color:var(--muted)}
+    .preview-wrap{width:100%;overflow:auto;border:1px solid var(--bd);border-radius:10px;background:#fff;max-height:68vh}
+    table.preview{width:100%;border-collapse:collapse;font-size:12px;min-width:1200px}
+    .preview th,.preview td{border:1px solid var(--bd);padding:5px;text-align:center;vertical-align:middle}
+    .preview th{position:sticky;top:0;background:#d9d9d9;z-index:1;font-weight:800}
+    .preview tr.exportacao{background:var(--exp)} .preview tr.normal{background:var(--normal)}
+    .preview tr.divergente{box-shadow:inset 4px 0 0 #ff9800}
+    .preview tr.nao-encontrada{box-shadow:inset 4px 0 0 #dc3545}
+    .preview input,.preview select{width:100%;padding:5px;border-radius:5px;font-size:12px}
+    .preview .col-modelo input{font-size:14px;font-weight:400;line-height:1.25}
+    .preview .col-tipo{width:130px}.preview .col-linha{width:60px}.preview .col-modelo{width:95px}.preview .col-atelier{width:130px}.preview .col-remessa{width:90px}.preview .col-pares{width:75px}.preview .col-data{width:90px}.preview .col-fab{width:65px}.preview .col-cliente{width:180px}.preview .col-norm{width:300px}.preview .col-taloes{width:70px}.preview .col-conf{width:175px}.preview .col-act{width:70px}
+    .conf-ok{font-weight:700;color:#167a31}.conf-warn{font-weight:700;color:#9a6500}.conf-bad{font-weight:700;color:#b00020}
+    .empty{padding:22px;text-align:center;color:var(--muted);font-size:14px}
+    .line-chip{display:inline-flex;border:1px solid var(--bd);background:#fff;border-radius:999px;padding:5px 10px;margin:4px;font-size:12px;gap:5px;align-items:center}
+    .line-chip strong{font-size:13px}
+    #printArea{display:none}
+
+    .btn:disabled{opacity:.55;cursor:not-allowed;filter:none}
+    .status-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:4px 8px;font-weight:800;font-size:11px;white-space:nowrap}
+    .status-badge.ok{background:#dff5e5;color:#146c2e}.status-badge.warn{background:#fff0c2;color:#855a00}.status-badge.bad{background:#ffdede;color:#a00018}.status-badge.info{background:#e4efff;color:#1457a6}
+    .comparison-detail{font-size:11px;text-align:left;line-height:1.35;min-width:210px}.comparison-detail strong{display:block;margin-bottom:2px}
+    .comparison-value{font-size:11px;line-height:1.35;text-align:left;min-width:170px}.comparison-value .pdf-value{color:#6b4c00;margin-top:3px}
+    body.modal-open{overflow:hidden}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.58);display:none;align-items:center;justify-content:center;padding:12px;z-index:10050}
+    .modal-overlay.open{display:flex}
+    .modal-card{background:#fff;border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.28);width:min(99vw,1820px);max-height:96vh;display:flex;flex-direction:column;overflow:hidden}
+    .modal-card.saved-card{width:min(94vw,980px);max-height:90vh}
+    .modal-header{padding:12px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;background:#fafafa}
+    .modal-header h2{font-size:19px}.modal-header .hint{margin-top:2px}
+    .modal-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bd);background:#fff}
+    .modal-body{padding:12px 14px;overflow:auto;flex:1}
+    .editor-title{text-align:center;font-size:17px;font-weight:800;margin:0 0 7px}
+    .editor-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;font-weight:700;margin-bottom:8px}
+    .editor-table-wrap{overflow:auto;border:1px solid #222;border-radius:4px;background:#fff;max-height:68vh}
+    table.editor-table{width:100%;min-width:1360px;border-collapse:collapse;table-layout:fixed;font-size:10px}
+    .editor-table th,.editor-table td{border:1px solid #222;padding:2px;vertical-align:middle;text-align:center}
+    .editor-table th{position:sticky;top:0;z-index:3;background:#d9d9d9;font-size:9px}
+    .editor-table input,.editor-table select,.editor-table textarea{width:100%;min-width:0;border:1px solid #b8b8b8;border-radius:4px;padding:3px;font-size:10px;background:#fff}
+    .editor-table textarea{resize:vertical;min-height:34px;line-height:1.15}
+    .editor-table .model-pair{display:grid;grid-template-columns:1fr;gap:3px}
+    .editor-table .model-pair small{font-size:8px;color:#666;text-align:left}
+    .editor-table tr.editor-export{background:#eef6ff}
+    .editor-table tr.editor-line-header td{background:#d9d9d9;font-weight:800;text-align:left;padding:4px 6px}
+    .editor-line-header-content{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .editor-table tr.editor-page-break td{border-top:4px solid var(--pri)!important}
+    .editor-table tr.editor-page-break td:first-child{position:relative}
+    .editor-table tr.editor-page-break td:first-child:before{content:'NOVA PÁGINA';position:absolute;left:2px;top:-15px;background:var(--pri);color:#fff;border-radius:4px 4px 0 0;padding:2px 5px;font-size:8px;font-weight:800;letter-spacing:.2px;z-index:2}
+    .editor-action-buttons{display:flex;flex-direction:column;gap:3px;align-items:stretch}
+    .editor-action-buttons .btn{white-space:normal;line-height:1.05;padding:4px 5px;font-size:10px}
+    .page-plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:8px;margin:0 0 9px;padding:9px;border:1px solid var(--bd);border-radius:8px;background:#fafafa}
+    .page-plan-title{grid-column:1/-1;font-size:12px;font-weight:800;color:var(--ink-2)}
+    .page-plan-card{border:1px solid #c9c9c9;border-radius:9px;background:#fff;padding:8px 9px;min-width:0;font-size:11px;line-height:1.35}
+    .page-plan-card>strong{display:block;font-size:13px;margin-bottom:3px}
+    .page-plan-card.manual{border-color:var(--pri);box-shadow:inset 4px 0 0 var(--pri)}
+    .page-plan-lines{font-weight:700;margin-bottom:2px;min-height:30px}
+    .page-plan-count{color:var(--ink-2);margin-bottom:7px}
+    .page-plan-controls{display:grid;grid-template-columns:1fr auto;gap:5px;align-items:end;padding-top:7px;border-top:1px solid #e2e2e2}
+    .page-plan-controls label{grid-column:1/-1;font-size:10px;color:var(--ink-2)}
+    .page-plan-controls select{width:100%;min-width:0;padding:6px;font-size:11px;border-radius:6px}
+    .page-plan-controls .btn{padding:6px 8px;font-size:11px}
+    .page-plan-remove{grid-column:1/-1;border:0;background:transparent;color:var(--pri-700);padding:2px 0;text-align:left;font-size:10px;font-weight:700;cursor:pointer}
+    .page-plan-last{padding-top:7px;border-top:1px solid #e2e2e2;color:var(--muted);font-size:10px;font-weight:700}
+    .editor-table .w-tipo{width:84px}.editor-table .w-linha{width:46px}.editor-table .w-modelo{width:156px}.editor-table .w-remessa{width:72px}.editor-table .w-pares{width:56px}.editor-table .w-entrega{width:72px}.editor-table .w-fab{width:40px}.editor-table .w-cliente{width:160px}.editor-table .w-norm{width:225px}.editor-table .w-tal{width:44px}.editor-table .w-prod{width:62px}.editor-table .w-act{width:56px}
+    .saved-list{display:grid;gap:9px}
+    .saved-item{border:1px solid var(--bd);border-radius:10px;padding:11px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff}
+    .saved-item h3{font-size:15px;margin:0 0 4px}.saved-item p{font-size:12px;color:var(--ink-2);margin:2px 0;line-height:1.35}
+    .saved-empty{padding:25px;text-align:center;color:var(--muted)}
+    .norm-review-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+    .norm-review-summary .summary-card{min-width:145px}
+    .norm-review-summary .filter-card{font-family:inherit;color:inherit;cursor:pointer;transition:.15s;position:relative}
+    .norm-review-summary .filter-card:hover{transform:translateY(-1px);box-shadow:0 3px 9px rgba(0,0,0,.10)}
+    .norm-review-summary .filter-card.active{border:2px solid #d59b00;box-shadow:0 0 0 3px rgba(255,193,7,.18)}
+    .norm-review-summary .filter-card.active:after{content:'FILTRO ATIVO';display:block;margin-top:3px;font-size:9px;font-weight:800;color:#7d5600}
+    .norm-review-summary .filter-card:disabled{cursor:default;opacity:.65;transform:none;box-shadow:none}
+    .norm-review-wrap{overflow:auto;border:1px solid var(--bd);border-radius:8px;max-height:62vh;background:#fff}
+    .norm-review-table{width:100%;min-width:1150px;border-collapse:collapse;font-size:11px}
+    .norm-review-table th,.norm-review-table td{border:1px solid var(--bd);padding:6px;vertical-align:top}
+    .norm-review-table th{position:sticky;top:0;background:#d9d9d9;z-index:2;text-align:center}
+    .norm-review-table td:nth-child(1),.norm-review-table td:nth-child(2),.norm-review-table td:nth-child(3){text-align:center;vertical-align:middle}
+    .change-old{color:#8b1e1e;text-decoration:line-through;display:block;margin-bottom:3px}
+    .change-new{color:#146c2e;font-weight:700;display:block}
+    .confidence-high{color:#146c2e;font-weight:800}.confidence-warn{color:#9a6500;font-weight:800}.confidence-bad{color:#b00020;font-weight:800}
+    .pdf-source-list{font-size:10px;line-height:1.3;color:var(--ink-2)}
+    .modal-close{border:0;background:#e9ecef;border-radius:8px;width:36px;height:34px;font-size:21px;cursor:pointer;line-height:1}
+
+    @media(max-width:760px){.main-content{padding:8px}.panel{padding:10px}.btn{flex:1 1 auto}.filters .form-group{min-width:calc(50% - 8px);flex:1}h1{font-size:19px}.summary-card{flex:1 1 calc(50% - 8px)}.modal-overlay{padding:4px}.modal-card{max-height:99vh;border-radius:7px}.modal-actions .btn{flex:1 1 calc(50% - 7px)}.saved-item{align-items:flex-start;flex-direction:column}.saved-item .btn{width:100%}}
+
+    @media print{
+      body.printing > *:not(#printArea){display:none!important}
+      body.printing #printArea{display:block!important}
+      @page{size:A4 landscape;margin:8mm}
+      .print-page{page-break-after:always;font-family:Arial,Helvetica,sans-serif;color:#000}
+      .print-page:last-child{page-break-after:auto}
+      .print-title{text-align:center;font-size:15px;font-weight:700;margin:0 0 8px}
+      .print-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;font-size:10px}
+      .print-head h2{font-size:14px;margin:0 0 4px}
+      .print-summary{display:flex;gap:10px;justify-content:center;margin:6px 0 8px;font-size:10px}
+      .print-summary div{border:1px solid #000;background:#d9d9d9;padding:5px 12px;font-weight:700}
+      .print-total-box{border-collapse:collapse;margin:4px auto 8px;font-size:8px;width:95mm}
+      .print-total-box td{border:1px solid #000;background:#d9d9d9;padding:3px 6px;font-weight:700}
+      .print-total-box td:last-child{text-align:right}
+      .print-table{width:100%;border-collapse:collapse;font-size:8.5px;table-layout:fixed}
+      .print-table th,.print-table td{border:1px solid #000;padding:4px 3px;vertical-align:middle;word-break:break-word}
+      .print-table th{background:#d9d9d9;text-align:center;font-weight:700}
+      .print-table .modelo-print{font-size:10px;font-weight:400;line-height:1.15;white-space:pre-line}
+      .print-table .section{background:#d9d9d9;font-weight:700;text-align:center}
+      .print-table .tipo{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-weight:700;background:#f2f2f2;width:6.8mm;min-width:6.8mm;max-width:6.8mm;overflow:hidden;padding:0!important;font-size:5.2px;line-height:1}
+      .print-table .total-row td{background:#d9d9d9;font-weight:700}
+      .text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}
+    }
+
+    /* Correção para o menu padrão do navegacao.js */
+    #sistemaMenuDrawer .sistema-menu-lista{max-height:none!important;height:calc(100vh - 54px)!important;overflow-y:auto!important;overflow-x:hidden!important;display:block!important;padding:8px 8px 16px!important;background:transparent!important;box-shadow:none!important;font-size:inherit!important;transition:none!important}
+    #sistemaMenuDrawer .sistema-menu-grupo{display:block!important}
+    #sistemaMenuDrawer .sistema-menu-link{display:flex!important;align-items:center!important;min-height:34px!important;padding:0 12px 0 20px!important;border-radius:8px!important;color:#f4f7fb!important;text-decoration:none!important;font-size:13px!important;font-weight:500!important;margin:1px 0!important;position:relative!important;white-space:normal!important}
+  </style>
+</head>
+<body>
+  <div class="main-content">
+    <div class="panel">
+      <div class="panel-title">
+        <div>
+          <h1>Programação por Linha</h1>
+          <div class="hint">Selecione <strong>3 PDFs Factor Geral de datas diferentes</strong>. O sistema compara cliente e normativa por remessa, escolhe os dois resultados mais próximos e só propõe alterações quando houver concordância segura. A programação oficial continua sendo criada pelos talões existentes no banco.</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input type="file" id="pdfFile" class="file-picker-hidden" accept=".pdf,application/pdf" multiple />
+        <label class="btn btn-primary" for="pdfFile">Escolher 3 PDFs</label>
+        <button class="btn btn-primary" id="launchNormativasButton" type="button">Lançar normativas</button>
+        <button class="btn btn-primary" id="createProgramButton" type="button">Criar programação</button>
+        <button class="btn btn-ok" id="generatePdfButton" type="button">Gerar PDF</button>
+        <button class="btn btn-ok" id="saveProgramButton" type="button">Salvar programação</button>
+        <button class="btn" id="openSavedButton" type="button">Abrir programações salvas</button>
+      </div>
+      <div id="selectedFilesLabel" class="selected-files">Nenhum PDF selecionado. Escolha três relatórios de datas diferentes.</div>
+      <div class="filters">
+        <div class="form-group date-small">
+          <label for="dataCorteInput">Data de Corte</label>
+          <input type="text" id="dataCorteInput" placeholder="Ex: 16/07 ou 16/jul" />
+        </div>
+      </div>
+      <div id="status" class="status">Aguardando login e seleção do PDF.</div>
+      <div class="summary" id="summaryCards"></div>
+      <div class="comparison-details" id="comparisonDetails" aria-live="polite"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">
+        <div>
+          <h2>Conferência da programação</h2>
+          <div class="hint">A tabela abaixo vem do banco de dados. A conferência usa o consenso dos três PDFs para remessas, pares, clientes e normativas. Remessas que existam apenas nos PDFs não entram automaticamente na programação.</div>
+        </div>
+      </div>
+      <div id="lineSummary"></div>
+      <div class="preview-wrap" id="previewWrap">
+        <div class="empty">Selecione o PDF, informe a data de corte e clique em <strong>Criar programação</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editorModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editorModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="editorModalTitle">Edição da programação</h2>
+          <div class="hint">Esta prévia usa exatamente os dados que serão enviados ao PDF. Ajuste a divisão diretamente nos cartões de <strong>Página 1, Página 2...</strong>, escolhendo onde cada folha deve terminar.</div>
+        </div>
+        <button class="modal-close" id="closeEditorButton" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="addEditorRowButton" type="button">Adicionar linha</button>
+        <button class="btn" id="clearPageBreaksButton" type="button">Limpar divisões de página</button>
+        <button class="btn btn-ok" id="saveProgramModalButton" type="button">Salvar programação</button>
+        <button class="btn btn-ok" id="printPdfButton" type="button">Gerar PDF para impressão</button>
+        <button class="btn" id="closeEditorFooterButton" type="button">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <div class="editor-title" id="editorDocumentTitle">Planejamento Calçados Roma</div>
+        <div class="editor-meta" id="editorSummary"></div>
+        <div class="page-plan" id="pagePlanSummary"></div>
+        <div class="editor-table-wrap" id="editorTableWrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="savedModal" aria-hidden="true">
+    <div class="modal-card saved-card" role="dialog" aria-modal="true" aria-labelledby="savedModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="savedModalTitle">Programações salvas</h2>
+          <div class="hint">Abra uma programação para revisar, editar, salvar novamente ou gerar o PDF.</div>
+        </div>
+        <button class="modal-close" id="closeSavedButton" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body"><div id="savedProgramsList" class="saved-list"><div class="saved-empty">Carregando...</div></div></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="normativasModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="normativasModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="normativasModalTitle">Revisão do lançamento de clientes e normativas</h2>
+          <div class="hint">Somente remessas confirmadas por pelo menos dois PDFs são marcadas para atualização. Revise as alterações antes de gravar no banco.</div>
+        </div>
+        <button class="modal-close" id="closeNormativasButton" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ok" id="confirmNormativasButton" type="button">Confirmar alterações selecionadas</button>
+        <button class="btn" id="selectAllNormativasButton" type="button">Marcar todas seguras</button>
+        <button class="btn" id="unselectAllNormativasButton" type="button">Desmarcar todas</button>
+        <button class="btn" id="closeNormativasFooterButton" type="button">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <div id="normativasReviewSummary" class="norm-review-summary"></div>
+        <div id="normativasReviewWrap" class="norm-review-wrap"><div class="saved-empty">Aguardando análise...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="printArea"></div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs, writeBatch, setDoc, serverTimestamp, orderBy, limit as firestoreLimit } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    const firebaseConfig = window.FIREBASE_CONFIG;
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const state = {
+      selectedPdfFile: null,
+      selectedPdfFiles: [],
+      pdfSources: [],
+      pdfConsensusAll: new Map(),
+      pendingNormativaUpdates: [],
+      pendingNormativaRows: [],
+      normativasReviewFilter: 'all',
+      pdfParsePromise: null,
+      pdfReady: false,
+      records: [],
+      allPdfRecords: [],
+      pdfMapAll: new Map(),
+      pdfMapSelected: new Map(),
+      pdfOnly: [],
+      reportYear: new Date().getFullYear(),
+      bancoResumo: new Map(),
+      authReady: false,
+      currentUser: null,
+      currentTarget: null,
+      currentProgramId: null,
+      currentProgramName: '',
+      comparison: { ok:0, divergentes:0, somenteBanco:0, somentePdf:0, pdfRemessas:0, pdfPares:0 },
+      savedPrograms: new Map(),
+      lineOrder: []
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const MONTHS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+    function setStatus(message){ $('status').innerHTML = message; }
+    function escapeHtml(value){ return String(value ?? '').replace(/[&<>\"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[s] || s)); }
+    function normalizeText(value){ return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim(); }
+    function parseNumberBR(value){
+      if(value == null) return 0;
+      let s = String(value).trim().replace(/\s/g,'');
+      if(!s) return 0;
+      s = s.replace(/\./g,'').replace(/,/g,'');
+      const n = parseInt(s,10);
+      return Number.isFinite(n) ? n : 0;
+    }
+    function formatNumberBR(n){ return parseNumberBR(n).toLocaleString('pt-BR'); }
+    function pad2(n){ return String(n).padStart(2,'0'); }
+    function uniqueValues(arr){ return [...new Set(arr.map(v => String(v || '').trim()).filter(Boolean))]; }
+    function sortNumericText(a,b){
+      const na = parseInt(String(a).replace(/\D/g,''),10);
+      const nb = parseInt(String(b).replace(/\D/g,''),10);
+      if(Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na - nb;
+      return String(a).localeCompare(String(b), 'pt-BR', {numeric:true});
+    }
+    function dmToDisplay(dm){
+      const m = String(dm || '').match(/^(\d{1,2})\/(\d{1,2})$/);
+      if(!m) return dm || '';
+      return `${pad2(m[1])}/${pad2(m[2])}/${state.reportYear}`;
+    }
+
+    function isoToDM(value){
+      const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}` : String(value || '');
+    }
+    function hasValue(value){ return String(value ?? '').trim() !== ''; }
+    function normalizeRemessa(value){ return String(value ?? '').trim().replace(/\.0+$/,''); }
+    function closeAllModals(){
+      document.querySelectorAll('.modal-overlay.open').forEach(el => { el.classList.remove('open'); el.setAttribute('aria-hidden','true'); });
+      document.body.classList.remove('modal-open');
+    }
+    function openModal(id){
+      const modal = $(id); if(!modal) return;
+      modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); document.body.classList.add('modal-open');
+    }
+    function setBusy(buttonId, busy, busyText){
+      const button = $(buttonId); if(!button) return;
+      if(busy){ button.dataset.originalText = button.textContent; button.textContent = busyText || 'Aguarde...'; button.disabled = true; }
+      else{ button.textContent = button.dataset.originalText || button.textContent; button.disabled = false; delete button.dataset.originalText; }
+    }
+
+    function parseDateInput(value){
+      let s = String(value || '').trim().toLowerCase();
+      if(!s) return null;
+      s = s.replace(/-/g,'/').replace(/\s+/g,'');
+      let compact = s.match(/^(\d{2})(\d{2})$/);
+      if(compact) s = `${compact[1]}/${compact[2]}`;
+      let m = s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+      if(m){
+        let y = m[3] ? parseInt(m[3],10) : state.reportYear;
+        if(y < 100) y += 2000;
+        const day = parseInt(m[1],10), month = parseInt(m[2],10);
+        if(day < 1 || day > 31 || month < 1 || month > 12) return null;
+        return { day, month, year:y, dm:`${pad2(day)}/${pad2(month)}`, iso:`${y}-${pad2(month)}-${pad2(day)}` };
+      }
+      m = s.match(/^(\d{1,2})\/?([a-zç]{3})(?:\/(\d{2,4}))?$/i);
+      if(m){
+        const monToken = m[2].normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        const mo = MONTHS.findIndex(mm => mm === monToken);
+        if(mo >= 0){
+          let y = m[3] ? parseInt(m[3],10) : state.reportYear;
+          if(y < 100) y += 2000;
+          const day = parseInt(m[1],10), month = mo+1;
+          return { day, month, year:y, dm:`${pad2(day)}/${pad2(month)}`, iso:`${y}-${pad2(month)}-${pad2(day)}` };
+        }
+      }
+      return null;
+    }
+
+    function inferDateFromFileName(name){
+      const m = String(name || '').match(/(\d{1,2})[-_\/](\d{1,2})(?:[-_\/](\d{2,4}))?/);
+      if(!m) return '';
+      let y = m[3] ? parseInt(m[3],10) : state.reportYear;
+      if(y < 100) y += 2000;
+      state.reportYear = y;
+      return `${pad2(m[1])}/${pad2(m[2])}`;
+    }
+
+    function reportDateSortKey(value){
+      const m = String(value || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      return m ? Number(`${m[3]}${m[2]}${m[1]}`) : 0;
+    }
+
+    function selectedPdfNames(){
+      return state.pdfSources.map(source => `${source.file.name} (${source.reportDate || 'data não identificada'})`).join(', ');
+    }
+
+    async function handlePdfFile(){
+      const files = [...($('pdfFile').files || [])].filter(file => /\.pdf$/i.test(file.name) || file.type === 'application/pdf').slice(0,3);
+      state.selectedPdfFiles = files;
+      state.selectedPdfFile = files[0] || null;
+      state.pdfReady = false;
+      state.pdfParsePromise = null;
+      state.allPdfRecords = [];
+      state.pdfMapAll = new Map();
+      state.pdfConsensusAll = new Map();
+      state.pdfSources = [];
+      state.pdfMapSelected = new Map();
+      if(!files.length){
+        $('selectedFilesLabel').textContent = 'Nenhum PDF válido selecionado. Escolha três relatórios de datas diferentes.';
+        setStatus('Selecione os três PDFs Factor Geral.');
+        return;
+      }
+      if(($('pdfFile').files || []).length > 3){
+        setStatus('Foram selecionados mais de três arquivos. O sistema usará somente os três primeiros PDFs.');
+      }
+      $('selectedFilesLabel').innerHTML = `Lendo <strong>${files.length}</strong> PDF(s)...`;
+      try{
+        state.pdfParsePromise = Promise.all(files.map(async file => {
+          const parsed = await parseFactorGeralPdf(file);
+          return {file, reportDate:parsed.reportDate || '', records:parsed.records, map:buildPdfMap(parsed.records)};
+        }));
+        const sources = await state.pdfParsePromise;
+        sources.sort((a,b)=>reportDateSortKey(a.reportDate)-reportDateSortKey(b.reportDate));
+        state.pdfSources = sources;
+        state.selectedPdfFile = sources.length ? sources[sources.length-1].file : null;
+        state.allPdfRecords = sources.flatMap(source => source.records.map(record => ({...record, sourceDate:source.reportDate, sourceFile:source.file.name})));
+        state.pdfConsensusAll = buildConsensusMap(sources.map(source => ({...source,map:source.map})));
+        state.pdfMapAll = state.pdfConsensusAll;
+        state.pdfReady = true;
+        const detalhes = sources.map(source => `${escapeHtml(source.file.name)}: <strong>${escapeHtml(source.reportDate || 'sem data')}</strong>, ${source.map.size} rem.`).join(' &nbsp;•&nbsp; ');
+        $('selectedFilesLabel').innerHTML = `<strong>${sources.length} PDF(s) carregado(s)</strong> — ${detalhes}`;
+        if(sources.length === 3){
+          setStatus('Três PDFs lidos. O botão <strong>Lançar normativas</strong> abrirá uma revisão antes de qualquer alteração no banco.');
+        }else{
+          setStatus(`Foram carregados <strong>${sources.length}</strong> PDF(s). Para corrigir clientes e normativas com segurança, selecione exatamente <strong>3 PDFs</strong>.`);
+        }
+      }catch(err){
+        console.error(err);
+        state.pdfReady = false;
+        $('selectedFilesLabel').innerHTML = 'Erro na leitura dos PDFs.';
+        setStatus('Erro ao ler os PDFs: ' + escapeHtml(err.message || String(err)));
+      }finally{
+        state.pdfParsePromise = null;
+      }
+    }
+
+    async function ensurePdfReady(requireThree=false){
+      if(state.pdfReady && state.pdfSources.length){
+        if(requireThree && state.pdfSources.length !== 3){
+          setStatus('Para lançar clientes e normativas, selecione exatamente <strong>3 PDFs Factor Geral</strong>.');
+          return false;
+        }
+        return true;
+      }
+      if(state.pdfParsePromise){ await state.pdfParsePromise; return ensurePdfReady(requireThree); }
+      if(!state.selectedPdfFiles.length){ setStatus('Selecione primeiro os <strong>3 PDFs Factor Geral</strong>.'); return false; }
+      await handlePdfFile();
+      return ensurePdfReady(requireThree);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if(!user){
+        setStatus('Usuário não autenticado. Faça login no sistema antes de consultar o banco.');
+        try{ window.location.href = 'login.html'; }catch(e){}
+        return;
+      }
+      state.authReady = true;
+      state.currentUser = user;
+      try{
+        const snap = await getDoc(doc(db, 'Usuario', user.email));
+        const userData = snap.exists() ? snap.data() : {}; window.Roma.validateProfile(user,userData);
+        const nivelAcesso = String(userData.nivelAcesso || '');
+        const Nome = userData.Nome || 'Usuário';
+        localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+        localStorage.setItem('calcadosroma-65ac6:userName', Nome);
+        if(window.SistemaNavegacao && typeof window.SistemaNavegacao.init === 'function'){
+          window.SistemaNavegacao.init({
+            userLevel:nivelAcesso,
+            userName:Nome,
+            title:'Programação por Linha',
+            onLogout: async () => {
+              await signOut(auth);
+              localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+              localStorage.removeItem('calcadosroma-65ac6:userName');
+              window.location.href = 'login.html';
+            }
+          });
+        }
+      }catch(err){ console.warn('Não foi possível carregar dados do usuário.', err); }
+      setStatus('Login confirmado. Selecione o PDF Factor Geral.');
+    });
+
+    async function parseFactorGeralPdf(file){
+      if(!window.pdfjsLib) throw new Error('Biblioteca PDF.js não carregou. Verifique a internet/CDN.');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const data = await file.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({data}).promise;
+      const records = [];
+      let current = null;
+      let reportDate = '';
+
+      for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
+        const page = await pdf.getPage(pageNum);
+        const content = await page.getTextContent();
+        const items = content.items.map(item => {
+          const str = String(item.str || '').trim();
+          const tx = item.transform || [1,0,0,1,0,0];
+          return { text:str, x:tx[4], y:tx[5], page:pageNum };
+        }).filter(i => i.text);
+
+        const fullDateItems = items.filter(i => /^\d{2}\/\d{2}\/\d{4}$/.test(i.text));
+        const anosDaPagina = fullDateItems.map(i => parseInt(i.text.split('/')[2],10)).filter(y => Number.isFinite(y) && y >= 2020);
+        if(anosDaPagina.length) state.reportYear = Math.max(state.reportYear, ...anosDaPagina);
+        if(!reportDate && fullDateItems.length){
+          const headerDate = fullDateItems.slice().sort((a,b)=>(b.y-a.y)||(b.x-a.x))[0];
+          reportDate = headerDate?.text || '';
+        }
+
+        const headerClient = items.find(i => normalizeText(i.text) === 'CLIENTE');
+        const headerObs = items.find(i => normalizeText(i.text).startsWith('OBSERVACAO'));
+        const pageHeaders = { clientX: headerClient ? headerClient.x : 520, obsX: headerObs ? headerObs.x : 650 };
+        const lines = groupPdfLines(items).map(line => ({...line, headers:pageHeaders, page:pageNum}));
+
+        for(const line of lines){
+          const parsedStart = parseRecordStart(line);
+          if(parsedStart){
+            if(current) records.push(finalizePdfRecord(current));
+            current = parsedStart;
+            appendLineDetails(current, line);
+          }else if(current){
+            appendLineDetails(current, line);
+          }
+        }
+      }
+      if(current) records.push(finalizePdfRecord(current));
+      return {records:records.filter(r => r.remessa && r.linha && r.pares && r.corte), reportDate};
+    }
+
+    function groupPdfLines(items){
+      const sorted = items.slice().sort((a,b) => (b.y - a.y) || (a.x - b.x));
+      const lines = [];
+      sorted.forEach(item => {
+        let line = lines.find(l => Math.abs(l.y - item.y) <= 2.2);
+        if(!line){ line = { y:item.y, items:[] }; lines.push(line); }
+        line.items.push(item);
+      });
+      lines.forEach(line => {
+        line.items.sort((a,b)=>a.x-b.x);
+        line.text = line.items.map(i=>i.text).join(' ').replace(/\s+/g,' ').trim();
+      });
+      return lines.sort((a,b)=>b.y-a.y);
+    }
+
+    function parseRecordStart(line){
+      const tokens = line.items.map(i => i.text).filter(Boolean);
+      if(tokens.length < 5) return null;
+      const linhaModelo = tokens[0];
+      const lote = tokens[1];
+      if(!/^\d{4}(?:\.\d{1,4})?$/.test(linhaModelo)) return null;
+      if(!/^\d{5,8}[A-Z]{0,3}$/i.test(lote)) return null;
+
+      let idx = 2;
+      let remessa = '';
+      if(/^\d{7,8}$/.test(tokens[idx] || '')){ remessa = tokens[idx]; idx++; }
+      const paresToken = tokens[idx];
+      const pares = parseNumberBR(paresToken);
+      if(!pares) return null;
+      idx++;
+
+      const dates = [];
+      let lastDateIndex = idx;
+      for(let i=idx; i<tokens.length; i++){
+        if(/^\d{2}\/\d{2}$/.test(tokens[i])){
+          dates.push(tokens[i]);
+          lastDateIndex = i;
+          if(dates.length === 7) break;
+        }
+      }
+      if(dates.length < 7) return null;
+
+      let fabrica = '';
+      for(let i=lastDateIndex+1; i<tokens.length; i++){
+        if(/^[1-9]$/.test(tokens[i])){ fabrica = tokens[i]; break; }
+      }
+      const [linha, modeloParte] = linhaModelo.split('.');
+      return {
+        linhaOriginal: linhaModelo, linha, modelo: modeloParte || 'VARIOS', lote, remessa, pares,
+        comp:dates[0], alm:dates[1], corte:dates[2], costura:dates[3], montagem:dates[4], exp:dates[5], entregaCronograma:dates[6],
+        fabrica, clienteParts:[], normativaParts:[], headers:line.headers, page:line.page
+      };
+    }
+
+    function appendLineDetails(record, line){
+      const rawText = String(line.text || '');
+      const normLine = normalizeText(rawText);
+      if(normLine.includes('LEGENDA:') || normLine.includes('USUARIO:') || normLine.includes('FAB0801') || normLine.includes('PROGRAMADOR:') || normLine.includes('EMPRESA:') || normLine.includes('FILIAL:') || normLine.includes('PERIODO:') || normLine.includes('PARAMETRO:') || normLine.includes('PAGINA ')) return;
+      const tokens = line.items.map(i=>i.text).filter(Boolean);
+      if(!record.remessa){
+        const remIdx = tokens.findIndex(t => /^\d{7,8}$/.test(t));
+        if(remIdx >= 0){
+          record.remessa = tokens[remIdx];
+          for(let i=remIdx+1; i<Math.min(tokens.length, remIdx+8); i++){
+            if(!record.fabrica && /^[1-9]$/.test(tokens[i])){ record.fabrica = tokens[i]; break; }
+          }
+        }
+      }else if(!record.fabrica){
+        const remIdx = tokens.findIndex(t => t === record.remessa);
+        const from = remIdx >= 0 ? remIdx + 1 : 0;
+        for(let i=from; i<Math.min(tokens.length, from+8); i++){
+          if(/^[1-9]$/.test(tokens[i])){ record.fabrica = tokens[i]; break; }
+        }
+      }
+
+      const clientX = record.headers?.clientX || line.headers?.clientX || 520;
+      const obsX = record.headers?.obsX || line.headers?.obsX || 650;
+      const client = line.items.filter(i => i.x >= clientX - 8 && i.x < obsX - 6).map(i=>i.text).join(' ').replace(/\s+/g,' ').trim();
+      const obs = line.items.filter(i => i.x >= obsX - 8).map(i=>i.text).join(' ').replace(/\s+/g,' ').trim();
+      if(client && !/^Cliente$/i.test(client)) record.clienteParts.push(client);
+      if(obs && !/^Observa/i.test(obs)) record.normativaParts.push(obs);
+    }
+
+    function finalizePdfRecord(record){
+      const cliente = cleanCliente(record.clienteParts.join(' '));
+      const normativa = cleanNormativa(record.normativaParts.join(' '));
+      const entregaNormativa = extractFirstDateDM(normativa);
+      return {
+        tipoCliente: '', tipoOrigem:'', linha: record.linha || '', modelo: record.modelo || 'VARIOS', atelieResponsavel:'', remessa: record.remessa || '', pares: parseNumberBR(record.pares), taloes:'',
+        corte: record.corte || '', entregaCronograma: record.entregaCronograma || '', entregaNormativa, entrega: record.entregaCronograma || '', fabrica: record.fabrica || '',
+        cliente, normativa, conferencia: { status:'Sem banco', detalhe:'Aguardando conferência' }, page:record.page || 0
+      };
+    }
+
+    function buildPdfMap(records){
+      const map = new Map();
+      (records || []).forEach(record => {
+        const remessa = normalizeRemessa(record.remessa);
+        if(!remessa) return;
+        if(!map.has(remessa)){
+          map.set(remessa, { remessa, pares:0, clientes:[], normativas:[], fabricas:[], cortes:[], linhas:[] });
+        }
+        const item = map.get(remessa);
+        item.pares += parseNumberBR(record.pares);
+        item.clientes = uniqueValues([...item.clientes, cleanCliente(record.cliente || '')]);
+        item.normativas = uniqueValues([...item.normativas, cleanNormativa(record.normativa || '')]);
+        item.fabricas = uniqueValues([...item.fabricas, record.fabrica || '']);
+        item.cortes = uniqueValues([...item.cortes, record.corte || '']);
+        item.linhas = uniqueValues([...item.linhas, record.linha || '']);
+      });
+      map.forEach(item => {
+        item.cliente = item.clientes.join(' / ');
+        item.normativa = item.normativas.join(' | ');
+        item.fabrica = item.fabricas.join(' / ');
+      });
+      return map;
+    }
+
+    function similarityTokens(value){
+      return normalizeText(value).replace(/[^A-Z0-9À-Ü]+/g,' ').split(/\s+/).filter(Boolean);
+    }
+
+    function jaccardSimilarity(a,b){
+      const A = new Set(similarityTokens(a));
+      const B = new Set(similarityTokens(b));
+      if(!A.size && !B.size) return 1;
+      if(!A.size || !B.size) return 0;
+      let inter = 0;
+      A.forEach(token=>{ if(B.has(token)) inter++; });
+      return inter / (A.size + B.size - inter);
+    }
+
+    function fieldSimilarity(a,b,field){
+      const na = normalizeText(field === 'cliente' ? cleanCliente(a) : cleanNormativa(a));
+      const nb = normalizeText(field === 'cliente' ? cleanCliente(b) : cleanNormativa(b));
+      if(!na || !nb) return 0;
+      if(na === nb) return 1;
+      const wordScore = jaccardSimilarity(na,nb);
+      if(field === 'cliente') return wordScore;
+      const numsA = new Set((na.match(/\d+/g)||[]));
+      const numsB = new Set((nb.match(/\d+/g)||[]));
+      let numberScore = 1;
+      if(numsA.size || numsB.size){
+        let inter = 0; numsA.forEach(n=>{if(numsB.has(n)) inter++;});
+        numberScore = inter / Math.max(1, numsA.size + numsB.size - inter);
+      }
+      return (wordScore * 0.45) + (numberScore * 0.55);
+    }
+
+    function valueCompleteness(value,field){
+      const cleaned = field === 'cliente' ? cleanCliente(value) : cleanNormativa(value);
+      const tokens = similarityTokens(cleaned);
+      const numbers = (cleaned.match(/\d+/g)||[]).length;
+      return tokens.length + numbers * 1.5 + Math.min(cleaned.length,180)/180;
+    }
+
+    function chooseConsensusField(candidates,field){
+      const valid = (candidates || []).map((candidate,index)=>({
+        ...candidate,
+        value:field === 'cliente' ? cleanCliente(candidate.value) : cleanNormativa(candidate.value),
+        sourceIndex:index
+      })).filter(candidate=>hasValue(candidate.value));
+      if(!valid.length) return {value:'',support:0,total:candidates.length,confidence:'vazio',score:0,sources:[]};
+      if(valid.length === 1) return {value:valid[0].value,support:1,total:candidates.length,confidence:'insuficiente',score:0,sources:[valid[0]]};
+      let best = null;
+      for(let i=0;i<valid.length;i++){
+        for(let j=i+1;j<valid.length;j++){
+          const score = fieldSimilarity(valid[i].value,valid[j].value,field);
+          const dateScore = Math.max(reportDateSortKey(valid[i].reportDate),reportDateSortKey(valid[j].reportDate));
+          if(!best || score > best.score || (score === best.score && dateScore > best.dateScore)) best={a:valid[i],b:valid[j],score,dateScore};
+        }
+      }
+      const threshold = field === 'cliente' ? 0.82 : 0.72;
+      const pair = [best.a,best.b];
+      pair.sort((a,b)=>{
+        const complete = valueCompleteness(b.value,field)-valueCompleteness(a.value,field);
+        if(Math.abs(complete)>0.15) return complete;
+        return reportDateSortKey(b.reportDate)-reportDateSortKey(a.reportDate);
+      });
+      const chosen = pair[0];
+      const agreeing = valid.filter(candidate=>fieldSimilarity(candidate.value,chosen.value,field)>=threshold);
+      return {
+        value:chosen.value,
+        support:agreeing.length,
+        total:candidates.length,
+        confidence:best.score>=threshold && agreeing.length>=2 ? 'alta' : 'revisar',
+        score:best.score,
+        sources:agreeing
+      };
+    }
+
+    function chooseConsensusPares(candidates){
+      const counts = new Map();
+      candidates.forEach(candidate=>{ const value=parseNumberBR(candidate.value); if(value) counts.set(value,(counts.get(value)||0)+1); });
+      const ranked=[...counts.entries()].sort((a,b)=>(b[1]-a[1])||(b[0]-a[0]));
+      return ranked.length ? ranked[0][0] : 0;
+    }
+
+    function chooseConsensusFabrica(candidates){
+      const counts = new Map();
+      candidates.forEach(candidate=>{ const value=String(candidate.value||'').trim(); if(value) counts.set(value,(counts.get(value)||0)+1); });
+      const ranked=[...counts.entries()].sort((a,b)=>(b[1]-a[1])||sortNumericText(a[0],b[0]));
+      return ranked.length ? ranked[0][0] : '';
+    }
+
+    function buildConsensusMap(sources){
+      const remessas = new Set();
+      (sources||[]).forEach(source=>source.map.forEach((_,remessa)=>remessas.add(remessa)));
+      const result = new Map();
+      remessas.forEach(remessa=>{
+        const sourceValues=(sources||[]).map(source=>{
+          const item=source.map.get(remessa)||{};
+          return {fileName:source.file?.name||'',reportDate:source.reportDate||'',cliente:item.cliente||'',normativa:item.normativa||'',pares:item.pares||0,fabrica:item.fabrica||'',cortes:item.cortes||[],linhas:item.linhas||[]};
+        });
+        const clienteConsensus=chooseConsensusField(sourceValues.map(v=>({...v,value:v.cliente})),'cliente');
+        const normativaConsensus=chooseConsensusField(sourceValues.map(v=>({...v,value:v.normativa})),'normativa');
+        const latestAvailable=sourceValues.slice().sort((a,b)=>reportDateSortKey(b.reportDate)-reportDateSortKey(a.reportDate)).find(v=>v.pares||v.cliente||v.normativa)||{};
+        result.set(remessa,{
+          remessa,
+          pares:chooseConsensusPares(sourceValues.map(v=>({...v,value:v.pares}))) || parseNumberBR(latestAvailable.pares),
+          cliente:clienteConsensus.value || '',
+          normativa:normativaConsensus.value || '',
+          fabrica:chooseConsensusFabrica(sourceValues.map(v=>({...v,value:v.fabrica}))),
+          cortes:uniqueValues(sourceValues.flatMap(v=>v.cortes||[])),
+          linhas:uniqueValues(sourceValues.flatMap(v=>v.linhas||[])),
+          clienteConsensus,normativaConsensus,sourceValues
+        });
+      });
+      return result;
+    }
+
+    function cleanCliente(value){
+      let s = String(value || '').replace(/\s+/g,' ').trim();
+      if(/^0+$/.test(s)) return '';
+      s = s.replace(/^0\s+/, '').trim();
+      s = s.replace(/\bEmpenho\b.*$/i, '').trim();
+      s = s.replace(/\bUsu[aá]rio\b.*$/i, '').trim();
+      s = s.replace(/\bP[aá]gina\b.*$/i, '').trim();
+      s = s.replace(/\b\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}\b/g, ' ');
+      s = s.replace(/(^|\s)à(?=\s|$)/gi, ' ').replace(/\s+0$/,'').replace(/\s+/g,' ').trim();
+      const u = normalizeText(s);
+      const mappings = [
+        ['INDUSTRIAS VERSATO', 'VERSATO'], ['VERSATO', 'VERSATO'], ['MARISA LOJAS', 'MARISA'], ['KALLAN CALCADOS', 'KALLAN'],
+        ['PONTAL CENTER', 'PONTAL'], ['IMPACTTO SHOES', 'IMPACTO SHOES'], ['IMPACTO SHOES', 'IMPACTO SHOES'],
+        ['ESPOSENDE', 'ESPOSENDE'], ['CARREFOUR', 'CARREFOUR'], ['RIACHUELO', 'RIACHUELO'],
+        ['LEME C DE M', 'LEME C'], ['PADYL PRONTA', 'PADYL PRONTA ENTREGA'], ['NOVA MODA', 'NOVA MODA SRL'],
+        ['NOV MODA', 'NOVA MODA SRL'], ['FEET COLOMBIA', 'FEET COLOMBIA'], ['CALZATODO', 'CALZATODO'],
+        ['PALMERO INTERNATIONAL', 'PALMERO INTERNATIONAL'], ['LEADER SHOES', 'LEADER SHOES'], ['ONE WORLD SHOES', 'ONE WORLD SHOES'],
+        ['LIMARCA', 'LIMARCA'], ['RIVERSIDE', 'RIVERSIDE'], ['GS TIENDAS', 'GS TIENDAS O DEPARTAMENTALES SA DE CV']
+      ];
+      const found = mappings.find(([key]) => u.includes(key));
+      return found ? found[1] : s;
+    }
+
+    function cleanNormativa(value){
+      let s = String(value || '').replace(/\s+/g,' ').trim();
+      s = s.replace(/\bNORM\s*\.:?/gi, 'NORM');
+      s = s.replace(/\bFAT\s*:/gi, 'FAT');
+      s = s.replace(/\s*[-–]\s*/g, ' ');
+      s = s.replace(/(\d{1,2})\/(\d{1,2})/g, (_,d,m) => `${pad2(d)}/${pad2(m)}`);
+      const cortesRodape = [
+        /\s+\*?\s*Pr[eé] n[aã]o enviado.*$/i,
+        /\s+N[aã]o processado.*$/i,
+        /\s+Etqtg\s*=.*$/i,
+        /\s+Usu[aá]rio\s*:.*$/i,
+        /\s+P[aá]gina\s+\d+.*$/i,
+        /\s+Legenda\s*:.*$/i,
+        /\s+Empenho\s+à.*$/i
+      ];
+      cortesRodape.forEach(rx => { s = s.replace(rx, ''); });
+      s = s.replace(/\b\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2}\b/g, ' ');
+      s = s.replace(/(^|\s)à(?=\s|$)/gi, ' ').replace(/^0\s+/,'').replace(/\s+/g,' ').trim();
+      return s;
+    }
+
+    function extractFirstDateDM(text){
+      const m = String(text || '').match(/\b(\d{1,2})\/(\d{1,2})\b/);
+      if(!m) return '';
+      const d = parseInt(m[1],10), mo = parseInt(m[2],10);
+      if(d < 1 || d > 31 || mo < 1 || mo > 12) return '';
+      return `${pad2(d)}/${pad2(mo)}`;
+    }
+
+    function tipoLabel(tipo){
+      const n = normalizeText(tipo);
+      if(n === 'EXPORTACAO' || n === 'EXPORTAÇÃO') return 'Exportação';
+      if(n === 'CLIENTE ESPECIAL') return 'Cliente Especial';
+      if(n === 'MERCADO INTERNO') return 'Mercado Interno';
+      if(n === 'ESTOQUE') return 'Estoque';
+      if(n === 'AMOSTRA') return 'Amostra';
+      return tipo || 'Sem tipo';
+    }
+
+    function isExportacao(tipo){
+      const n = normalizeText(tipo);
+      return n === 'EXPORTACAO' || n === 'EXPORTAÇÃO';
+    }
+    function isClienteEspecial(tipo){ return normalizeText(tipo) === 'CLIENTE ESPECIAL'; }
+
+    function typePriority(tipo){
+      if(isExportacao(tipo)) return 0;
+      if(isClienteEspecial(tipo)) return 1;
+      const n = normalizeText(tipo);
+      if(n === 'MERCADO INTERNO') return 2;
+      if(n === 'ESTOQUE') return 3;
+      if(n === 'AMOSTRA') return 4;
+      return 5;
+    }
+
+    function needsNormativaEntrega(tipo, normativa){
+      const nNorm = normalizeText(normativa);
+      return isExportacao(tipo) || isClienteEspecial(tipo) || nNorm.includes('EMBARQUE ESTRATEGICO') || nNorm.includes('EMBARQUE ESTRAT');
+    }
+
+    function applyEntregaRule(record){
+      if(needsNormativaEntrega(record.tipoCliente, record.normativa) && record.entregaNormativa){
+        record.entrega = record.entregaNormativa;
+      }else{
+        record.entrega = record.entregaCronograma || record.entrega || '';
+      }
+    }
+
+    function extractAtelieResponsavel(t){
+      const value = t?.idAtelieResponsavel ?? t?.atelieResponsavel ?? t?.nomeAtelieResponsavel ?? t?.atelierResponsavel ?? t?.atelier ?? t?.atelie ?? '';
+      if(Array.isArray(value)) return value.map(v => String(v || '').trim()).filter(Boolean).join(' / ');
+      if(value && typeof value === 'object'){
+        return String(value.nome || value.name || value.id || value.codigo || '').trim();
+      }
+      return String(value || '').trim();
+    }
+
+    function extractFabricaValue(t){
+      const candidates = [t?.fabrica, t?.fab, t?.numeroFabrica, t?.codigoFabrica, t?.codFabrica, t?.idFabrica];
+      const value = candidates.find(candidate => {
+        if(Array.isArray(candidate)) return candidate.some(v => String(v ?? '').trim());
+        if(candidate && typeof candidate === 'object') return Object.values(candidate).some(v => String(v ?? '').trim());
+        return String(candidate ?? '').trim() !== '';
+      });
+      if(Array.isArray(value)) return uniqueValues(value.map(v => String(v ?? '').trim())).join(' / ');
+      if(value && typeof value === 'object'){
+        return String(value.numero ?? value.codigo ?? value.id ?? value.nome ?? value.name ?? '').trim();
+      }
+      return String(value ?? '').trim();
+    }
+
+    function splitCompoundValues(value){
+      return String(value || '')
+        .split(/\s*\/\s*|\s*\|\s*|\s*;\s*|\s*,\s*|\n+/)
+        .map(v => String(v || '').trim())
+        .filter(Boolean);
+    }
+
+    function joinNamesHumanized(names){
+      const cleaned = uniqueValues((names || []).map(v => String(v || '').trim()).filter(Boolean));
+      if(!cleaned.length) return '';
+      if(cleaned.length === 1) return cleaned[0];
+      if(cleaned.length === 2) return `${cleaned[0]} e ${cleaned[1]}`;
+      return `${cleaned.slice(0, -1).join(', ')} e ${cleaned[cleaned.length - 1]}`;
+    }
+
+    function formatModeloAtelieEntry(modelo, atelies){
+      const modeloTxt = String(modelo || '').trim() || 'VARIOS';
+      const nomes = uniqueValues((atelies || []).map(v => String(v || '').trim()).filter(Boolean));
+      if(!nomes.length) return modeloTxt;
+      return `${modeloTxt} ${joinNamesHumanized(nomes)}`;
+    }
+
+    function wrapModeloAtelieEntries(entries, maxCharsPerLine = 38){
+      const lines = [];
+      let current = '';
+      (entries || []).forEach(entry => {
+        const token = String(entry || '').trim();
+        if(!token) return;
+        const candidate = current ? `${current} / ${token}` : token;
+        if(current && candidate.length > maxCharsPerLine){
+          lines.push(current);
+          current = token;
+        }else{
+          current = candidate;
+        }
+      });
+      if(current) lines.push(current);
+      return lines.join('\n');
+    }
+
+    function buildModeloAtelieDisplay(record){
+      const rawEntries = Array.isArray(record?.modeloAtelieEntries) ? record.modeloAtelieEntries : [];
+      if(rawEntries.length){
+        const entries = rawEntries
+          .map(entry => formatModeloAtelieEntry(entry?.modelo, Array.isArray(entry?.atelies) ? entry.atelies : []))
+          .filter(Boolean);
+        return wrapModeloAtelieEntries(entries, 38);
+      }
+      const modelo = String(record?.modelo || 'VARIOS').trim();
+      const atelie = String(record?.atelieResponsavel || record?.idAtelieResponsavel || '').trim();
+      return atelie ? `${modelo} ${atelie}` : modelo;
+    }
+
+    function modeloAteliePrint(record){
+      return buildModeloAtelieDisplay(record);
+    }
+
+    function modeloAtelieHtml(record){
+      return buildModeloAtelieDisplay(record);
+    }
+
+    async function fetchBancoResumo(dataCorteParsed){
+      const qRef = query(collection(db,'taloes'), where('dataCorte','==', dataCorteParsed.iso));
+      const snap = await getDocs(qRef);
+      const map = new Map();
+      snap.docs.forEach(docSnap => {
+        const t = docSnap.data();
+        const rem = normalizeRemessa(t.numeroRemessa);
+        if(!rem) return;
+        if(!map.has(rem)){
+          map.set(rem, {
+            remessa:rem, pares:0, taloes:0, tipos:new Set(), linhas:new Set(), modelos:new Set(), atelies:new Set(),
+            modelAtelieMap:new Map(), clientes:new Set(), normativas:new Set(), fabricas:new Set(), entregas:new Set(), docs:[]
+          });
+        }
+        const item = map.get(rem);
+        item.pares += Number(t.pares || 0);
+        item.taloes += 1;
+        if(hasValue(t.tipoCliente)) item.tipos.add(String(t.tipoCliente).trim());
+        if(hasValue(t.linha)) item.linhas.add(String(t.linha).trim());
+        if(hasValue(t.modelo)) item.modelos.add(String(t.modelo).trim());
+        if(hasValue(t.cliente)) item.clientes.add(String(t.cliente).trim());
+        if(hasValue(t.normativa)) item.normativas.add(String(t.normativa).trim());
+        const fabricaBanco = extractFabricaValue(t);
+        if(hasValue(fabricaBanco)) item.fabricas.add(fabricaBanco);
+        if(hasValue(t.dataEntrega)) item.entregas.add(String(t.dataEntrega).trim());
+        const atelieNome = extractAtelieResponsavel(t);
+        if(atelieNome) item.atelies.add(atelieNome);
+        const modeloKey = String(t.modelo || '').trim();
+        if(modeloKey){
+          if(!item.modelAtelieMap.has(modeloKey)) item.modelAtelieMap.set(modeloKey, new Set());
+          splitCompoundValues(atelieNome).forEach(nome => item.modelAtelieMap.get(modeloKey).add(nome));
+        }
+        item.docs.push({ id:docSnap.id, ref:docSnap.ref, data:t });
+      });
+      state.bancoResumo = map;
+      return map;
+    }
+
+    function recordFromBancoItem(item, target, index){
+      const tipos = uniqueValues([...item.tipos]);
+      const linhas = uniqueValues([...item.linhas]).sort(sortNumericText);
+      const modelos = uniqueValues([...item.modelos]).sort(sortNumericText);
+      const atelies = uniqueValues([...item.atelies]).sort(sortNumericText);
+      const clientes = uniqueValues([...item.clientes]);
+      const normativas = uniqueValues([...item.normativas]);
+      const fabricas = uniqueValues([...item.fabricas]);
+      const entregas = uniqueValues([...item.entregas]).sort();
+      const modeloAtelieEntries = [...item.modelAtelieMap.entries()]
+        .sort((a,b)=>sortNumericText(a[0],b[0]))
+        .map(([modelo, nomes]) => ({modelo, atelies:uniqueValues([...nomes]).sort(sortNumericText)}));
+      return {
+        id:`banco_${item.remessa}_${index}`,
+        origem:'banco',
+        tipoCliente:tipos[0] || '',
+        linha:linhas[0] || '',
+        modelo:modelos.join(' / ') || 'VARIOS',
+        atelieResponsavel:atelies.join(' / '),
+        modeloAtelieEntries,
+        remessa:item.remessa,
+        pares:item.pares,
+        taloes:item.taloes,
+        corte:target.dm,
+        dataCorteIso:target.iso,
+        dataEntregaIso:entregas[0] || '',
+        entrega:isoToDM(entregas[0] || ''),
+        fabrica:fabricas.join(' / '),
+        cliente:clientes.join(' / '),
+        normativa:normativas.join(' | '),
+        costura:'', palmilha:'', sola:'', embarque:'', pageBreakBefore:false,
+        conferencia:{status:'Aguardando', detalhe:'Ainda não comparado com o PDF.'},
+        pdfPares:0, pdfCliente:'', pdfNormativa:''
+      };
+    }
+
+    function compareProgramacaoComPdf(records, pdfMap){
+      let ok = 0, divergentes = 0, somenteBanco = 0;
+      const bancoRemessas = new Set(records.map(r=>normalizeRemessa(r.remessa)));
+      records.forEach(record => {
+        const pdf = pdfMap.get(normalizeRemessa(record.remessa));
+        record.pdfPares = pdf ? pdf.pares : 0;
+        record.pdfCliente = pdf ? pdf.cliente : '';
+        record.pdfNormativa = pdf ? pdf.normativa : '';
+        if(!pdf){
+          record.conferencia = {status:'Somente no banco', detalhe:'Remessa não encontrada no PDF atual.'};
+          somenteBanco++;
+          return;
+        }
+        const diferencas = [];
+        if(parseNumberBR(record.pares) !== parseNumberBR(pdf.pares)) diferencas.push(`Pares: banco ${formatNumberBR(record.pares)} × PDF ${formatNumberBR(pdf.pares)}`);
+        if(normalizeText(cleanCliente(record.cliente)) !== normalizeText(cleanCliente(pdf.cliente))) diferencas.push('Cliente diferente');
+        if(normalizeText(cleanNormativa(record.normativa)) !== normalizeText(cleanNormativa(pdf.normativa))) diferencas.push('Normativa diferente');
+        if(diferencas.length){
+          record.conferencia = {status:'Divergente', detalhe:diferencas.join(' • ')};
+          divergentes++;
+        }else{
+          record.conferencia = {status:'OK', detalhe:'Remessa, pares, cliente e normativa conferidos.'};
+          ok++;
+        }
+      });
+      state.pdfOnly = [...pdfMap.values()].filter(item=>!bancoRemessas.has(normalizeRemessa(item.remessa))).sort((a,b)=>sortNumericText(a.remessa,b.remessa));
+      const pdfPares = [...pdfMap.values()].reduce((sum,item)=>sum+parseNumberBR(item.pares),0);
+      state.comparison = {
+        ok, divergentes, somenteBanco, somentePdf:state.pdfOnly.length,
+        pdfRemessas:pdfMap.size, pdfPares
+      };
+    }
+
+    async function createProgramacao(){
+      const target = parseDateInput($('dataCorteInput').value);
+      if(!target){ setStatus('Informe uma Data de Corte válida. Exemplo: <strong>16/07</strong>.'); return; }
+      if(!state.authReady){ setStatus('Aguarde a confirmação do login antes de consultar o banco.'); return; }
+      if(!(await ensurePdfReady())) return;
+      setBusy('createProgramButton', true, 'Criando...');
+      try{
+        setStatus(`Buscando no banco todos os talões do corte <strong>${escapeHtml(target.dm)}</strong>...`);
+        const bancoMap = await fetchBancoResumo(target);
+        if(!bancoMap.size){
+          state.records = [];
+          state.currentTarget = target;
+          state.currentProgramId = null;
+          renderPreview(); updateSummary(); renderLineSummary();
+          setStatus(`Nenhum talão encontrado no banco para o corte <strong>${escapeHtml(target.dm)}</strong>.`);
+          return;
+        }
+        const selectedSources = state.pdfSources.map(source => ({...source,map:buildPdfMap(source.records.filter(r => String(r.corte || '') === target.dm))}));
+        state.pdfMapSelected = buildConsensusMap(selectedSources);
+        const records = [...bancoMap.values()].map((item,index)=>recordFromBancoItem(item,target,index));
+        state.currentTarget = target;
+        state.currentProgramId = null;
+        state.currentProgramName = '';
+        state.lineOrder = uniqueValues(records.map(r=>r.linha)).sort(sortNumericText);
+        compareProgramacaoComPdf(records, state.pdfMapSelected);
+        state.records = records.sort(sortRecordsForPreview);
+        renderPreview(); updateSummary(); renderLineSummary();
+        const totals = getTotals();
+        let msg = `Programação criada pelo banco para <strong>${escapeHtml(target.dm)}</strong>: <strong>${totals.qtdRemessas}</strong> remessa(s), <strong>${formatNumberBR(totals.total)}</strong> pares e <strong>${formatNumberBR(totals.totalTaloes)}</strong> talões.`;
+        msg += ` Conferência: <strong>${state.comparison.ok}</strong> OK, <strong>${state.comparison.divergentes}</strong> divergente(s), <strong>${state.comparison.somenteBanco}</strong> somente no banco e <strong>${state.comparison.somentePdf}</strong> somente no PDF.`;
+        setStatus(msg);
+      }catch(err){
+        console.error(err);
+        setStatus('Erro ao criar a programação: ' + escapeHtml(err.message || String(err)));
+      }finally{
+        setBusy('createProgramButton', false);
+      }
+    }
+
+    function lineOrderIndex(linha){
+      const idx = state.lineOrder.indexOf(String(linha));
+      return idx >= 0 ? idx : 9999;
+    }
+
+    function sortRecordsForPreview(a,b){
+      const l = lineOrderIndex(a.linha) - lineOrderIndex(b.linha);
+      if(l) return l;
+      const t = typePriority(a.tipoCliente) - typePriority(b.tipoCliente);
+      if(t) return t;
+      return Number(a.remessa || 0) - Number(b.remessa || 0);
+    }
+
+    function sortRecordsForPdf(a,b){
+      const grupoA = isExportacao(a.tipoCliente) ? 0 : 1;
+      const grupoB = isExportacao(b.tipoCliente) ? 0 : 1;
+      if(grupoA !== grupoB) return grupoA - grupoB;
+
+      const fabricaA = String(a.fabrica || '').trim();
+      const fabricaB = String(b.fabrica || '').trim();
+      if(fabricaA && !fabricaB) return -1;
+      if(!fabricaA && fabricaB) return 1;
+      if(fabricaA || fabricaB){
+        const fabricaSort = sortNumericText(fabricaA, fabricaB);
+        if(fabricaSort) return fabricaSort;
+      }
+      return sortNumericText(a.remessa || '', b.remessa || '');
+    }
+
+    function tipoOptions(selected){
+      const opts = [
+        ['Exportacao','Exportação'], ['Cliente especial','Cliente Especial'], ['Mercado Interno','Mercado Interno'], ['Estoque','Estoque'], ['Amostra','Amostra'], ['','Sem tipo']
+      ];
+      const normSel = normalizeText(selected);
+      return opts.map(([value,label]) => {
+        const sel = normalizeText(value) === normSel || normalizeText(label) === normSel ? 'selected' : '';
+        return `<option value="${escapeHtml(value)}" ${sel}>${escapeHtml(label)}</option>`;
+      }).join('');
+    }
+
+    function confClass(status){
+      if(status === 'OK') return 'ok';
+      if(status === 'Divergente') return 'warn';
+      if(status === 'Somente no banco') return 'bad';
+      return 'info';
+    }
+
+    function rowClass(record){
+      const classes = [isExportacao(record.tipoCliente) ? 'exportacao' : 'normal'];
+      if(record.conferencia?.status === 'Divergente') classes.push('divergente');
+      if(record.conferencia?.status === 'Somente no banco') classes.push('nao-encontrada');
+      return classes.join(' ');
+    }
+
+    function renderPreview(){
+      const wrap = $('previewWrap');
+      if(!state.records.length){
+        wrap.innerHTML = '<div class="empty">Nenhuma programação criada ou aberta.</div>';
+        return;
+      }
+      const rows = state.records.map(r => {
+        const status = r.conferencia?.status || 'Sem conferência';
+        const paresPdf = r.pdfPares ? formatNumberBR(r.pdfPares) : '-';
+        return `<tr class="${rowClass(r)}">
+          <td><span class="status-badge ${confClass(status)}">${escapeHtml(status)}</span></td>
+          <td>${escapeHtml(r.linha)}</td>
+          <td class="text-left">${escapeHtml(modeloAtelieHtml(r)).replace(/\n/g,'<br>')}</td>
+          <td>${escapeHtml(r.remessa)}</td>
+          <td><strong>${formatNumberBR(r.pares)}</strong><br><small>PDF: ${paresPdf}</small></td>
+          <td>${formatNumberBR(r.taloes)}</td>
+          <td>${escapeHtml(r.entrega || '-')}</td>
+          <td><div class="comparison-value"><strong>Banco:</strong> ${escapeHtml(r.cliente || '-')}<div class="pdf-value"><strong>PDF:</strong> ${escapeHtml(r.pdfCliente || '-')}</div></div></td>
+          <td><div class="comparison-value"><strong>Banco:</strong> ${escapeHtml(r.normativa || '-')}<div class="pdf-value"><strong>PDF:</strong> ${escapeHtml(r.pdfNormativa || '-')}</div></div></td>
+          <td><div class="comparison-detail"><strong>${escapeHtml(r.conferencia?.detalhe || '')}</strong></div></td>
+        </tr>`;
+      }).join('');
+      let onlyPdfHtml = '';
+      if(state.pdfOnly.length){
+        const linhas = state.pdfOnly.map(item=>`<tr class="nao-encontrada"><td><span class="status-badge info">Somente no PDF</span></td><td>${escapeHtml((item.linhas||[]).join(' / '))}</td><td>-</td><td>${escapeHtml(item.remessa)}</td><td><strong>-</strong><br><small>PDF: ${formatNumberBR(item.pares)}</small></td><td>-</td><td>-</td><td><div class="comparison-value"><strong>Banco:</strong> -<div class="pdf-value"><strong>PDF:</strong> ${escapeHtml(item.cliente || '-')}</div></div></td><td><div class="comparison-value"><strong>Banco:</strong> -<div class="pdf-value"><strong>PDF:</strong> ${escapeHtml(item.normativa || '-')}</div></div></td><td><div class="comparison-detail"><strong>Não entra na programação porque não foi encontrada no banco para este corte.</strong></div></td></tr>`).join('');
+        onlyPdfHtml = linhas;
+      }
+      wrap.innerHTML = `<table class="preview"><thead><tr><th>Status</th><th>Linha</th><th>Modelo / Ateliê</th><th>Remessa</th><th>Pares</th><th>Talões</th><th>Entrega</th><th>Cliente</th><th>Normativa</th><th>Conferência</th></tr></thead><tbody>${rows}${onlyPdfHtml}</tbody></table>`;
+    }
+
+    function editorRecordRow(record, index){
+      const hasBreak = !!record.pageBreakBefore;
+      const isFirstRecord = index === 0;
+      return `<tr class="${isExportacao(record.tipoCliente) ? 'editor-export' : ''}${hasBreak ? ' editor-page-break' : ''}" data-index="${index}">
+        <td><select data-field="tipoCliente">${tipoOptions(record.tipoCliente)}</select></td>
+        <td><input data-field="linha" value="${escapeHtml(record.linha)}"></td>
+        <td><div class="model-pair"><small>Modelo</small><input data-field="modelo" value="${escapeHtml(record.modelo)}"><small>Ateliê</small><input data-field="atelieResponsavel" value="${escapeHtml(record.atelieResponsavel || '')}"></div></td>
+        <td><input data-field="remessa" value="${escapeHtml(record.remessa)}"></td>
+        <td><input data-field="pares" value="${escapeHtml(formatNumberBR(record.pares))}"></td>
+        <td><input data-field="entrega" value="${escapeHtml(record.entrega || '')}" placeholder="dd/mm"></td>
+        <td><input data-field="fabrica" value="${escapeHtml(record.fabrica || '')}"></td>
+        <td><textarea data-field="cliente">${escapeHtml(record.cliente || '')}</textarea></td>
+        <td><textarea data-field="normativa">${escapeHtml(record.normativa || '')}</textarea></td>
+        <td><input data-field="taloes" value="${escapeHtml(formatNumberBR(record.taloes || 0))}"></td>
+        <td><input data-field="costura" value="${escapeHtml(record.costura || '')}"></td>
+        <td><input data-field="palmilha" value="${escapeHtml(record.palmilha || '')}"></td>
+        <td><input data-field="sola" value="${escapeHtml(record.sola || '')}"></td>
+        <td><input data-field="embarque" value="${escapeHtml(record.embarque || '')}"></td>
+        <td><div class="editor-action-buttons"><button class="btn btn-danger btn-mini" type="button" data-action="delete-editor">Excluir</button></div></td>
+      </tr>`;
+    }
+
+    function renderEditorTable(){
+      const wrap = $('editorTableWrap');
+      if(!state.records.length){ wrap.innerHTML = '<div class="empty">Nenhuma linha na programação.</div>'; updateEditorSummary(); return; }
+      state.records.sort(sortRecordsForPreview);
+      let lastLine = null;
+      let body = '';
+      state.records.forEach((record,index)=>{
+        const line = String(record.linha || 'Sem linha');
+        if(line !== lastLine){
+          const lineRows = state.records.filter(r=>String(r.linha || 'Sem linha')===line);
+          const total = lineRows.reduce((sum,r)=>sum+parseNumberBR(r.pares),0);
+          body += `<tr class="editor-line-header"><td colspan="15"><div class="editor-line-header-content"><span>LINHA ${escapeHtml(line)} — ${lineRows.length} remessa(s) — ${formatNumberBR(total)} pares</span></div></td></tr>`;
+          lastLine = line;
+        }
+        body += editorRecordRow(record,index);
+      });
+      wrap.innerHTML = `<table class="editor-table"><thead><tr><th class="w-tipo">TIPO</th><th class="w-linha">LINHA</th><th class="w-modelo">MODELO / ATELIÊ</th><th class="w-remessa">REMESSA</th><th class="w-pares">PARES</th><th class="w-entrega">ENTREGA</th><th class="w-fab">FAB</th><th class="w-cliente">CLIENTE</th><th class="w-norm">NORMATIVAS</th><th class="w-tal">TAL.</th><th class="w-prod">COSTURA</th><th class="w-prod">PALMILHA</th><th class="w-prod">SOLA</th><th class="w-prod">EMBARQUE</th><th class="w-act">AÇÃO</th></tr></thead><tbody>${body}</tbody></table>`;
+      wrap.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',updateEditorRecord));
+      wrap.querySelectorAll('[data-action="delete-editor"]').forEach(el=>el.addEventListener('click',deleteEditorRow));
+      updateEditorSummary();
+    }
+
+    function updateEditorRecord(event){
+      const tr = event.target.closest('tr[data-index]');
+      if(!tr) return;
+      const index = Number(tr.dataset.index);
+      const field = event.target.dataset.field;
+      const record = state.records[index];
+      if(!record || !field) return;
+      let value = event.target.value;
+      if(field === 'pares' || field === 'taloes') value = parseNumberBR(value);
+      record[field] = value;
+      if(field === 'modelo' || field === 'atelieResponsavel') record.modeloAtelieEntries = [];
+      record.origem = record.origem === 'banco' ? 'banco-editado' : (record.origem || 'manual');
+      updateEditorSummary();
+      updateSummary();
+    }
+
+    function toggleEditorPageBreak(event){
+      const explicitIndex = event.currentTarget?.dataset?.index;
+      const tr = event.currentTarget?.closest('tr[data-index]');
+      const index = explicitIndex !== undefined ? Number(explicitIndex) : Number(tr?.dataset.index);
+      if(!Number.isInteger(index) || !state.records[index]) return;
+      state.records[index].pageBreakBefore = !state.records[index].pageBreakBefore;
+      renderEditorTable();
+      updateSummary();
+    }
+
+    function clearPageBreaks(){
+      const count = state.records.filter(r=>r.pageBreakBefore).length;
+      if(!count){ setStatus('A programação não possui divisões manuais de página.'); return; }
+      if(!confirm(`Remover as ${count} divisão(ões) manual(is) de página desta programação?`)) return;
+      state.records.forEach(record=>{ record.pageBreakBefore = false; });
+      renderEditorTable();
+      updateSummary();
+      setStatus('Divisões manuais removidas. A paginação voltou ao modo automático.');
+    }
+
+    function deleteEditorRow(event){
+      const tr = event.target.closest('tr[data-index]');
+      const index = Number(tr?.dataset.index);
+      if(!Number.isInteger(index) || !state.records[index]) return;
+      if(!confirm(`Excluir a remessa ${state.records[index].remessa || 'sem número'} desta programação?`)) return;
+      state.records.splice(index,1);
+      state.lineOrder = uniqueValues(state.records.map(r=>r.linha)).sort(sortNumericText);
+      renderEditorTable(); renderPreview(); renderLineSummary(); updateSummary();
+    }
+
+    function addEditorRow(){
+      const target = state.currentTarget || parseDateInput($('dataCorteInput').value);
+      const linhaBase = state.records.length ? state.records[state.records.length-1].linha : '';
+      state.records.push({
+        id:`manual_${Date.now()}`, origem:'manual', tipoCliente:'Mercado Interno', linha:linhaBase, modelo:'', atelieResponsavel:'', modeloAtelieEntries:[],
+        remessa:'', pares:0, taloes:0, corte:target?.dm || '', dataCorteIso:target?.iso || '', dataEntregaIso:'', entrega:'', fabrica:'', cliente:'', normativa:'',
+        costura:'', palmilha:'', sola:'', embarque:'', pageBreakBefore:false, conferencia:{status:'Manual',detalhe:'Linha adicionada manualmente.'}, pdfPares:0, pdfCliente:'', pdfNormativa:''
+      });
+      state.lineOrder = uniqueValues(state.records.map(r=>r.linha)).sort(sortNumericText);
+      renderEditorTable();
+      const scroller = $('editorTableWrap'); if(scroller) scroller.scrollTop = scroller.scrollHeight;
+    }
+
+    function orderedPdfRecords(){
+      return groupByLinha().flatMap(([, rows]) => rows);
+    }
+
+    function pageBoundaryLabel(record, ordered, orderIndex){
+      const next = ordered[orderIndex + 1];
+      const linha = String(record?.linha || 'Sem linha');
+      if(!next || String(next.linha || 'Sem linha') !== linha){
+        return `Após a linha ${linha}`;
+      }
+      return `Linha ${linha}: após remessa ${record?.remessa || (orderIndex + 1)}`;
+    }
+
+    function applyPageEndFromPlan(event){
+      const card = event.currentTarget.closest('.page-plan-card');
+      const pageIndex = Number(card?.dataset.pageIndex);
+      const select = card?.querySelector('[data-page-end-select]');
+      const endOrderIndex = Number(select?.value);
+      const ordered = orderedPdfRecords();
+      const currentPages = paginateRecords();
+      const pageRows = currentPages[pageIndex]?.flatMap(group => group.rows) || [];
+      const firstRecord = pageRows[0];
+      const startOrderIndex = ordered.indexOf(firstRecord);
+
+      if(!Number.isInteger(endOrderIndex) || endOrderIndex < startOrderIndex || endOrderIndex >= ordered.length - 1){
+        setStatus('Não foi possível aplicar esse fim de página. Escolha outro ponto.');
+        return;
+      }
+
+      // Remove quebras existentes dentro do trecho que o usuário escolheu manter na mesma folha.
+      for(let i = startOrderIndex + 1; i <= endOrderIndex; i++){
+        ordered[i].pageBreakBefore = false;
+      }
+      ordered[endOrderIndex + 1].pageBreakBefore = true;
+
+      const label = pageBoundaryLabel(ordered[endOrderIndex], ordered, endOrderIndex);
+      renderEditorTable();
+      updateSummary();
+      setStatus(`Página ${pageIndex + 1} ajustada: <strong>${escapeHtml(label)}</strong>.`);
+    }
+
+    function removePageEndFromPlan(event){
+      const pageIndex = Number(event.currentTarget.dataset.pageIndex);
+      const currentPages = paginateRecords();
+      const nextFirstRecord = currentPages[pageIndex + 1]?.[0]?.rows?.[0];
+      if(!nextFirstRecord || !nextFirstRecord.pageBreakBefore){
+        setStatus('Essa página já está usando a divisão automática.');
+        return;
+      }
+      nextFirstRecord.pageBreakBefore = false;
+      renderEditorTable();
+      updateSummary();
+      setStatus(`A divisão manual após a página ${pageIndex + 1} foi removida.`);
+    }
+
+    function renderPagePlan(pages){
+      const wrap = $('pagePlanSummary');
+      if(!wrap) return;
+      if(!pages.length){ wrap.innerHTML = '<div class="page-plan-title">Nenhuma página estimada.</div>'; return; }
+
+      const ordered = orderedPdfRecords();
+      const cards = pages.map((groups,index)=>{
+        const rows = groups.flatMap(group=>group.rows);
+        const total = rows.reduce((sum,row)=>sum+parseNumberBR(row.pares),0);
+        const labels = groups.map(group=>`Linha ${group.linha}${group.parte ? ' parte ' + group.parte : ''}`).join(' / ');
+        const lastRecord = rows[rows.length - 1];
+        const lastOrderIndex = ordered.indexOf(lastRecord);
+        const nextRecord = ordered[lastOrderIndex + 1];
+        const manualEnd = !!nextRecord?.pageBreakBefore;
+
+        let controls = '<div class="page-plan-last">Última página — termina no final da programação.</div>';
+        if(nextRecord){
+          const options = rows.map(record => {
+            const orderIndex = ordered.indexOf(record);
+            const selected = orderIndex === lastOrderIndex ? 'selected' : '';
+            return `<option value="${orderIndex}" ${selected}>${escapeHtml(pageBoundaryLabel(record, ordered, orderIndex))}</option>`;
+          }).join('');
+          controls = `<div class="page-plan-controls">
+            <label>Onde a página ${index + 1} deve terminar?</label>
+            <select data-page-end-select>${options}</select>
+            <button class="btn btn-primary" type="button" data-action="apply-page-end">Aplicar</button>
+            ${manualEnd ? `<button class="page-plan-remove" type="button" data-action="remove-page-end" data-page-index="${index}">Usar divisão automática nesta página</button>` : ''}
+          </div>`;
+        }
+
+        return `<div class="page-plan-card ${manualEnd ? 'manual' : ''}" data-page-index="${index}">
+          <strong>Página ${index+1}${manualEnd ? ' • ajuste manual' : ''}</strong>
+          <div class="page-plan-lines">${escapeHtml(labels)}</div>
+          <div class="page-plan-count">${rows.length} remessa(s) • ${formatNumberBR(total)} pares</div>
+          ${controls}
+        </div>`;
+      }).join('');
+
+      wrap.innerHTML = `<div class="page-plan-title">Distribuição das folhas — em cada cartão escolha onde aquela página deve terminar:</div>${cards}`;
+      wrap.querySelectorAll('[data-action="apply-page-end"]').forEach(button=>button.addEventListener('click',applyPageEndFromPlan));
+      wrap.querySelectorAll('[data-action="remove-page-end"]').forEach(button=>button.addEventListener('click',removePageEndFromPlan));
+    }
+
+    function updateEditorSummary(){
+      const totals = getTotals();
+      const target = state.currentTarget || parseDateInput($('dataCorteInput').value);
+      const pages = paginateRecords();
+      $('editorDocumentTitle').textContent = `Planejamento Calçados Roma - Corte ${target ? target.dm : ''}`;
+      $('editorSummary').innerHTML = `<span>Total: ${formatNumberBR(totals.total)} pares</span><span>Exportação: ${formatNumberBR(totals.totalExp)} pares</span><span>${totals.qtdRemessas} remessa(s) • ${formatNumberBR(totals.totalTaloes)} talões • ${pages.length || 0} página(s) estimada(s)</span>`;
+      renderPagePlan(pages);
+    }
+
+    function openEditorModal(){
+      if(!state.records.length){ setStatus('Crie uma programação pelo banco ou abra uma programação salva antes de gerar o PDF.'); return; }
+      renderEditorTable();
+      openModal('editorModal');
+    }
+
+    function closeEditorModal(){
+      state.lineOrder = uniqueValues(state.records.map(r=>r.linha)).sort(sortNumericText);
+      renderPreview();
+      renderLineSummary();
+      updateSummary();
+      closeAllModals();
+    }
+
+    function updateStateFromPreview(){
+      // Os campos do modal atualizam state.records em tempo real.
+      state.records.sort(sortRecordsForPreview);
+    }
+
+    function getTotals(){
+      const exp = state.records.filter(r => isExportacao(r.tipoCliente));
+      const normal = state.records.filter(r => !isExportacao(r.tipoCliente));
+      const totalExp = exp.reduce((s,r)=>s+parseNumberBR(r.pares),0);
+      const totalNormal = normal.reduce((s,r)=>s+parseNumberBR(r.pares),0);
+      const total = totalExp + totalNormal;
+      const totalTaloes = state.records.reduce((s,r)=>s+parseNumberBR(r.taloes),0);
+      const totalClienteEspecial = state.records.filter(r => normalizeText(r.tipoCliente) === 'CLIENTE ESPECIAL').reduce((s,r)=>s+parseNumberBR(r.pares),0);
+      const totalMercadoInterno = state.records.filter(r => normalizeText(r.tipoCliente) === 'MERCADO INTERNO').reduce((s,r)=>s+parseNumberBR(r.pares),0);
+      const totalEstoque = state.records.filter(r => normalizeText(r.tipoCliente) === 'ESTOQUE').reduce((s,r)=>s+parseNumberBR(r.pares),0);
+      return { totalExp,totalNormal,total,totalBanco:total,totalTaloes,totalClienteEspecial,totalMercadoInterno,totalEstoque,qtdExp:new Set(exp.map(r=>r.remessa)).size,qtdRemessas:new Set(state.records.map(r=>normalizeRemessa(r.remessa)).filter(Boolean)).size };
+    }
+
+    function comparisonFieldRows(record){
+      const rows = [];
+      const bancoPares = parseNumberBR(record.pares);
+      const pdfPares = parseNumberBR(record.pdfPares);
+      if(bancoPares !== pdfPares){
+        rows.push({campo:'Pares', banco:formatNumberBR(bancoPares), pdf:formatNumberBR(pdfPares)});
+      }
+      const bancoCliente = cleanCliente(record.cliente || '');
+      const pdfCliente = cleanCliente(record.pdfCliente || '');
+      if(normalizeText(bancoCliente) !== normalizeText(pdfCliente)){
+        rows.push({campo:'Cliente', banco:bancoCliente || '-', pdf:pdfCliente || '-'});
+      }
+      const bancoNormativa = cleanNormativa(record.normativa || '');
+      const pdfNormativa = cleanNormativa(record.pdfNormativa || '');
+      if(normalizeText(bancoNormativa) !== normalizeText(pdfNormativa)){
+        rows.push({campo:'Normativa', banco:bancoNormativa || '-', pdf:pdfNormativa || '-'});
+      }
+      return rows;
+    }
+
+    function closeComparisonDetails(){
+      const wrap = $('comparisonDetails');
+      if(!wrap) return;
+      wrap.classList.remove('open');
+      wrap.innerHTML = '';
+    }
+
+    function showComparisonDetails(kind){
+      const wrap = $('comparisonDetails');
+      if(!wrap) return;
+      let title = '';
+      let subtitle = '';
+      let rowsHtml = '';
+
+      if(kind === 'divergentes'){
+        title = 'Remessas divergentes';
+        const divergentes = state.records.filter(r => r.conferencia?.status === 'Divergente');
+        subtitle = `${divergentes.length} remessa(s) com diferença entre o banco e o PDF atual.`;
+        const detailRows = [];
+        divergentes.forEach(record => {
+          const fields = comparisonFieldRows(record);
+          if(fields.length){
+            fields.forEach(field => detailRows.push({record, ...field}));
+          }else{
+            detailRows.push({record, campo:'Conferência', banco:record.conferencia?.detalhe || '-', pdf:'-'});
+          }
+        });
+        rowsHtml = detailRows.map(item => `<tr>
+          <td><strong>${escapeHtml(item.record.remessa || '-')}</strong></td>
+          <td>${escapeHtml(item.record.linha || '-')}</td>
+          <td class="comparison-field">${escapeHtml(item.campo)}</td>
+          <td>${escapeHtml(item.banco)}</td>
+          <td>${escapeHtml(item.pdf)}</td>
+        </tr>`).join('');
+      }else if(kind === 'somenteBanco'){
+        title = 'Remessas somente no banco';
+        const items = state.records.filter(r => r.conferencia?.status === 'Somente no banco');
+        subtitle = `${items.length} remessa(s) pertencem ao corte selecionado, mas não foram encontradas no PDF atual.`;
+        rowsHtml = items.map(record => `<tr>
+          <td><strong>${escapeHtml(record.remessa || '-')}</strong></td>
+          <td>${escapeHtml(record.linha || '-')}</td>
+          <td class="num">${formatNumberBR(record.pares)}</td>
+          <td>${escapeHtml(record.cliente || '-')}</td>
+          <td>${escapeHtml(record.normativa || '-')}</td>
+        </tr>`).join('');
+      }else if(kind === 'somentePdf'){
+        title = 'Remessas somente no PDF';
+        const items = state.pdfOnly || [];
+        subtitle = `${items.length} remessa(s) aparecem no PDF, mas não foram encontradas no banco para a data de corte selecionada.`;
+        rowsHtml = items.map(item => `<tr>
+          <td><strong>${escapeHtml(item.remessa || '-')}</strong></td>
+          <td>${escapeHtml((item.linhas || []).join(' / ') || '-')}</td>
+          <td class="num">${formatNumberBR(item.pares)}</td>
+          <td>${escapeHtml(item.cliente || '-')}</td>
+          <td>${escapeHtml(item.normativa || '-')}</td>
+        </tr>`).join('');
+      }
+
+      let tableHead = '';
+      if(kind === 'divergentes'){
+        tableHead = '<tr><th>Remessa</th><th>Linha</th><th>Campo divergente</th><th>Banco</th><th>PDF</th></tr>';
+      }else{
+        tableHead = '<tr><th>Remessa</th><th>Linha</th><th>Pares</th><th>Cliente</th><th>Normativa</th></tr>';
+      }
+
+      wrap.innerHTML = `<div class="comparison-details-head">
+        <div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(subtitle)}</p></div>
+        <button class="comparison-details-close" id="closeComparisonDetailsButton" type="button" aria-label="Fechar detalhes">×</button>
+      </div>
+      ${rowsHtml ? `<div class="comparison-details-wrap"><table class="comparison-details-table"><thead>${tableHead}</thead><tbody>${rowsHtml}</tbody></table></div>` : '<div class="comparison-empty">Nenhuma ocorrência encontrada.</div>'}`;
+      wrap.classList.add('open');
+      $('closeComparisonDetailsButton')?.addEventListener('click', closeComparisonDetails);
+      wrap.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }
+
+    function updateSummary(){
+      if(!state.records.length){
+        $('summaryCards').innerHTML = '';
+        closeComparisonDetails();
+        return;
+      }
+      const totals = getTotals();
+      const c = state.comparison || {};
+      $('summaryCards').innerHTML = `
+        <div class="summary-card"><span>Remessas Banco</span><strong>${totals.qtdRemessas}</strong></div>
+        <div class="summary-card"><span>Pares Banco</span><strong>${formatNumberBR(totals.total)}</strong></div>
+        <div class="summary-card"><span>Total talões</span><strong>${formatNumberBR(totals.totalTaloes)}</strong></div>
+        <div class="summary-card"><span>Remessas PDF</span><strong>${c.pdfRemessas || 0}</strong></div>
+        <div class="summary-card"><span>Pares PDF</span><strong>${formatNumberBR(c.pdfPares || 0)}</strong></div>
+        <div class="summary-card good"><span>Conferidas</span><strong>${c.ok || 0}</strong></div>
+        <button class="summary-card ${(c.divergentes||0) ? 'warn' : ''}" type="button" data-comparison-detail="divergentes" ${(c.divergentes||0) ? '' : 'disabled'} title="Clique para ver as remessas e os campos divergentes"><span>Divergentes</span><strong>${c.divergentes || 0}</strong></button>
+        <button class="summary-card ${(c.somenteBanco||0) ? 'bad' : ''}" type="button" data-comparison-detail="somenteBanco" ${(c.somenteBanco||0) ? '' : 'disabled'} title="Clique para ver as remessas existentes somente no banco"><span>Somente banco</span><strong>${c.somenteBanco || 0}</strong></button>
+        <button class="summary-card ${(c.somentePdf||0) ? 'warn' : ''}" type="button" data-comparison-detail="somentePdf" ${(c.somentePdf||0) ? '' : 'disabled'} title="Clique para ver as remessas existentes somente no PDF"><span>Somente PDF</span><strong>${c.somentePdf || 0}</strong></button>
+        <div class="summary-card"><span>Páginas estimadas</span><strong>${paginateRecords().length || 0}</strong></div>`;
+      $('summaryCards').querySelectorAll('[data-comparison-detail]').forEach(button => {
+        button.addEventListener('click', () => showComparisonDetails(button.dataset.comparisonDetail));
+      });
+    }
+
+    function groupByLinha(){
+      const map = new Map();
+      state.records.forEach(r => {
+        const linha = String(r.linha || 'Sem linha');
+        if(!map.has(linha)) map.set(linha, []);
+        map.get(linha).push(r);
+      });
+      const ordered = [...map.entries()].sort((a,b)=>lineOrderIndex(a[0]) - lineOrderIndex(b[0]));
+      ordered.forEach(([, rows]) => rows.sort(sortRecordsForPdf));
+      return ordered;
+    }
+
+    function renderLineSummary(){
+      const wrap = $('lineSummary');
+      if(!state.records.length){ wrap.innerHTML = ''; return; }
+      const html = groupByLinha().map(([linha, rows]) => {
+        const total = rows.reduce((s,r)=>s+parseNumberBR(r.pares),0);
+        const exp = rows.filter(r=>isExportacao(r.tipoCliente)).reduce((s,r)=>s+parseNumberBR(r.pares),0);
+        return `<span class="line-chip"><strong>Linha ${escapeHtml(linha)}</strong> ${rows.length} rem. | ${formatNumberBR(total)} pares | Exp. ${formatNumberBR(exp)}</span>`;
+      }).join('');
+      wrap.innerHTML = html;
+    }
+
+    function rowsByType(rows, exportacao){
+      return rows.filter(r => exportacao ? isExportacao(r.tipoCliente) : !isExportacao(r.tipoCliente));
+    }
+
+    function createPdfMeasureDoc(){
+      try{
+        if(window.jspdf?.jsPDF) return new window.jspdf.jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+      }catch(err){ console.warn('Não foi possível iniciar a medição do PDF.', err); }
+      return null;
+    }
+
+    function estimateWrappedLines(doc, text, width, fontSize){
+      const value = String(text || '');
+      if(!value) return 1;
+      if(!doc){
+        const charsPerLine = Math.max(8, Math.floor(width * 2.2));
+        return value.split('\n').reduce((sum, part) => sum + Math.max(1, Math.ceil(part.length / charsPerLine)), 0);
+      }
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(fontSize);
+      return Math.max(1, doc.splitTextToSize(value, Math.max(2, width)).length);
+    }
+
+    function estimateRecordHeight(record, doc){
+      const normalFont = 5.9;
+      const modelFont = 5.8;
+      const normalLineMm = normalFont * 0.352778 * 1.15;
+      const modelLineMm = modelFont * 0.352778 * 1.05;
+
+      const modelLines = estimateWrappedLines(doc, modeloAteliePrint(record), 37.3, modelFont);
+      const clientLines = estimateWrappedLines(doc, cleanCliente(record.cliente || ''), 40.2, normalFont);
+      const normLines = estimateWrappedLines(doc, record.normativa || '', 57.2, normalFont);
+
+      const modelHeight = modelLines * modelLineMm + 0.7;
+      const clientHeight = clientLines * normalLineMm + 1.8;
+      const normHeight = normLines * normalLineMm + 1.8;
+      return Math.max(9.4, modelHeight, clientHeight, normHeight);
+    }
+
+    function estimateGroupHeight(group, doc, showLineHeader){
+      const expRows = rowsByType(group.rows, true);
+      const normalRows = rowsByType(group.rows, false);
+      let height = showLineHeader ? 5.8 : 0;
+
+      height += 6.2; // cabeçalho das colunas
+      if(expRows.length){
+        height += expRows.reduce((sum, row) => sum + estimateRecordHeight(row, doc), 0);
+      }else{
+        height += 14; // espaço de exportação vazio mantido no modelo atual
+      }
+      height += 5.8; // total exportação
+      height += normalRows.reduce((sum, row) => sum + estimateRecordHeight(row, doc), 0);
+      height += 5.8; // total normal
+      return height;
+    }
+
+    function estimatePageHeight(groups, doc){
+      const multiple = groups.length > 1;
+      return groups.reduce((sum, group, index) => {
+        const spacer = multiple && index > 0 ? 5.5 : 0;
+        return sum + spacer + estimateGroupHeight(group, doc, multiple);
+      }, 0);
+    }
+
+    function pdfTableAvailableHeight(pageIndex){
+      const pageHeight = 210;
+      const startY = 19;
+      const bottomMargin = pageIndex === 0 ? 28 : 7;
+      const safety = 2.5;
+      return pageHeight - startY - bottomMargin - safety;
+    }
+
+    function splitGroupToFit(group, pageIndex, doc){
+      const chunks = [];
+      let remaining = group.rows.slice();
+
+      while(remaining.length){
+        const pageLimit = pdfTableAvailableHeight(pageIndex + chunks.length);
+        let accepted = [];
+
+        for(const row of remaining){
+          const candidate = {linha:group.linha, rows:[...accepted, row], parte:''};
+          if(accepted.length && estimatePageHeight([candidate], doc) > pageLimit) break;
+          accepted.push(row);
+          if(estimatePageHeight([candidate], doc) > pageLimit){
+            accepted.pop();
+            break;
+          }
+        }
+
+        // Garante avanço mesmo em uma normativa excepcionalmente extensa.
+        if(!accepted.length) accepted = [remaining[0]];
+        chunks.push({linha:group.linha, rows:accepted, parte:''});
+        remaining = remaining.slice(accepted.length);
+      }
+      return chunks;
+    }
+
+    function buildPaginationQueue(){
+      const queue = [];
+      groupByLinha().forEach(([linha, rows])=>{
+        let segmentRows = [];
+        let segmentBreak = false;
+        rows.slice().sort(sortRecordsForPdf).forEach(row=>{
+          if(row.pageBreakBefore && segmentRows.length){
+            queue.push({linha, rows:segmentRows, parte:'', manualBreakBefore:segmentBreak});
+            segmentRows = [row];
+            segmentBreak = true;
+          }else{
+            if(!segmentRows.length) segmentBreak = !!row.pageBreakBefore;
+            segmentRows.push(row);
+          }
+        });
+        if(segmentRows.length) queue.push({linha, rows:segmentRows, parte:'', manualBreakBefore:segmentBreak});
+      });
+      return queue;
+    }
+
+    function paginateRecords(){
+      const measureDoc = createPdfMeasureDoc();
+      const queue = buildPaginationQueue();
+      const pages = [];
+      let current = [];
+
+      function rowsThatFit(group, pageGroups, pageIndex){
+        const pageLimit = pdfTableAvailableHeight(pageIndex);
+        const accepted = [];
+        for(const row of group.rows){
+          const candidateGroup = {linha:group.linha, rows:[...accepted, row], parte:'', manualBreakBefore:group.manualBreakBefore};
+          const candidatePage = [...pageGroups, candidateGroup];
+          if(estimatePageHeight(candidatePage, measureDoc) <= pageLimit) accepted.push(row);
+          else break;
+        }
+        return accepted;
+      }
+
+      while(queue.length){
+        const group = queue.shift();
+
+        // Uma divisão manual sempre encerra a folha atual. Marcando a primeira
+        // remessa de uma linha, a linha inteira começa na página seguinte.
+        if(group.manualBreakBefore && current.length){
+          pages.push(current);
+          current = [];
+        }
+
+        const pageIndex = pages.length;
+        const pageLimit = pdfTableAvailableHeight(pageIndex);
+        const wholeCandidate = [...current, group];
+
+        if(estimatePageHeight(wholeCandidate, measureDoc) <= pageLimit){
+          current = wholeCandidate;
+          continue;
+        }
+
+        const accepted = rowsThatFit(group, current, pageIndex);
+        if(accepted.length){
+          current.push({linha:group.linha, rows:accepted, parte:'', manualBreakBefore:group.manualBreakBefore});
+          pages.push(current);
+          current = [];
+          const remaining = group.rows.slice(accepted.length);
+          if(remaining.length) queue.unshift({linha:group.linha, rows:remaining, parte:'', manualBreakBefore:false});
+          continue;
+        }
+
+        if(current.length){
+          pages.push(current);
+          current = [];
+          queue.unshift(group);
+          continue;
+        }
+
+        const forcedRow = group.rows[0];
+        pages.push([{linha:group.linha, rows:[forcedRow], parte:'', manualBreakBefore:group.manualBreakBefore}]);
+        const remaining = group.rows.slice(1);
+        if(remaining.length) queue.unshift({linha:group.linha, rows:remaining, parte:'', manualBreakBefore:false});
+      }
+
+      if(current.length) pages.push(current);
+
+      const occurrences = new Map();
+      pages.flat().forEach(group => occurrences.set(group.linha, (occurrences.get(group.linha) || 0) + 1));
+      const counters = new Map();
+      pages.flat().forEach(group => {
+        if((occurrences.get(group.linha) || 0) > 1){
+          const next = (counters.get(group.linha) || 0) + 1;
+          counters.set(group.linha, next);
+          group.parte = next;
+        }else group.parte = '';
+      });
+
+      return pages;
+    }
+
+    function summarizePageLines(pageGroups){
+      const labels = pageGroups.map(g => `Linha ${g.linha}${g.parte ? ' parte ' + g.parte : ''}`);
+      if(labels.length === 1) return labels[0];
+      return labels.join(' / ');
+    }
+
+    function pageHeaderText(index, total){
+      return `Pagina ${index + 1} de ${total}`;
+    }
+
+    function groupLabelForRow(index, totalRows, label){
+      if(!totalRows) return '';
+      const middle = Math.floor((totalRows - 1) / 2);
+      return index === middle ? label : '';
+    }
+
+    function buildAutoTableBody(pageGroups, includeEmptyExportBlock=true){
+      const body = [];
+      const header = ['', 'LINHA', 'MODELO / ATELIÊ', 'REMESSA', 'PARES', 'ENTREGA', 'FAB', 'CLIENTE', 'NORMATIVAS', 'TAL.', 'COSTURA', 'PALMILHA', 'SOLA', 'EMBARQUE'];
+
+      function addLineHeader(group){
+        const totalLinha = group.rows.reduce((s,r)=>s+parseNumberBR(r.pares),0);
+        const expLinha = rowsByType(group.rows,true).reduce((s,r)=>s+parseNumberBR(r.pares),0);
+        body.push([{content:`LINHA ${group.linha}${group.parte ? ' - PARTE ' + group.parte : ''}  |  TOTAL ${formatNumberBR(totalLinha)} pares  |  EXP. ${formatNumberBR(expLinha)} pares`, colSpan:14, styles:{halign:'left', fontStyle:'bold', fillColor:[235,235,235], minCellHeight:5.4}}]);
+      }
+
+      function addColumnHeader(){
+        body.push(header.map(txt => ({content:txt, styles:{fillColor:[217,217,217], textColor:[0,0,0], fontStyle:'bold', halign:'center', valign:'middle', minCellHeight:6.2}})));
+      }
+
+      function addGroup(label, list, forceEmpty){
+        const total = list.reduce((s,r)=>s+parseNumberBR(r.pares),0);
+        if(list.length){
+          list.forEach((r, idx) => {
+            const tipoCell = idx === 0
+              ? {content:label, rowSpan:list.length, styles:{halign:'center', valign:'middle', fillColor:[242,242,242], fontStyle:'bold', cellPadding:0}}
+              : null;
+            const row = [
+              r.linha || '',
+              modeloAteliePrint(r),
+              r.remessa || '',
+              formatNumberBR(r.pares),
+              dmToDisplay(r.entrega),
+              r.fabrica || '',
+              cleanCliente(r.cliente || ''),
+              r.normativa || '',
+              r.taloes || '',
+              r.costura || '', r.palmilha || '', r.sola || '', r.embarque || ''
+            ];
+            body.push(tipoCell ? [tipoCell, ...row] : row);
+          });
+        }else if(forceEmpty){
+          body.push([{content:label, styles:{halign:'center', valign:'middle', fillColor:[242,242,242], fontStyle:'bold', cellPadding:0, minCellHeight:14}},'','','','','','','','','','','','','']);
+        }
+        body.push(['','','','TOTAL',formatNumberBR(total),'','','','','','','','','']);
+      }
+
+      function addSpacer(){
+        body.push([{content:'', colSpan:14, styles:{fillColor:[255,255,255], lineColor:[255,255,255], textColor:[255,255,255], minCellHeight:5.5, cellPadding:0}}]);
+      }
+
+      pageGroups.forEach((group, groupIndex) => {
+        if(pageGroups.length > 1) addLineHeader(group);
+        addColumnHeader();
+        addGroup('EXP', rowsByType(group.rows,true), includeEmptyExportBlock);
+        addGroup('NOR', rowsByType(group.rows,false), false);
+        if(pageGroups.length > 1 && groupIndex < pageGroups.length - 1) addSpacer();
+      });
+      return body;
+    }
+
+    function generatePdf(){
+      openEditorModal();
+    }
+
+    function generateFinalPdf(){
+      updateStateFromPreview();
+      if(!state.records.length){ setStatus('Não há dados para gerar PDF.'); return; }
+      const target = state.currentTarget || parseDateInput($('dataCorteInput').value);
+      if(!target){ setStatus('Informe a Data de Corte antes de gerar o PDF.'); return; }
+      state.currentTarget = target;
+      if(window.jspdf && window.jspdf.jsPDF && typeof window.jspdf.jsPDF.API.autoTable !== 'undefined') generatePdfWithJsPdf(target);
+      else generatePrintablePdf(target);
+    }
+
+    function generatePdfWithJsPdf(target){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+      const pages = paginateRecords();
+      const totals = getTotals();
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 8;
+      const corteTitulo = `Corte ${pad2(target.day)}/${pad2(target.month)}`;
+
+      function drawResumoCardsAtBottom(){
+        const cards = [
+          ['Talões', formatNumberBR(totals.totalTaloes)],
+          ['Pares PDF', formatNumberBR(totals.total)],
+          ['Remessas', formatNumberBR(totals.qtdRemessas)],
+          ['Exportação', formatNumberBR(totals.totalExp)],
+          ['Cliente especial', formatNumberBR(totals.totalClienteEspecial)],
+          ['Mercado interno', formatNumberBR(totals.totalMercadoInterno)],
+          ['Estoque', formatNumberBR(totals.totalEstoque)]
+        ];
+        const gap = 2;
+        const left = margin;
+        const totalW = pageW - margin*2;
+        const cardW = (totalW - gap * (cards.length - 1)) / cards.length;
+        const cardH = 13;
+        const y = pageH - cardH - 8;
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(8);
+        doc.text('Dados encontrados', left, y - 2.2);
+        cards.forEach(([label, value], i) => {
+          const x = left + i * (cardW + gap);
+          doc.setDrawColor(180,180,180);
+          doc.setFillColor(248,248,248);
+          doc.roundedRect(x, y, cardW, cardH, 1.8, 1.8, 'FD');
+          doc.setFont('helvetica','bold');
+          doc.setFontSize(7.2);
+          doc.text(label, x + cardW/2, y + 4.3, {align:'center'});
+          doc.setFontSize(10.5);
+          doc.text(value, x + cardW/2, y + 10.3, {align:'center'});
+        });
+      }
+
+      pages.forEach((pageGroups, index) => {
+        if(index > 0) doc.addPage();
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(12);
+        doc.text(`Planejamento Calçados Roma - ${corteTitulo}`, pageW/2, 9, {align:'center'});
+        doc.setFontSize(8);
+        doc.text(`${summarizePageLines(pageGroups)}`, margin, 16);
+        doc.setFont('helvetica','normal');
+        doc.text(pageHeaderText(index, pages.length), pageW - margin, 16, {align:'right'});
+
+        doc.autoTable({
+          startY: 19,
+          margin:{left:margin,right:margin,bottom:index===0?28:7},
+          tableWidth: pageW - margin * 2,
+          body: buildAutoTableBody(pageGroups, true),
+          theme:'grid',
+          rowPageBreak:'avoid',
+          styles:{font:'helvetica',fontSize:5.9,cellPadding:0.9,valign:'middle',textColor:[0,0,0],lineColor:[0,0,0],lineWidth:0.1,overflow:'linebreak',minCellHeight:9.4},
+          headStyles:{fillColor:[217,217,217],textColor:[0,0,0],fontStyle:'bold',halign:'center',valign:'middle',fontSize:6.0,minCellHeight:7},
+          columnStyles:{
+            0:{cellWidth:6.8,halign:'center',valign:'middle',cellPadding:0},
+            1:{cellWidth:9,halign:'center'},
+            2:{cellWidth:38,halign:'center',fontSize:5.8,cellPadding:0.35,fontStyle:'normal'},
+            3:{cellWidth:12,halign:'center'},
+            4:{cellWidth:9,halign:'right'},
+            5:{cellWidth:14,halign:'center'},
+            6:{cellWidth:6,halign:'center'},
+            7:{cellWidth:42,halign:'left'},
+            8:{cellWidth:59,halign:'left'},
+            9:{cellWidth:8,halign:'center'},
+            10:{cellWidth:17,halign:'center'},
+            11:{cellWidth:17,halign:'center'},
+            12:{cellWidth:15,halign:'center'},
+            13:{cellWidth:17,halign:'center'}
+          },
+          didParseCell:function(data){
+            if(data.section !== 'body') return;
+            const raw = data.row.raw || [];
+            const getRaw = (idx) => typeof raw[idx] === 'object' ? raw[idx].content : raw[idx];
+            const first = getRaw(0);
+            const isColumnHeader = getRaw(1) === 'LINHA' && String(getRaw(2)).startsWith('MODELO') && getRaw(3) === 'REMESSA';
+            const isTotal = getRaw(3) === 'TOTAL';
+            const isLineHeader = typeof first === 'string' && first.startsWith('LINHA ');
+            if(isColumnHeader){
+              data.cell.styles.fillColor = [217,217,217];
+              data.cell.styles.textColor = [0,0,0];
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.halign = 'center';
+              data.cell.styles.valign = 'middle';
+              data.cell.styles.fontSize = 5.9;
+              data.cell.styles.minCellHeight = 6.2;
+            }
+            if(isTotal){
+              data.cell.styles.fillColor = [217,217,217];
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.minCellHeight = 5.8;
+            }
+            if(isLineHeader){
+              data.cell.styles.fillColor = [235,235,235];
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.minCellHeight = 5.8;
+            }
+            const cellRaw = typeof data.cell.raw === 'object' ? data.cell.raw.content : data.cell.raw;
+            if(data.column.index === 0 && (cellRaw === 'EXP' || cellRaw === 'NOR' || cellRaw === 'EXPORTAÇÃO' || cellRaw === 'NORMAL')){
+              data.cell.text = [''];
+              data.cell.styles.fillColor = [242,242,242];
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.cellPadding = 0;
+              data.cell.styles.lineWidth = 0.12;
+              data.cell.styles.halign = 'center';
+              data.cell.styles.valign = 'middle';
+            }
+            if(data.column.index === 2 && !isTotal && !isLineHeader && !isColumnHeader){
+              data.cell.styles.fontSize = 5.8;
+              data.cell.styles.cellPadding = 0.35;
+              data.cell.styles.fontStyle = 'normal';
+              data.cell.styles.lineHeight = 1.05;
+              data.cell.styles.valign = 'middle';
+            }
+          },
+          didDrawCell:function(data){
+            if(data.section !== 'body' || data.column.index !== 0) return;
+            const rawValue = typeof data.cell.raw === 'object' ? data.cell.raw.content : data.cell.raw;
+            if(rawValue !== 'EXP' && rawValue !== 'NOR' && rawValue !== 'EXPORTAÇÃO' && rawValue !== 'NORMAL') return;
+
+            doc.setFont('helvetica','bold');
+            doc.setTextColor(0,0,0);
+
+            const chars = String(rawValue).split('');
+            const cx = data.cell.x + (data.cell.width / 2);
+            const availableH = Math.max(6, data.cell.height - 2.4);
+            const availableW = Math.max(2.5, data.cell.width - 1.2);
+
+            const stepMm = Math.max(2.0, Math.min(availableH / chars.length, 3.2));
+            const fontMm = Math.min(availableW * 0.72, stepMm * 0.72);
+            const fontPt = Math.max(4.0, Math.min(8.0, fontMm / 0.352778));
+            doc.setFontSize(fontPt);
+
+            const topY = data.cell.y + ((data.cell.height - (stepMm * chars.length)) / 2) + (stepMm * 0.74);
+            chars.forEach((ch, i) => {
+              doc.text(ch, cx, topY + (i * stepMm), {align:'center', baseline:'middle'});
+            });
+          }
+        });
+        if(index === 0) drawResumoCardsAtBottom();
+      });
+
+      const fileDate = target.dm.replace('/','-');
+      doc.save(`programacao_${fileDate}.pdf`);
+      setStatus(`PDF gerado com sucesso. Pares PDF: <strong>${formatNumberBR(totals.total)}</strong>. Pares banco: <strong>${state.bancoResumo.size ? formatNumberBR(totals.totalBanco) : '-'}</strong>. Total de exportação: <strong>${formatNumberBR(totals.totalExp)}</strong>.`);
+    }
+
+    function printableColumnHeader(){
+      return `<tr><th></th><th>LINHA</th><th>MODELO / ATELIÊ</th><th>REMESSA</th><th>PARES</th><th>ENTREGA</th><th>FAB</th><th>CLIENTE</th><th>NORMATIVAS</th><th>TAL.</th><th>COSTURA</th><th>PALMILHA</th><th>SOLA</th><th>EMBARQUE</th></tr>`;
+    }
+
+    function printableGroupRows(label, rows, forceEmpty){
+      const total = rows.reduce((s,r)=>s+parseNumberBR(r.pares),0);
+      let html = '';
+      if(rows.length){
+        const labelIndex = Math.floor((rows.length - 1) / 2);
+        rows.forEach((r, idx) => {
+          html += `<tr><td class="tipo">${idx === labelIndex ? escapeHtml(label) : ''}</td>
+            <td class="text-center">${escapeHtml(r.linha)}</td>
+            <td class="text-center modelo-print">${escapeHtml(modeloAtelieHtml(r))}</td>
+            <td class="text-center">${escapeHtml(r.remessa)}</td>
+            <td class="text-right">${formatNumberBR(r.pares)}</td>
+            <td class="text-center">${dmToDisplay(r.entrega)}</td>
+            <td class="text-center">${escapeHtml(r.fabrica)}</td>
+            <td class="text-left">${escapeHtml(r.cliente)}</td>
+            <td class="text-left">${escapeHtml(r.normativa)}</td>
+            <td class="text-center">${escapeHtml(r.taloes || '')}</td><td>${escapeHtml(r.costura || '')}</td><td>${escapeHtml(r.palmilha || '')}</td><td>${escapeHtml(r.sola || '')}</td><td>${escapeHtml(r.embarque || '')}</td>
+          </tr>`;
+        });
+      }else if(forceEmpty){
+        html += `<tr><td class="tipo">${escapeHtml(label)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+      }
+      html += `<tr class="total-row"><td></td><td></td><td></td><td class="text-center">TOTAL</td><td class="text-right">${formatNumberBR(total)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+      return html;
+    }
+
+    function generatePrintablePdf(target){
+      const pages = paginateRecords();
+      const totals = getTotals();
+      const corteTitulo = `Corte ${pad2(target.day)}/${pad2(target.month)}`;
+      const html = pages.map((pageGroups,index) => {
+        const summary = index === 0 ? `<table class="print-total-box"><tr><td>TOTAL DE EXPORTAÇÃO</td><td>${formatNumberBR(totals.totalExp)}</td></tr><tr><td>TOTAL DE NORMAL</td><td>${formatNumberBR(totals.totalNormal)}</td></tr><tr><td>TOTAL DE PARES</td><td>${formatNumberBR(totals.total)}</td></tr></table>` : '';
+        const groupsHtml = pageGroups.map((group, groupIndex) => `${pageGroups.length > 1 ? `<tr class="line-title"><td colspan="14">LINHA ${escapeHtml(group.linha)}${group.parte ? ' - PARTE ' + group.parte : ''}</td></tr>` : ''}${printableColumnHeader()}${printableGroupRows('EXPORTAÇÃO', rowsByType(group.rows,true), true)}${printableGroupRows('NORMAL', rowsByType(group.rows,false), false)}${pageGroups.length > 1 && groupIndex < pageGroups.length - 1 ? '<tr class="line-spacer"><td colspan="14"></td></tr>' : ''}`).join('');
+        return `<section class="print-page">
+          <div class="print-title">Planejamento Calçados Roma - ${escapeHtml(corteTitulo)}</div>
+          <div class="print-head"><div><h2>${escapeHtml(summarizePageLines(pageGroups))}</h2></div><div>${pageHeaderText(index, pages.length)}</div></div>
+          <table class="print-table"><tbody>${groupsHtml}</tbody></table>
+          ${summary}
+        </section>`;
+      }).join('');
+      $('printArea').innerHTML = html;
+      document.body.classList.add('printing');
+      setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('printing'), 600); }, 80);
+    }
+
+    function chunkArray(arr, size){
+      const chunks = [];
+      for(let i=0; i<arr.length; i+=size) chunks.push(arr.slice(i,i+size));
+      return chunks;
+    }
+
+    async function getDocsWithTimeout(queryRef, timeoutMs=45000, label='consulta'){
+      let timer = null;
+      try{
+        return await Promise.race([
+          getDocs(queryRef),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error(`Tempo excedido na ${label}.`)), timeoutMs);
+          })
+        ]);
+      }finally{
+        if(timer) clearTimeout(timer);
+      }
+    }
+
+    async function fetchNormativasRemessaGroup(remessas, label, depth=0){
+      const grupo = uniqueValues((remessas || []).map(normalizeRemessa)).filter(Boolean);
+      if(!grupo.length) return {docs:[], failed:[]};
+
+      const timeoutMs = grupo.length <= 2 ? 60000 : 45000;
+      try{
+        const qRef = query(collection(db,'taloes'), where('numeroRemessa','in',grupo));
+        const snap = await getDocsWithTimeout(qRef, timeoutMs, label);
+        return {docs:snap.docs, failed:[]};
+      }catch(err){
+        console.warn(`Falha em ${label} (${grupo.length} remessa(s)).`, err);
+
+        // Se um bloco ficar pesado, dividimos automaticamente em blocos menores.
+        // Assim uma unica consulta lenta nao derruba todo o lancamento.
+        if(grupo.length > 1 && depth < 6){
+          const meio = Math.ceil(grupo.length / 2);
+          const esquerda = await fetchNormativasRemessaGroup(grupo.slice(0,meio), `${label}A`, depth+1);
+          const direita = await fetchNormativasRemessaGroup(grupo.slice(meio), `${label}B`, depth+1);
+          return {docs:[...esquerda.docs,...direita.docs], failed:[...esquerda.failed,...direita.failed]};
+        }
+
+        // Para uma unica remessa, fazemos uma ultima tentativa mais longa.
+        if(grupo.length === 1 && depth < 7){
+          try{
+            const qRef = query(collection(db,'taloes'), where('numeroRemessa','in',grupo));
+            const snap = await getDocsWithTimeout(qRef, 90000, `${label} - ultima tentativa`);
+            return {docs:snap.docs, failed:[]};
+          }catch(finalErr){
+            console.error(`Nao foi possivel consultar a remessa ${grupo[0]}.`, finalErr);
+            return {docs:[], failed:[grupo[0]]};
+          }
+        }
+
+        return {docs:[], failed:grupo};
+      }
+    }
+
+    function confidenceLabel(consensus){
+      if(!consensus || consensus.confidence === 'vazio') return '<span class="confidence-bad">Sem dados</span>';
+      if(consensus.confidence === 'alta') return `<span class="confidence-high">${consensus.support}/${consensus.total} PDFs</span>`;
+      if(consensus.confidence === 'insuficiente') return `<span class="confidence-warn">Somente ${consensus.support} PDF</span>`;
+      return '<span class="confidence-bad">Sem concordância</span>';
+    }
+
+    function renderNormativasReview(){
+      const rows=state.pendingNormativaRows||[];
+      const safe=rows.filter(row=>row.safe && (row.changeCliente||row.changeNormativa||row.changeFabrica));
+      const review=rows.filter(row=>!row.safe && row.hasCandidate);
+      const reviewFilterActive=state.normativasReviewFilter==='review';
+      $('normativasReviewSummary').innerHTML=`
+        <div class="summary-card good"><span>Seguras para atualizar</span><strong>${safe.length}</strong></div>
+        <button type="button" class="summary-card warn filter-card ${reviewFilterActive?'active':''}" id="filterReviewNormativasButton" ${review.length?'':'disabled'} title="${reviewFilterActive?'Clique para voltar a mostrar todas as remessas':'Clique para mostrar somente as remessas que precisam de revisão'}"><span>Precisam revisão</span><strong>${review.length}</strong></button>
+        <div class="summary-card"><span>Talões envolvidos</span><strong>${safe.reduce((sum,row)=>sum+row.docs.length,0)}</strong></div>
+        <div class="summary-card"><span>PDFs comparados</span><strong>${state.pdfSources.length}</strong></div>`;
+
+      const filterButton=$('filterReviewNormativasButton');
+      if(filterButton){
+        filterButton.addEventListener('click',()=>{
+          state.normativasReviewFilter=state.normativasReviewFilter==='review'?'all':'review';
+          renderNormativasReview();
+          $('normativasReviewWrap').scrollTop=0;
+        });
+      }
+
+      if(!rows.length){
+        $('normativasReviewWrap').innerHTML='<div class="saved-empty">Nenhuma remessa do PDF foi encontrada no banco.</div>';
+        return;
+      }
+
+      const indexedRows=rows.map((row,index)=>({row,index}));
+      const visibleRows=reviewFilterActive
+        ? indexedRows.filter(item=>!item.row.safe && item.row.hasCandidate)
+        : indexedRows;
+
+      if(!visibleRows.length){
+        $('normativasReviewWrap').innerHTML='<div class="saved-empty">Nenhuma remessa precisa de revisão.</div>';
+        return;
+      }
+
+      const html=visibleRows.map(({row,index})=>{
+        const disabled=!row.safe || !(row.changeCliente||row.changeNormativa||row.changeFabrica);
+        const selected=!disabled ? 'checked' : '';
+        const oldCliente=row.currentClientes.join(' / ')||'-';
+        const oldNorm=row.currentNormativas.join(' | ')||'-';
+        const newCliente=row.info.clienteConsensus?.value||'-';
+        const newNorm=row.info.normativaConsensus?.value||'-';
+        const sources=(row.info.sourceValues||[]).map(v=>`${escapeHtml(v.reportDate||'?')}: ${escapeHtml(v.cliente||'-')} | ${escapeHtml(v.normativa||'-')}`).join('<br>');
+        return `<tr data-review-index="${index}">
+          <td><input type="checkbox" data-review-select ${selected} ${disabled?'disabled':''}></td>
+          <td><strong>${escapeHtml(row.remessa)}</strong><br><small>${row.docs.length} talão(ões)</small></td>
+          <td>${confidenceLabel(row.info.clienteConsensus)}<br>${confidenceLabel(row.info.normativaConsensus)}</td>
+          <td>${row.changeCliente?`<span class="change-old">${escapeHtml(oldCliente)}</span><span class="change-new">${escapeHtml(newCliente)}</span>`:escapeHtml(oldCliente)}</td>
+          <td>${row.changeNormativa?`<span class="change-old">${escapeHtml(oldNorm)}</span><span class="change-new">${escapeHtml(newNorm)}</span>`:escapeHtml(oldNorm)}</td>
+          <td>${row.changeFabrica?`<span class="change-old">${escapeHtml(row.currentFabricas.join(' / ')||'-')}</span><span class="change-new">${escapeHtml(row.info.fabrica||'-')}</span>`:escapeHtml(row.currentFabricas.join(' / ')||'-')}</td>
+          <td><div class="pdf-source-list">${sources}</div></td>
+        </tr>`;
+      }).join('');
+      $('normativasReviewWrap').innerHTML=`<table class="norm-review-table"><thead><tr><th>Atualizar</th><th>Remessa</th><th>Confiança</th><th>Cliente atual → escolhido</th><th>Normativa atual → escolhida</th><th>FAB</th><th>Leitura dos 3 PDFs</th></tr></thead><tbody>${html}</tbody></table>`;
+    }
+
+    async function launchNormativas(){
+      if(!state.authReady){ setStatus('Aguarde a confirmação do login.'); return; }
+      if(!(await ensurePdfReady(true))) return;
+      const pdfMap=state.pdfConsensusAll;
+      const remessas=[...pdfMap.keys()];
+      if(!remessas.length){ setStatus('Nenhuma remessa válida foi encontrada nos PDFs.'); return; }
+      setBusy('launchNormativasButton',true,'Comparando...');
+      try{
+        const grouped=new Map();
+        const failedRemessas=new Set();
+
+        // Firestore aceita ate 30 valores no operador IN. Usamos 25 para manter
+        // margem de seguranca e reduzir bastante o numero total de consultas.
+        const grupos=chunkArray(remessas,25);
+        const consultasSimultaneas=2;
+        let gruposConcluidos=0;
+        let remessasProcessadas=0;
+
+        setStatus(`Buscando <strong>${remessas.length}</strong> remessas no banco em <strong>${grupos.length}</strong> blocos. Aguarde...`);
+
+        for(let inicio=0; inicio<grupos.length; inicio+=consultasSimultaneas){
+          const loteGrupos=grupos.slice(inicio,inicio+consultasSimultaneas);
+          const resultados=await Promise.all(loteGrupos.map((grupo,indiceLote)=>{
+            const numeroConsulta=inicio+indiceLote+1;
+            return fetchNormativasRemessaGroup(grupo, `bloco ${numeroConsulta}/${grupos.length}`);
+          }));
+
+          resultados.forEach(resultado=>{
+            (resultado.failed||[]).forEach(rem=>failedRemessas.add(normalizeRemessa(rem)));
+            (resultado.docs||[]).forEach(docSnap=>{
+              const data=docSnap.data();
+              const rem=normalizeRemessa(data.numeroRemessa);
+              if(!pdfMap.has(rem)) return;
+              if(!grouped.has(rem)) grouped.set(rem,{docs:[],clientes:new Set(),normativas:new Set(),fabricas:new Set()});
+              const group=grouped.get(rem);
+              group.docs.push({ref:docSnap.ref,data});
+              if(hasValue(data.cliente)) group.clientes.add(cleanCliente(data.cliente));
+              if(hasValue(data.normativa)) group.normativas.add(cleanNormativa(data.normativa));
+              const fab=extractFabricaValue(data); if(hasValue(fab)) group.fabricas.add(fab);
+            });
+          });
+
+          gruposConcluidos+=loteGrupos.length;
+          remessasProcessadas+=loteGrupos.reduce((sum,g)=>sum+g.length,0);
+          const percentual=Math.min(100,Math.round((remessasProcessadas/remessas.length)*100));
+          const falhasTxt=failedRemessas.size ? ` • <strong>${failedRemessas.size}</strong> remessa(s) exigiram proteção/falharam` : '';
+          setStatus(`Consultando banco: <strong>${Math.min(remessasProcessadas,remessas.length)}/${remessas.length}</strong> remessas (${percentual}%) • <strong>${gruposConcluidos}/${grupos.length}</strong> blocos • <strong>${grouped.size}</strong> remessas encontradas${falhasTxt}.`);
+          await new Promise(resolve=>setTimeout(resolve,0));
+        }
+
+        const rows=[];
+        grouped.forEach((group,remessa)=>{
+          const info=pdfMap.get(remessa);
+          const currentClientes=uniqueValues([...group.clientes]);
+          const currentNormativas=uniqueValues([...group.normativas]);
+          const currentFabricas=uniqueValues([...group.fabricas]);
+          const safeCliente=info.clienteConsensus?.confidence==='alta' && hasValue(info.clienteConsensus.value);
+          const safeNormativa=info.normativaConsensus?.confidence==='alta' && hasValue(info.normativaConsensus.value);
+          const changeCliente=safeCliente && (currentClientes.length!==1 || normalizeText(currentClientes[0])!==normalizeText(info.clienteConsensus.value));
+          const changeNormativa=safeNormativa && (currentNormativas.length!==1 || normalizeText(currentNormativas[0])!==normalizeText(info.normativaConsensus.value));
+          const changeFabrica=hasValue(info.fabrica) && currentFabricas.length===0;
+          rows.push({remessa,docs:group.docs,currentClientes,currentNormativas,currentFabricas,info,safe:(safeCliente||safeNormativa),hasCandidate:hasValue(info.clienteConsensus?.value)||hasValue(info.normativaConsensus?.value),changeCliente,changeNormativa,changeFabrica});
+        });
+        rows.sort((a,b)=>sortNumericText(a.remessa,b.remessa));
+        state.pendingNormativaRows=rows;
+        state.normativasReviewFilter='all';
+        renderNormativasReview();
+        openModal('normativasModal');
+        const safeCount=rows.filter(row=>row.safe&&(row.changeCliente||row.changeNormativa||row.changeFabrica)).length;
+
+        if(failedRemessas.size){
+          setStatus(`Comparação concluída com proteção: <strong>${safeCount}</strong> remessa(s) possuem alterações seguras. <strong>${failedRemessas.size}</strong> remessa(s) não puderam ser consultadas e foram automaticamente excluídas de qualquer atualização. Você pode revisar e confirmar as demais com segurança.`);
+        }else{
+          setStatus(`Comparação concluída: <strong>${safeCount}</strong> remessa(s) possuem alterações seguras. Revise a janela antes de confirmar.`);
+        }
+      }catch(err){
+        console.error(err);
+        setStatus('Erro ao preparar o lançamento: '+escapeHtml(err.message||String(err)));
+      }finally{
+        setBusy('launchNormativasButton',false);
+      }
+    }
+
+    async function confirmNormativasUpdates(){
+      const checked=[...document.querySelectorAll('#normativasReviewWrap [data-review-select]:checked')];
+      if(!checked.length){ setStatus('Nenhuma alteração foi selecionada.'); return; }
+      const selectedRows=checked.map(input=>state.pendingNormativaRows[Number(input.closest('tr').dataset.reviewIndex)]).filter(Boolean);
+      const updates=[];
+      selectedRows.forEach(row=>{
+        row.docs.forEach(docItem=>{
+          const patch={};
+          if(row.changeCliente) patch.cliente=row.info.clienteConsensus.value;
+          if(row.changeNormativa) patch.normativa=row.info.normativaConsensus.value;
+          if(row.changeFabrica && !hasValue(extractFabricaValue(docItem.data))) patch.fabrica=row.info.fabrica;
+          if(Object.keys(patch).length) updates.push({ref:docItem.ref,patch});
+        });
+      });
+      if(!updates.length){ setStatus('As remessas selecionadas não possuem alterações pendentes.'); return; }
+      const ok=confirm(`Confirmar a atualização de ${selectedRows.length} remessa(s), totalizando ${updates.length} talão(ões)? Cliente e normativa poderão ser corrigidos quando dois ou três PDFs concordarem.`);
+      if(!ok) return;
+      setBusy('confirmNormativasButton',true,'Gravando...');
+      try{
+        let total=0;
+        for(const lote of chunkArray(updates,450)){
+          const batch=writeBatch(db); lote.forEach(item=>batch.update(item.ref,item.patch)); await batch.commit(); total+=lote.length;
+        }
+        closeAllModals();
+        setStatus(`Clientes e normativas atualizados com segurança em <strong>${selectedRows.length}</strong> remessa(s) e <strong>${total}</strong> talão(ões).`);
+      }catch(err){
+        console.error(err); setStatus('Erro ao atualizar o banco: '+escapeHtml(err.message||String(err)));
+      }finally{ setBusy('confirmNormativasButton',false); }
+    }
+
+    function setSafeReviewSelection(checked){
+      document.querySelectorAll('#normativasReviewWrap [data-review-select]:not(:disabled)').forEach(input=>{input.checked=checked;});
+    }
+
+    function serializeRecord(record){
+      return {
+        tipoCliente:String(record.tipoCliente || ''), linha:String(record.linha || ''), modelo:String(record.modelo || ''), atelieResponsavel:String(record.atelieResponsavel || ''),
+        modeloAtelieEntries:Array.isArray(record.modeloAtelieEntries) ? record.modeloAtelieEntries.map(e=>({modelo:String(e?.modelo||''),atelies:Array.isArray(e?.atelies)?e.atelies.map(v=>String(v||'')):[]})) : [],
+        remessa:String(record.remessa || ''), pares:parseNumberBR(record.pares), taloes:parseNumberBR(record.taloes), corte:String(record.corte || ''), dataCorteIso:String(record.dataCorteIso || ''),
+        dataEntregaIso:String(record.dataEntregaIso || ''), entrega:String(record.entrega || ''), fabrica:String(record.fabrica || ''), cliente:String(record.cliente || ''), normativa:String(record.normativa || ''),
+        costura:String(record.costura || ''), palmilha:String(record.palmilha || ''), sola:String(record.sola || ''), embarque:String(record.embarque || ''), pageBreakBefore:!!record.pageBreakBefore, origem:String(record.origem || ''),
+        conferencia:{status:String(record.conferencia?.status || ''),detalhe:String(record.conferencia?.detalhe || '')}, pdfPares:parseNumberBR(record.pdfPares), pdfCliente:String(record.pdfCliente || ''), pdfNormativa:String(record.pdfNormativa || '')
+      };
+    }
+
+    async function saveProgramacao(){
+      updateStateFromPreview();
+      if(!state.records.length){ setStatus('Crie ou abra uma programação antes de salvar.'); return; }
+      if(!state.authReady){ setStatus('Aguarde a confirmação do login.'); return; }
+      const target = state.currentTarget || parseDateInput($('dataCorteInput').value);
+      if(!target){ setStatus('Informe a Data de Corte antes de salvar.'); return; }
+      let nome = state.currentProgramName;
+      if(!nome){
+        const sugerido = `Programação ${target.dm.replace('/','-')}-${target.year}`;
+        nome = prompt('Nome da programação:', sugerido);
+        if(nome === null) return;
+        nome = String(nome).trim() || sugerido;
+      }
+      setBusy('saveProgramButton',true,'Salvando...');
+      setBusy('saveProgramModalButton',true,'Salvando...');
+      try{
+        const totals = getTotals();
+        const ref = state.currentProgramId ? doc(db,'programacoesMontagem',state.currentProgramId) : doc(collection(db,'programacoesMontagem'));
+        const payload = {
+          nome, dataCorte:target.iso, dataCorteDm:target.dm, ano:target.year,
+          arquivoPdf:selectedPdfNames(), arquivosPdf:state.pdfSources.map(source=>({nome:source.file.name,data:source.reportDate})), itens:state.records.map(serializeRecord),
+          totalRemessas:totals.qtdRemessas,totalPares:totals.total,totalTaloes:totals.totalTaloes,
+          comparacao:{...state.comparison}, atualizadoEm:serverTimestamp(), atualizadoPor:state.currentUser?.email || localStorage.getItem('calcadosroma-65ac6:userName') || ''
+        };
+        if(!state.currentProgramId){ payload.criadoEm = serverTimestamp(); payload.criadoPor = state.currentUser?.email || ''; }
+        await setDoc(ref,payload,{merge:true});
+        state.currentProgramId = ref.id;
+        state.currentProgramName = nome;
+        setStatus(`Programação <strong>${escapeHtml(nome)}</strong> salva com sucesso: ${totals.qtdRemessas} remessa(s) e ${formatNumberBR(totals.total)} pares.`);
+      }catch(err){
+        console.error(err);
+        setStatus('Erro ao salvar a programação: ' + escapeHtml(err.message || String(err)));
+      }finally{
+        setBusy('saveProgramButton',false);
+        setBusy('saveProgramModalButton',false);
+      }
+    }
+
+    function formatSavedDate(value){
+      try{
+        const d = value?.toDate ? value.toDate() : (value ? new Date(value) : null);
+        return d && !Number.isNaN(d.getTime()) ? d.toLocaleString('pt-BR') : 'Data não disponível';
+      }catch(e){ return 'Data não disponível'; }
+    }
+
+    function renderSavedPrograms(){
+      const wrap = $('savedProgramsList');
+      const list = [...state.savedPrograms.entries()];
+      if(!list.length){ wrap.innerHTML = '<div class="saved-empty">Nenhuma programação salva foi encontrada.</div>'; return; }
+      wrap.innerHTML = list.map(([id,data])=>`<div class="saved-item"><div><h3>${escapeHtml(data.nome || 'Programação sem nome')}</h3><p><strong>Corte:</strong> ${escapeHtml(data.dataCorteDm || isoToDM(data.dataCorte) || '-')} • <strong>Remessas:</strong> ${formatNumberBR(data.totalRemessas || (data.itens||[]).length)} • <strong>Pares:</strong> ${formatNumberBR(data.totalPares || 0)} • <strong>Talões:</strong> ${formatNumberBR(data.totalTaloes || 0)}</p><p>Última atualização: ${escapeHtml(formatSavedDate(data.atualizadoEm || data.criadoEm))}</p></div><button class="btn btn-primary" type="button" data-open-program="${escapeHtml(id)}">Abrir</button></div>`).join('');
+      wrap.querySelectorAll('[data-open-program]').forEach(btn=>btn.addEventListener('click',()=>loadSavedProgram(btn.dataset.openProgram)));
+    }
+
+    async function openSavedPrograms(){
+      openModal('savedModal');
+      $('savedProgramsList').innerHTML = '<div class="saved-empty">Carregando programações...</div>';
+      try{
+        const snap = await getDocs(query(collection(db,'programacoesMontagem'),orderBy('atualizadoEm','desc'),firestoreLimit(50)));
+        state.savedPrograms = new Map(snap.docs.map(d=>[d.id,d.data()]));
+        renderSavedPrograms();
+      }catch(err){
+        console.error(err);
+        $('savedProgramsList').innerHTML = `<div class="saved-empty">Erro ao carregar: ${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    function targetFromIso(iso, dmFallback){
+      const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(m) return {year:Number(m[1]),month:Number(m[2]),day:Number(m[3]),dm:`${m[3]}/${m[2]}`,iso:String(iso)};
+      return parseDateInput(dmFallback || '');
+    }
+
+    function loadSavedProgram(id){
+      const data = state.savedPrograms.get(id);
+      if(!data) return;
+      const target = targetFromIso(data.dataCorte,data.dataCorteDm);
+      state.currentTarget = target;
+      if(target){ state.reportYear = target.year; $('dataCorteInput').value = target.dm; }
+      state.currentProgramId = id;
+      state.currentProgramName = data.nome || '';
+      state.records = Array.isArray(data.itens) ? data.itens.map((r,index)=>({
+        id:`salvo_${id}_${index}`,...r,
+        modeloAtelieEntries:Array.isArray(r.modeloAtelieEntries)?r.modeloAtelieEntries:[],
+        costura:r.costura||'',palmilha:r.palmilha||'',sola:r.sola||'',embarque:r.embarque||'',pageBreakBefore:!!r.pageBreakBefore,
+        conferencia:r.conferencia||{status:'Salva',detalhe:'Programação carregada do histórico.'}
+      })) : [];
+      state.comparison = data.comparacao || {ok:0,divergentes:0,somenteBanco:0,somentePdf:0,pdfRemessas:0,pdfPares:0};
+      state.pdfOnly = [];
+      state.lineOrder = uniqueValues(state.records.map(r=>r.linha)).sort(sortNumericText);
+      renderPreview();renderLineSummary();updateSummary();
+      closeAllModals();
+      setStatus(`Programação salva <strong>${escapeHtml(state.currentProgramName || '')}</strong> aberta com ${state.records.length} linha(s).`);
+      openEditorModal();
+    }
+
+    $('pdfFile').addEventListener('change', handlePdfFile);
+    $('launchNormativasButton').addEventListener('click', launchNormativas);
+    $('createProgramButton').addEventListener('click', createProgramacao);
+    $('generatePdfButton').addEventListener('click', generatePdf);
+    $('saveProgramButton').addEventListener('click', saveProgramacao);
+    $('openSavedButton').addEventListener('click', openSavedPrograms);
+    $('addEditorRowButton').addEventListener('click', addEditorRow);
+    $('clearPageBreaksButton').addEventListener('click', clearPageBreaks);
+    $('saveProgramModalButton').addEventListener('click', saveProgramacao);
+    $('printPdfButton').addEventListener('click', generateFinalPdf);
+    $('closeEditorButton').addEventListener('click', closeEditorModal);
+    $('closeEditorFooterButton').addEventListener('click', closeEditorModal);
+    $('closeSavedButton').addEventListener('click', closeAllModals);
+    $('closeNormativasButton').addEventListener('click', closeAllModals);
+    $('closeNormativasFooterButton').addEventListener('click', closeAllModals);
+    $('confirmNormativasButton').addEventListener('click', confirmNormativasUpdates);
+    $('selectAllNormativasButton').addEventListener('click', ()=>setSafeReviewSelection(true));
+    $('unselectAllNormativasButton').addEventListener('click', ()=>setSafeReviewSelection(false));
+    document.querySelectorAll('.modal-overlay').forEach(modal=>modal.addEventListener('click',event=>{ if(event.target!==modal) return; if(modal.id==='editorModal') closeEditorModal(); else closeAllModals(); }));
+    document.addEventListener('keydown',event=>{ if(event.key==='Escape'){ if($('editorModal').classList.contains('open')) closeEditorModal(); else closeAllModals(); } });
+  </script>
+</body>
+</html>

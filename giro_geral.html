@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <script src="roma-producao.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css">
+  <title>Giro de Produção - Calçados Roma</title>
+  <style>
+    :root{
+      --bg:#f3f4f6; --card:#fff; --ink:#0f172a; --muted:#64748b; --line:#d7dde7;
+      --primary:#2563eb; --primary-2:#1d4ed8; --shadow:0 6px 18px rgba(15,23,42,.08);
+      --blue:#dfeaf7; --green:#e2f3e8; --yellow:#fff6cc; --red:#f6dddd; --gray:#f8fafc;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+    .main-content{width:min(1760px,calc(100vw - 24px));margin:0 auto;padding:12px 0 28px}
+    .toolbar{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .toolbar-title h1{margin:0;font-size:24px;color:#111827}.toolbar-title p{margin:4px 0 0;color:var(--muted);font-weight:800;font-size:13px}
+    .toolbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.status-line{color:var(--muted);font-size:13px;margin:8px 4px 12px;min-height:18px}
+    .btn{border:0;border-radius:10px;padding:11px 16px;min-height:40px;cursor:pointer;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+    .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-2)}.btn-secondary{background:#e5e7eb;color:#111827}.btn-secondary:hover{background:#d1d5db}
+    .cards-grid{display:grid;grid-template-columns:repeat(3,minmax(300px,1fr));gap:14px;align-items:start}
+    .sector-card{background:#fff;border:1px solid #cad4df;border-radius:18px;box-shadow:var(--shadow);overflow:hidden;min-height:620px;display:flex;flex-direction:column;cursor:pointer;transition:.15s}
+    .sector-card:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(15,23,42,.12);border-color:#93c5fd}
+    .sector-card.corte .sector-head{background:var(--yellow)}.sector-card.costura .sector-head{background:var(--blue)}.sector-card.montagem .sector-head{background:var(--green)}
+    .sector-head{border-bottom:1px solid #d7dde7;padding:14px 16px}.sector-head-row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.sector-head h2{margin:0;font-size:21px;color:#0f172a}.sector-head small{display:block;margin-top:4px;color:#475569;font-weight:800;font-size:12px}.sector-total{text-align:right}.sector-total strong{display:block;font-size:25px;color:#0f172a}.sector-total span{font-size:12px;color:#64748b;font-weight:900;text-transform:uppercase}
+    .sector-body{padding:12px 14px 16px;display:flex;flex-direction:column;gap:12px;flex:1}.section-label{font-size:11px;color:#64748b;font-weight:900;letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
+    .line-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:8px}.line-chip{background:#fff;border:1px solid #d7dde7;border-radius:13px;padding:9px 10px;text-align:center}.line-chip strong{display:block;font-size:18px;color:#0f172a}.line-chip span{display:block;color:#64748b;font-size:10px;font-weight:900;text-transform:uppercase;margin-top:2px}
+    .model-list{display:flex;flex-direction:column;gap:7px}.model-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(255,255,255,.78);border:1px solid rgba(148,163,184,.45);border-radius:12px;padding:8px 10px;font-size:13px}.model-row strong{font-size:15px;color:#0f172a}.model-row span{font-weight:900;color:#1e3a5f;white-space:nowrap}.empty-message{padding:12px 10px;border-radius:12px;background:rgba(255,255,255,.72);color:var(--muted);font-style:italic;font-size:12px;border:1px dashed #cbd5e1}.muted-note{font-size:12px;color:#64748b;font-weight:700;line-height:1.3}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99999;padding:18px;align-items:center;justify-content:center}.modal-overlay.show{display:flex}.modal-content{width:min(1320px,96vw);max-height:90vh;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.36);overflow:hidden;display:flex;flex-direction:column;border:1px solid #cbd5e1}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid #e5e7eb;background:#f8fafc}.modal-head h3{margin:0;font-size:20px;color:#111827}.modal-head p{margin:4px 0 0;color:#64748b;font-size:13px;font-weight:800}.modal-close{border:1px solid #d7dee9;background:#eef2f7;color:#111827;border-radius:10px;padding:9px 15px;font-weight:900;cursor:pointer}.modal-body{overflow:auto;background:#eef2f7;padding:18px}.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(330px,1fr));gap:14px}.modal-card{background:#fff;border:1px solid #d7dde7;border-radius:16px;box-shadow:0 4px 12px rgba(15,23,42,.06);overflow:hidden}.modal-card.full{grid-column:1/-1}.modal-card-head{padding:12px 14px;background:#f8fafc;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;gap:10px;align-items:center}.modal-card-head h4{margin:0;font-size:16px;color:#0f172a}.modal-card-head strong{font-size:17px;color:#1e3a5f}.modal-card-body{padding:12px 14px}
+    table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px solid #e5e7eb;padding:7px 8px;text-align:left;white-space:nowrap}th{background:#f1f5f9;color:#334155;text-transform:uppercase;font-size:10px;font-weight:900}.num{text-align:right;font-weight:900;color:#1e3a5f}.date-title{font-weight:900;color:#0f172a}.sub-row td{background:#fafafa;color:#475569}.type-pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:900;border:1px solid rgba(15,23,42,.12);background:#fff}.danger{color:#dc2626!important;font-weight:900}.ok{color:#15803d!important;font-weight:900}
+    @media(max-width:1200px){.cards-grid{grid-template-columns:1fr}.sector-card{min-height:auto}.modal-grid{grid-template-columns:1fr}.modal-content{width:97vw}.modal-body{padding:12px}}
+    @media(max-width:760px){.main-content{width:calc(100vw - 16px);padding:8px 0 18px}.toolbar{align-items:flex-start}.toolbar-actions,.btn{width:100%}.btn{justify-content:center}.line-grid{grid-template-columns:repeat(2,1fr)}table{font-size:11px}.modal-overlay{padding:8px}.modal-body{padding:10px}}
+
+    /* Ajustes finos v5 */
+    .global-line-panel{display:none;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:10px 12px;margin:0 0 12px}.global-line-panel.show{display:flex}.global-line-panel strong{font-size:13px;color:#334155}.global-line-filters{display:flex;gap:8px;flex-wrap:wrap}.global-line-check{display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;color:#334155;cursor:pointer}.global-line-check input{width:15px;height:15px;accent-color:var(--primary)}
+    .filter-panel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin:0 0 12px;background:#fff;border:1px solid #e2e8f0;border-radius:14px}.filter-panel strong{font-size:13px;color:#334155}.filter-check{display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900;color:#334155;cursor:pointer}.filter-check input{width:15px;height:15px;accent-color:var(--primary)}
+    .value-button{border:0;background:transparent;color:#1e3a5f;font-weight:900;cursor:pointer;padding:2px 6px;border-radius:8px;font-family:inherit}.value-button:hover{background:#eaf2ff;text-decoration:underline}.clickable-cell{cursor:pointer}.clickable-cell:hover{background:#eaf2ff!important;text-decoration:underline}.small-note{font-size:12px;color:#64748b;font-weight:800;margin:10px 0 0}.status-danger{color:#dc2626!important;font-weight:900}.status-ok{color:#15803d!important;font-weight:900}
+    .modal-grid.costura-grid{grid-template-columns:repeat(3,minmax(270px,1fr));align-items:start}.modal-grid.costura-grid .modal-card-head{padding:9px 11px}.modal-grid.costura-grid .modal-card-head h4{font-size:14px}.modal-grid.costura-grid .modal-card-head strong{font-size:14px}.modal-grid.costura-grid .modal-card-body{padding:9px 10px;overflow:hidden}.modal-grid.costura-grid table{font-size:10.5px;table-layout:fixed}.modal-grid.costura-grid th,.modal-grid.costura-grid td{padding:5px 5px}.modal-grid.costura-grid th{font-size:9px}.modal-grid.costura-grid th:nth-child(1),.modal-grid.costura-grid td:nth-child(1){width:78px}.modal-grid.costura-grid th:nth-child(2),.modal-grid.costura-grid td:nth-child(2),.modal-grid.costura-grid th:nth-child(3),.modal-grid.costura-grid td:nth-child(3){width:82px}
+    .atelier-model-table-wrap{overflow:auto}.atelier-model-table{min-width:760px}.atelier-model-table .model-name{font-weight:900;color:#0f172a}.atelier-model-table .total-col{background:#f8fafc}.atelier-model-table .click-cell{cursor:pointer;border-radius:8px}.atelier-model-table .click-cell:hover{background:#eaf2ff!important;text-decoration:underline}
+    .remessa-list{width:min(1080px,100%);margin:0 auto;display:flex;flex-direction:column;gap:22px}.remessa-card{background:transparent;border:0;box-shadow:none}.remessa-card-header{width:760px;max-width:92%;display:grid;grid-template-columns:130px 155px 145px 210px;gap:18px;align-items:end;background:#fff;border:1px solid #c7d4e5;border-radius:12px;padding:10px 16px;box-shadow:0 2px 8px rgba(15,23,42,.08)}.remessa-card.tipo-exportacao .remessa-card-header{background:#e8f3ff;border-color:#93c5fd}.remessa-card.tipo-cliente-especial .remessa-card-header{background:#fff0f7;border-color:#f9a8d4}.remessa-card.tipo-estoque .remessa-card-header{background:#fff8d9;border-color:#fde68a}.remessa-card.tipo-amostra .remessa-card-header{background:#eefaf1;border-color:#86efac}.remessa-info-label{display:block;font-size:9px;font-weight:900;color:#64748b;text-transform:uppercase;letter-spacing:.05em;line-height:1;margin:0 0 3px}.remessa-info-value{display:block;font-size:14px;font-weight:900;color:#002b5c;line-height:1.05}.remessa-card-table{width:940px;max-width:100%;margin:-1px 0 0 72px;border-collapse:separate;border-spacing:0;table-layout:fixed;background:#fff;border:1px solid #c7d4e5;border-radius:0 10px 10px 10px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.07)}.remessa-card-table th,.remessa-card-table td{text-align:center;white-space:nowrap;padding:5px 6px;height:25px;font-size:11px;color:#002b5c}.remessa-card-table th{background:#f1f5f9;color:#0f172a;font-size:10px;font-weight:900}.remessa-card-table .model-cell{font-weight:900;font-size:12px}.remessa-card-table .alert-cell{color:#dc2626!important;font-weight:900!important}.remessa-card-table .alert-row .model-cell{color:#dc2626!important}
+    @media(max-width:1180px){.modal-grid.costura-grid{grid-template-columns:repeat(2,minmax(270px,1fr))}.remessa-card-table{margin-left:30px}.remessa-card-header{max-width:100%}}@media(max-width:760px){.modal-grid.costura-grid{grid-template-columns:1fr}.remessa-card-table{min-width:860px;margin-left:0}.remessa-card-header{width:620px;grid-template-columns:110px 130px 120px 170px}}
+
+
+
+    /* Ajuste fino v6: totais e aparência de clique */
+    .clickable-card,
+    .clickable-row,
+    .value-button,
+    .click-cell,
+    .modal-card.clickable-card {
+      transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease !important;
+    }
+    .clickable-card {
+      cursor: pointer !important;
+      border-color: #c7d4e5 !important;
+    }
+    .clickable-card:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 12px 26px rgba(37, 99, 235, .18) !important;
+      border-color: #60a5fa !important;
+      background: #fbfdff !important;
+    }
+    .clickable-card:hover .modal-card-head {
+      background: #eaf2ff !important;
+    }
+    .clickable-row {
+      cursor: pointer !important;
+    }
+    .clickable-row:hover td {
+      background: #eaf2ff !important;
+      color: #0f172a !important;
+    }
+    .value-button {
+      min-width: 48px;
+      border: 1px solid transparent !important;
+    }
+    .value-button:hover,
+    .click-cell:hover {
+      background: #dbeafe !important;
+      border-color: #93c5fd !important;
+      color: #1d4ed8 !important;
+      text-decoration: none !important;
+      box-shadow: 0 2px 8px rgba(37,99,235,.16) !important;
+    }
+    .costura-total-row td {
+      background: #f8fafc !important;
+      border-top: 2px solid #cbd5e1 !important;
+      font-weight: 900 !important;
+      color: #0f172a !important;
+    }
+    .costura-card-totals {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      padding: 8px 0 0;
+      margin-top: 8px;
+      border-top: 1px dashed #cbd5e1;
+      font-size: 10.5px;
+      font-weight: 900;
+      color: #334155;
+    }
+    .costura-card-totals span {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 9px;
+      padding: 6px 7px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .costura-card-totals strong {
+      display: block;
+      margin-top: 2px;
+      font-size: 12px;
+      color: #1e3a5f;
+    }
+
+  </style>
+  <style id="roma-giro-v2">.cards-grid{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}.sector-card{min-height:380px}.sector-card.palmilha .sector-head{background:#ede9fe}.sector-card.sola .sector-head{background:#ffedd5}.stage-na{color:#64748b;font-size:.86em}.stage-pending{color:#9a3412}.remessa-list{width:100%}.remessa-card-table{width:1280px;max-width:none;table-layout:auto;margin-left:0}.remessa-card{overflow-x:auto}.sector-status-note{font-size:12px;color:#64748b}.modal-card-body table{min-width:100%}.modal-grid .atelier-status-table{table-layout:auto;width:100%}@media(max-width:600px){.cards-grid{grid-template-columns:1fr}.sector-card{min-height:0}}</style>
+<style id="roma-costura-giro-totals">.modal-grid.costura-grid{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}.modal-grid.costura-grid .modal-card-body{overflow-x:auto}.modal-grid.costura-grid table{table-layout:auto;min-width:300px}.modal-grid.costura-grid th,.modal-grid.costura-grid td{width:auto!important}.costura-card-totals{grid-template-columns:repeat(4,minmax(0,1fr))}.costura-card-totals span{font-size:10px}.costura-card-totals strong{font-size:17px}@media(max-width:760px){.modal-grid.costura-grid{grid-template-columns:minmax(0,1fr)}}</style>
+</head>
+<body>
+  <main class="main-content">
+    <section class="toolbar">
+      <div class="toolbar-title">
+        <h1>Giro de Produção</h1>
+        <p>Acompanhe Corte, Costura, Palmilha, Sola e Montagem. Componentes ausentes do modelo não geram pendências.</p>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn btn-primary" id="refreshButton" type="button">Atualizar dados</button>
+      </div>
+    </section>
+    <div class="status-line" id="statusLine">Carregando dados...</div>
+    <section class="global-line-panel" id="globalLinePanel"><strong>Linhas visíveis:</strong><div class="global-line-filters" id="globalLineFilters"></div></section>
+
+    <section class="cards-grid">
+      <article class="sector-card corte" id="corteCard" tabindex="0">
+        <div class="sector-head"><div class="sector-head-row"><div><h2>Corte</h2><small>Talões com corte/material em aberto</small></div><div class="sector-total"><strong id="corteTotal">0</strong><span>pares</span></div></div></div>
+        <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="corteLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="corteModelos"></div></div></div>
+      </article>
+      <article class="sector-card costura" id="costuraCard" tabindex="0">
+        <div class="sector-head"><div class="sector-head-row"><div><h2>Costura</h2><small>Talões para produzir nos ateliês</small></div><div class="sector-total"><strong id="costuraTotal">0</strong><span>pares</span></div></div></div>
+        <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="costuraLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="costuraModelos"></div></div></div>
+      </article>
+      <article class="sector-card palmilha" id="palmilhaCard" tabindex="0">
+        <div class="sector-head"><div class="sector-head-row"><div><h2>Palmilha</h2><small>Componentes para produzir nos ateliês</small></div><div class="sector-total"><strong id="palmilhaTotal">0</strong><span>pares</span></div></div></div>
+        <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="palmilhaLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="palmilhaModelos"></div></div></div>
+      </article>
+      <article class="sector-card sola" id="solaCard" tabindex="0">
+        <div class="sector-head"><div class="sector-head-row"><div><h2>Sola</h2><small>Componentes para produzir nos ateliês</small></div><div class="sector-total"><strong id="solaTotal">0</strong><span>pares</span></div></div></div>
+        <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="solaLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="solaModelos"></div></div></div>
+      </article>
+      <article class="sector-card montagem" id="montagemCard" tabindex="0">
+        <div class="sector-head"><div class="sector-head-row"><div><h2>Montagem</h2><small>Talões entregues na fábrica e não montados</small></div><div class="sector-total"><strong id="montagemTotal">0</strong><span>pares</span></div></div></div>
+        <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="montagemLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="montagemModelos"></div></div></div>
+      </article>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-content">
+      <div class="modal-head">
+        <div><h3 id="modalTitle">Detalhes</h3><p id="modalSubtitle"></p></div>
+        <button class="modal-close" id="closeModalButton" type="button">Fechar</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="navegacao.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+  <script>
+    (function(){
+      const firebaseConfig = window.FIREBASE_CONFIG;
+      try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);}catch(e){console.error(e)}
+      const auth=firebase.auth(); const db=firebase.firestore();
+      const statusLine=document.getElementById('statusLine');
+      const refreshButton=document.getElementById('refreshButton');
+      const globalLinePanel=document.getElementById('globalLinePanel');
+      const globalLineFilters=document.getElementById('globalLineFilters');
+      const modal=document.getElementById('detailModal'); const modalTitle=document.getElementById('modalTitle'); const modalSubtitle=document.getElementById('modalSubtitle'); const modalBody=document.getElementById('modalBody');
+      const closeModalButton=document.getElementById('closeModalButton');
+      let allDocs=[]; let docsCorte=[]; let docsCostura=[]; let docsMontagem=[]; let currentUserLevel=''; let currentUserName='';
+      let selectedGlobalLines = new Set();
+      let storedLists = new Map(); let storedListCounter = 0;
+      let currentCorteBase = []; let selectedCorteAtelies = new Set();
+      let currentCosturaAtelieGroups = new Map();
+
+      function localDateToISO(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+      function todayISO(){return localDateToISO(new Date())}
+      function dateFromISO(iso){const [y,m,d]=String(iso||'').split('-').map(Number);return new Date(y,(m||1)-1,d||1)}
+      function addDaysISO(iso,days){const d=dateFromISO(iso);d.setDate(d.getDate()+days);return localDateToISO(d)}
+      function toISODateOnly(v){if(!v)return''; if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v))return v; if(v&&typeof v.toDate==='function')return localDateToISO(v.toDate()); const d=new Date(v);return Number.isNaN(d.getTime())?'':localDateToISO(d)}
+      function formatDate(v){const iso=toISODateOnly(v); if(!iso)return''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`}
+      function normalizePares(v){const n=Number(v);return Number.isFinite(n)?n:0}
+      function has(v){return v!==undefined&&v!==null&&String(v).trim()!==''}
+      function bool(v){return v===true||v==='true'||v===1||v==='1'||String(v).toLowerCase()==='sim'}
+      function normTipo(t){const v=String(t||'').trim().toLowerCase(); if(['exportacao','exportação','exportacoes','exportações'].includes(v))return'Exportacao'; if(['amostra','amostras'].includes(v))return'Amostra'; return String(t||'').trim()}
+      function isAmostra(t){return normTipo(t.tipoCliente)==='Amostra'}
+      function modelKey(t){const l=String(t.linha||'').trim(); const m=String(t.modelo||'').trim(); if(m&&m.includes('.'))return m; if(l&&m)return `${l}.${m}`; return m||l||'Sem modelo'}
+      function lineKey(t){return String(t.linha||'Sem linha').trim()||'Sem linha'}
+      function getAtelieKey(t,sector='costura'){const cfg=window.Roma.SECTORS[sector]||window.Roma.SECTORS.costura;return String(t[cfg.nameField]||'').trim()||'A definir pelo Corte'}
+      function sumTotal(list){return list.reduce((a,t)=>a+normalizePares(t.pares),0)}
+      function compareText(a,b){return String(a||'').localeCompare(String(b||''),'pt-BR',{numeric:true})}
+      function materialComplete(t){return window.Roma.cutComplete(t)}
+      function materialIncomplete(t){return !materialComplete(t)}
+      function isCutComplete(t){return materialComplete(t)}
+      function isAvailableCorte(t){return !isAmostra(t)&&!isCutComplete(t)}
+      function isAvailableCostura(t){return !isAmostra(t)&&window.RomaProducao.missing(t,'costura')}
+      function isAvailableSector(t,sector){return !isAmostra(t)&&window.RomaProducao.missing(t,sector)}
+      function isCosturaInsideAtelier(t){return !isAmostra(t)&&has(t.costuraDataInicio)&&!has(t.dataSaidaCostura)&&has(t.idAtelieResponsavel)}
+      function isProducedNotFactory(t){return !isAmostra(t)&&has(t.dataSaidaCostura)&&!has(t.dataEntradaDistribuicao)&&has(t.idAtelieResponsavel)}
+      function isAvailableMontagem(t){return !isAmostra(t)&&has(t.dataEntradaDistribuicao)&&!has(t.dataEntradaMontagem)}
+      function isMissingMontagem(t){return !isAmostra(t)&&!has(t.dataEntradaMontagem)}
+      function groupSum(list,keyFn){const map=new Map(); list.forEach(t=>{const k=keyFn(t); map.set(k,(map.get(k)||0)+normalizePares(t.pares));}); return Array.from(map.entries()).sort((a,b)=>compareText(a[0],b[0]));}
+      function groupDocs(list,keyFn){const map=new Map(); list.forEach(t=>{const k=keyFn(t); if(!map.has(k))map.set(k,[]); map.get(k).push(t);}); return map}
+      function escapeHTML(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+      function encodeGiro(value){return encodeURIComponent(value).replace(/'/g,'%27')}
+      function setStatus(t){statusLine.textContent=t||''}
+      function dateLabel(date){return date==='Sem data'?'Sem data':formatDate(date)}
+
+      function renderLineGrid(el,list){const entries=groupSum(list,lineKey).filter(([,v])=>v>0); el.innerHTML=entries.length?entries.map(([k,v])=>`<div class="line-chip"><strong>${v.toLocaleString('pt-BR')}</strong><span>Linha ${escapeHTML(k)}</span></div>`).join(''):'<div class="empty-message">Nenhuma linha encontrada.</div>'}
+      function renderModelList(el,list){const entries=groupSum(list,modelKey).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]||compareText(a[0],b[0])).slice(0,24); el.innerHTML=entries.length?entries.map(([k,v])=>`<div class="model-row"><strong>${escapeHTML(k)}</strong><span>${v.toLocaleString('pt-BR')} pares</span></div>`).join(''):'<div class="empty-message">Nenhum modelo encontrado.</div>'}
+
+      function storeList(list,sector='costura'){const key='l'+(++storedListCounter); storedLists.set(key,{items:Array.isArray(list)?[...list]:[],sector});return key;}
+      function getStoredList(key){return storedLists.get(key)?.items||[];}
+      function getStoredSector(key){return storedLists.get(key)?.sector||'costura';}
+      function getSelectedGlobalLines(){return Array.from(selectedGlobalLines)}
+      function filterBySelectedLines(list){const selected=getSelectedGlobalLines(); if(!selected.length)return list; return list.filter(t=>selected.includes(lineKey(t)))}
+      function getGiroLineSource(){return allDocs.filter(t=>isAvailableCorte(t)||isAvailableCostura(t)||isAvailableSector(t,'palmilha')||isAvailableSector(t,'sola')||isAvailableMontagem(t));}
+      function renderGlobalLineFilters(){
+        const lines=groupSum(getGiroLineSource(),lineKey).map(([line])=>line).sort(compareText);
+        if(!lines.length){globalLinePanel.classList.remove('show');globalLineFilters.innerHTML='';return;}
+        if(!selectedGlobalLines.size){selectedGlobalLines=new Set(lines)} else {const valid=new Set(lines);selectedGlobalLines=new Set(Array.from(selectedGlobalLines).filter(l=>valid.has(l)));if(!selectedGlobalLines.size)selectedGlobalLines=new Set(lines)}
+        globalLinePanel.classList.add('show');
+        globalLineFilters.innerHTML=lines.map(line=>`<label class="global-line-check"><input type="checkbox" value="${escapeHTML(line)}" ${selectedGlobalLines.has(line)?'checked':''} onchange="window.toggleGiroLine(this.value,this.checked)" /> Linha ${escapeHTML(line)}</label>`).join('');
+      }
+      window.toggleGiroLine=function(line,checked){if(checked)selectedGlobalLines.add(line);else selectedGlobalLines.delete(line);renderDashboard();};
+
+      function renderDashboard(){
+        renderGlobalLineFilters();
+        const baseDocs=filterBySelectedLines(allDocs);
+        docsCorte=baseDocs.filter(isAvailableCorte); docsCostura=baseDocs.filter(isAvailableCostura); docsMontagem=baseDocs.filter(isAvailableMontagem);
+        document.getElementById('corteTotal').textContent=sumTotal(docsCorte).toLocaleString('pt-BR');
+        document.getElementById('costuraTotal').textContent=sumTotal(docsCostura).toLocaleString('pt-BR');
+        document.getElementById('montagemTotal').textContent=sumTotal(docsMontagem).toLocaleString('pt-BR');
+        renderLineGrid(document.getElementById('corteLinhas'),docsCorte); renderModelList(document.getElementById('corteModelos'),docsCorte);
+        renderLineGrid(document.getElementById('costuraLinhas'),docsCostura); renderModelList(document.getElementById('costuraModelos'),docsCostura);
+        renderLineGrid(document.getElementById('montagemLinhas'),docsMontagem); renderModelList(document.getElementById('montagemModelos'),docsMontagem);
+        ['palmilha','sola'].forEach(sector=>{
+          const pending=baseDocs.filter(t=>isAvailableSector(t,sector));
+          document.getElementById(`${sector}Total`).textContent=sumTotal(pending).toLocaleString('pt-BR');
+          renderLineGrid(document.getElementById(`${sector}Linhas`),pending);
+          renderModelList(document.getElementById(`${sector}Modelos`),pending);
+        });
+      }
+      async function loadData(){
+        try{setStatus('Carregando giro de produção...'); refreshButton.disabled=true; const start=addDaysISO(todayISO(),-120), end=addDaysISO(todayISO(),120); const snap=await db.collection('taloes').where('dataCorte','>=',start).where('dataCorte','<=',end).get(); const map=new Map(); snap.docs.forEach(d=>map.set(d.id,{id:d.id,...d.data()})); allDocs=Array.from(map.values()).filter(t=>!isAmostra(t)); renderDashboard(); setStatus(`Atualizado em ${formatDate(todayISO())} • ${allDocs.length.toLocaleString('pt-BR')} talões analisados • janela de corte ${formatDate(start)} a ${formatDate(end)}`);}catch(error){console.error(error);setStatus('Erro ao carregar dados. Veja o console para detalhes.');}finally{refreshButton.disabled=false;}
+      }
+
+      function openModal(title,subtitle,html){modalTitle.textContent=title; modalSubtitle.textContent=subtitle||''; modalBody.innerHTML=html; modal.classList.add('show')}
+      function tipoClass(t){const tipo=normTipo(t.tipoCliente); if(tipo==='Exportacao')return'tipo-exportacao'; if(tipo==='Cliente especial')return'tipo-cliente-especial'; if(tipo==='Estoque')return'tipo-estoque'; if(tipo==='Amostra')return'tipo-amostra'; return'tipo-mercado-interno'}
+      function tipoLabel(t){const tipo=normTipo(t.tipoCliente); if(tipo==='Exportacao')return'Exportação'; return tipo||'Sem tipo'}
+      function getStatusText(t,sector='costura'){
+        const cfg=window.Roma.SECTORS[sector];
+        if(!window.RomaProducao.applicable(t,sector))return'Não se aplica';
+        if(window.RomaProducao.complete(t,sector))return has(t.dataEntradaDistribuicao)?'Entregue fábrica':'Produzido';
+        return has(t[cfg.start])?'Em produção':'Sem entrada';
+      }
+      function statusClass(t,sector='costura'){return window.RomaProducao.missing(t,sector)?'alert-cell':''}
+      function renderDateCell(v){return has(v)?formatDate(v):'<span class="alert-cell">—</span>'}
+      function renderTaloesRemessaCards(list,sector='costura'){
+        if(!list.length)return '<div class="empty-message">Nenhum talão encontrado.</div>';
+        const cfg=window.Roma.SECTORS[sector];
+        const groups=Array.from(groupDocs(list,t=>String(t.numeroRemessa||'Sem remessa')).entries()).sort((a,b)=>compareText(a[0],b[0]));
+        return `<div class="remessa-list">${groups.map(([remessa,items])=>{
+          items=[...items].sort((a,b)=>compareText(a.numeroTalaoSequencial,b.numeroTalaoSequencial));const first=items[0]||{};
+          const rows=items.map(t=>`<tr><td>${escapeHTML(t.numeroTalaoSequencial||'')}</td><td class="model-cell">${escapeHTML(modelKey(t))}</td><td>${escapeHTML(t.corSapato||t.cor||'')}</td><td class="num">${normalizePares(t.pares).toLocaleString('pt-BR')}</td><td>${escapeHTML(getAtelieKey(t,sector))}</td><td>${window.RomaProducao.detail(t,'corte',formatDate)}</td><td>${window.RomaProducao.detail(t,'palmilha',formatDate)}</td><td>${window.RomaProducao.detail(t,'sola',formatDate)}</td><td>${window.RomaProducao.entryDetail(t,sector,formatDate)}</td><td>${window.RomaProducao.detail(t,sector,formatDate)}</td><td>${formatDate(t.dataEntradaDistribuicao)}</td><td class="${statusClass(t,sector)}">${escapeHTML(getStatusText(t,sector))}</td></tr>`).join('');
+          return `<div class="remessa-card ${tipoClass(first)}"><div class="remessa-card-header"><div><span class="remessa-info-label">Remessa</span><span class="remessa-info-value">${escapeHTML(remessa)}</span></div><div><span class="remessa-info-label">Data de corte</span><span class="remessa-info-value">${formatDate(first.dataCorte)}</span></div><div><span class="remessa-info-label">Entrega</span><span class="remessa-info-value">${formatDate(first.dataEntrega)}</span></div><div><span class="remessa-info-label">Tipo cliente</span><span class="remessa-info-value">${escapeHTML(tipoLabel(first))}</span></div></div><table class="remessa-card-table"><thead><tr><th>Talão</th><th>Linha/Modelo</th><th>Cor</th><th>Pares</th><th>Ateliê ${cfg.name}</th><th>Corte</th><th>Palmilha</th><th>Sola</th><th>Entrada ${cfg.name}</th><th>Saída ${cfg.name}</th><th>Entrada Fábrica</th><th>Status ${cfg.name}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        }).join('')}</div>`;
+      }
+      function openTaloesModal(title,subtitle,list,sector='costura'){openModal(title,subtitle,`<div class="modal-card full"><div class="modal-card-head"><h4>Talões — ${window.Roma.SECTORS[sector].name}</h4><strong>${sumTotal(list).toLocaleString('pt-BR')} pares</strong></div><div class="modal-card-body">${renderTaloesRemessaCards(list,sector)}</div></div>`)}
+      window.openGiroStoredTaloes=function(sourceKey,title,subtitle){openTaloesModal(decodeURIComponent(title),decodeURIComponent(subtitle||''),getStoredList(sourceKey),getStoredSector(sourceKey))};
+
+
+      function renderModelAtelieTable(list,sector='costura'){
+        const atelies=Array.from(new Set(list.map(t=>getAtelieKey(t,sector)))).sort(compareText);
+        const models=Array.from(groupDocs(list,modelKey).entries()).sort((a,b)=>compareText(a[0],b[0]));
+        if(!models.length)return '<div class="empty-message">Nenhum modelo encontrado.</div>';
+        const head=`<tr><th>Modelo</th>${atelies.map(a=>`<th class="num">${escapeHTML(a)}</th>`).join('')}<th class="num total-col">Total</th></tr>`;
+        const rows=models.map(([model,modelList])=>{const cells=atelies.map(a=>{const cellList=modelList.filter(t=>getAtelieKey(t,sector)===a); const total=sumTotal(cellList); if(!total)return '<td class="num">-</td>'; const key=storeList(cellList,sector); return `<td class="num click-cell" onclick="window.openGiroStoredTaloes('${key}','${encodeGiro(`Talões - ${model} • ${a}`)}','${encodeGiro(`${cellList.length.toLocaleString('pt-BR')} talões • ${total.toLocaleString('pt-BR')} pares`)}')">${total.toLocaleString('pt-BR')}</td>`;}).join(''); return `<tr><td class="model-name">${escapeHTML(model)}</td>${cells}<td class="num total-col">${sumTotal(modelList).toLocaleString('pt-BR')}</td></tr>`;}).join('');
+        return `<div class="atelier-model-table-wrap"><table class="atelier-model-table"><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
+      }
+      function openModelSubModal(title,subtitle,list,sector='costura'){openModal(title,subtitle,`<div class="modal-card full"><div class="modal-card-head"><h4>Modelos por ateliê responsável</h4><strong>${sumTotal(list).toLocaleString('pt-BR')} pares</strong></div><div class="modal-card-body">${renderModelAtelieTable(list,sector)}<p class="small-note">Clique em qualquer valor para abrir os talões daquele modelo/ateliê.</p></div></div>`)}
+      window.openGiroStoredModels=function(sourceKey,title,subtitle){openModelSubModal(decodeURIComponent(title),decodeURIComponent(subtitle||''),getStoredList(sourceKey),getStoredSector(sourceKey));};
+      function valueButton(list,title,sector='costura'){const key=storeList(list,sector); const total=sumTotal(list); if(!total)return '0'; return `<button type="button" class="value-button" onclick="event.stopPropagation(); window.openGiroStoredModels('${key}','${encodeGiro(title)}','${encodeGiro(`${list.length.toLocaleString('pt-BR')} talões • ${total.toLocaleString('pt-BR')} pares`)}')">${total.toLocaleString('pt-BR')}</button>`;}
+
+      function buildCorteTable(list){
+        const byDate=Array.from(groupDocs(list,t=>toISODateOnly(t.dataCorte)||'Sem data').entries()).sort((a,b)=>compareText(a[0],b[0]));
+        return byDate.map(([date,dateList])=>{const cab=dateList.filter(t=>!window.Roma.cutItemComplete(t,'cabedal')); const forro=dateList.filter(t=>!window.Roma.cutItemComplete(t,'forro')); const tiras=dateList.filter(t=>!window.Roma.cutItemComplete(t,'tiras')); const avi=dateList.filter(t=>!window.Roma.cutItemComplete(t,'aviamentos')); const completos=dateList.filter(t=>!has(t.costuraDataInicio)&&materialComplete(t)); const incompletos=dateList.filter(t=>materialIncomplete(t)); const txt=dateLabel(date); return `<tr><td class="date-title">${txt}</td><td class="num">${valueButton(cab,`Corte ${txt} - Cabedal em aberto`)}</td><td class="num">${valueButton(forro,`Corte ${txt} - Forro em aberto`)}</td><td class="num">${valueButton(tiras,`Corte ${txt} - Tiras em aberto`)}</td><td class="num">${valueButton(avi,`Corte ${txt} - Aviamento em aberto`)}</td><td class="num ok">${valueButton(completos,`Corte ${txt} - No corte completos`)}</td><td class="num danger">${valueButton(incompletos,`Corte ${txt} - No corte incompletos`)}</td></tr>`}).join('')||'<tr><td colspan="7" class="empty-message">Nenhum dado de corte encontrado.</td></tr>';
+      }
+      function renderCorteModalContent(){
+        const filtered=currentCorteBase.filter(t=>selectedCorteAtelies.has(getAtelieKey(t)));
+        const body=document.getElementById('corteModalBody'); const total=document.getElementById('corteModalTotal'); if(!body)return; body.innerHTML=buildCorteTable(filtered); if(total)total.textContent=sumTotal(filtered).toLocaleString('pt-BR')+' pares';
+      }
+      window.toggleCorteAtelie=function(atelie,checked){atelie=decodeURIComponent(atelie);if(checked)selectedCorteAtelies.add(atelie);else selectedCorteAtelies.delete(atelie);renderCorteModalContent();};
+      function openCorte(){
+        currentCorteBase=filterBySelectedLines(allDocs).filter(t=>!isAmostra(t)&&(!has(t.costuraDataInicio)||materialIncomplete(t)));
+        const atelies=Array.from(new Set(currentCorteBase.map(getAtelieKey))).sort(compareText); selectedCorteAtelies=new Set(atelies);
+        const checks=atelies.map(a=>`<label class="filter-check"><input type="checkbox" checked onchange="window.toggleCorteAtelie('${encodeGiro(a)}',this.checked)" /> ${escapeHTML(a)}</label>`).join('');
+        openModal('Giro do Corte',`${currentCorteBase.length.toLocaleString('pt-BR')} talões analisados • ${sumTotal(currentCorteBase).toLocaleString('pt-BR')} pares`, `<div class="filter-panel"><strong>Filtrar ateliê:</strong>${checks || '<span class="small-note">Nenhum ateliê encontrado.</span>'}</div><div class="modal-grid"><div class="modal-card full"><div class="modal-card-head"><h4>Materiais e talões em aberto por data de corte</h4><strong id="corteModalTotal">${sumTotal(currentCorteBase).toLocaleString('pt-BR')} pares</strong></div><div class="modal-card-body"><table><thead><tr><th>Data corte</th><th class="num">Cabedal</th><th class="num">Forro</th><th class="num">Tiras</th><th class="num">Aviamento</th><th class="num">No corte completos</th><th class="num">No corte incompletos</th></tr></thead><tbody id="corteModalBody"></tbody></table><p class="small-note">Clique em qualquer valor para abrir os modelos. Depois clique no valor do modelo/ateliê para listar os talões.</p></div></div></div>`);
+        renderCorteModalContent();
+      }
+
+      function openCostura(){
+        const costuraBase=filterBySelectedLines(allDocs).filter(isAvailableCostura);
+        const atelies=Array.from(groupDocs(costuraBase,t=>getAtelieKey(t)).entries()).sort((a,b)=>compareText(a[0],b[0]));
+        currentCosturaAtelieGroups=new Map(atelies);
+        const cards=atelies.map(([atelie,list])=>{
+          const byDate=Array.from(groupDocs(list,t=>toISODateOnly(t.dataCorte)||'Sem data').entries()).sort((a,b)=>compareText(a[0],b[0]));
+          const totalSemEntrada=sumTotal(list.filter(t=>!has(t.costuraDataInicio)));
+          const totalCompletos=sumTotal(list.filter(t=>has(t.costuraDataInicio)&&materialComplete(t)));
+          const totalIncompletos=sumTotal(list.filter(t=>has(t.costuraDataInicio)&&materialIncomplete(t)));
+          const totalAtelie=totalSemEntrada+totalCompletos+totalIncompletos;
+          const rows=byDate.map(([date,dateList])=>{
+            const semEntrada=dateList.filter(t=>!has(t.costuraDataInicio));
+            const completos=dateList.filter(t=>has(t.costuraDataInicio)&&materialComplete(t));
+            const incompletos=dateList.filter(t=>has(t.costuraDataInicio)&&materialIncomplete(t));
+            const txt=dateLabel(date);
+            return `<tr><td class="date-title">${txt}</td><td class="num">${valueButton(semEntrada,`${atelie} • ${txt} - Sem entrada`)}</td><td class="num ok">${valueButton(completos,`${atelie} • ${txt} - Material completo`)}</td><td class="num danger">${valueButton(incompletos,`${atelie} • ${txt} - Material incompleto`)}</td></tr>`;
+          }).join('')||'<tr><td colspan="4" class="empty-message">Nenhuma data encontrada.</td></tr>';
+          const totalRow=byDate.length?`<tr class="costura-total-row"><td>Total</td><td class="num">${totalSemEntrada.toLocaleString('pt-BR')}</td><td class="num ok">${totalCompletos.toLocaleString('pt-BR')}</td><td class="num danger">${totalIncompletos.toLocaleString('pt-BR')}</td></tr>`:'';
+          return `<div class="modal-card clickable-card" onclick="window.openCosturaAtelieGrade('${encodeGiro(atelie)}')" title="Clique para ver grade de modelos do ateliê"><div class="modal-card-head"><h4>${escapeHTML(atelie)}</h4><strong>${totalAtelie.toLocaleString('pt-BR')} pares</strong></div><div class="modal-card-body"><table><thead><tr><th>Data</th><th class="num">Sem entrada</th><th class="num">Material completo</th><th class="num">Material incompleto</th></tr></thead><tbody>${rows}${totalRow}</tbody></table><div class="costura-card-totals"><span>Sem entrada<strong>${totalSemEntrada.toLocaleString('pt-BR')}</strong></span><span>Material completo<strong>${totalCompletos.toLocaleString('pt-BR')}</strong></span><span>Material incompleto<strong>${totalIncompletos.toLocaleString('pt-BR')}</strong></span><span>Total<strong>${totalAtelie.toLocaleString('pt-BR')}</strong></span></div><p class="small-note">Material completo ou incompleto: talões já recebidos na Costura.</p></div></div>`;
+        }).join('')||'<div class="modal-card full"><div class="modal-card-body"><div class="empty-message">Nenhum ateliê com giro.</div></div></div>';
+        openModal('Giro da Costura',`${atelies.length.toLocaleString('pt-BR')} ateliês • ${sumTotal(costuraBase).toLocaleString('pt-BR')} pares`,`<div class="modal-grid costura-grid">${cards}</div>`);
+      }
+      window.openCosturaAtelieGrade=function(atelieEncoded){const atelie=decodeURIComponent(atelieEncoded); const list=currentCosturaAtelieGroups.get(atelie)||[]; const models=Array.from(groupDocs(list,modelKey).entries()).sort((a,b)=>compareText(a[0],b[0])); const rows=models.map(([model,modelList])=>{const noCorte=modelList.filter(t=>!has(t.costuraDataInicio)); const completos=modelList.filter(t=>has(t.costuraDataInicio)&&materialComplete(t)); const incompletos=modelList.filter(t=>has(t.costuraDataInicio)&&materialIncomplete(t)); const total=sumTotal(modelList); const key=storeList(modelList); return `<tr class="clickable-row" onclick="window.openGiroStoredTaloes('${key}','${encodeGiro(`Talões - ${model}`)}','${encodeGiro(`${modelList.length.toLocaleString('pt-BR')} talões • ${total.toLocaleString('pt-BR')} pares`)}')"><td><strong>${escapeHTML(model)}</strong></td><td class="num">${sumTotal(noCorte).toLocaleString('pt-BR')}</td><td class="num ok">${sumTotal(completos).toLocaleString('pt-BR')}</td><td class="num danger">${sumTotal(incompletos).toLocaleString('pt-BR')}</td><td class="num">${total.toLocaleString('pt-BR')}</td></tr>`}).join('')||'<tr><td colspan="5" class="empty-message">Nenhum modelo encontrado.</td></tr>'; openModal(`Grade de modelos - ${atelie}`,`${list.length.toLocaleString('pt-BR')} talões • ${sumTotal(list).toLocaleString('pt-BR')} pares`,`<div class="modal-card full"><div class="modal-card-head"><h4>Modelos por situação</h4><strong>${sumTotal(list).toLocaleString('pt-BR')} pares</strong></div><div class="modal-card-body"><table><thead><tr><th>Modelo</th><th class="num">Sem entrada</th><th class="num">Material completo</th><th class="num">Material incompleto</th><th class="num">Total</th></tr></thead><tbody>${rows}</tbody></table></div></div>`)};
+
+      function openAtelierSector(sector){
+        const cfg=window.Roma.SECTORS[sector];
+        const pending=filterBySelectedLines(allDocs).filter(t=>isAvailableSector(t,sector));
+        const groups=Array.from(groupDocs(pending,t=>String(t[cfg.owner]||'sem-atelie')).entries());
+        groups.sort((a,b)=>compareText(getAtelieKey(a[1][0],sector),getAtelieKey(b[1][0],sector)));
+        const cards=groups.map(([owner,list])=>{
+          const name=getAtelieKey(list[0],sector);
+          const dates=Array.from(groupDocs(list,t=>toISODateOnly(t.dataCorte)||'Sem data').entries()).sort((a,b)=>compareText(a[0],b[0]));
+          const rows=dates.map(([date,items])=>{
+            const waiting=items.filter(t=>!has(t[cfg.start])),started=items.filter(t=>has(t[cfg.start]));
+            return `<tr><td>${dateLabel(date)}</td><td class="num">${valueButton(waiting,`${cfg.name} • ${name} • ${dateLabel(date)} — Sem entrada`,sector)}</td><td class="num">${valueButton(started,`${cfg.name} • ${name} • ${dateLabel(date)} — Em produção`,sector)}</td></tr>`;
+          }).join('');
+          return `<div class="modal-card"><div class="modal-card-head"><h4>${escapeHTML(name)}</h4><strong>${sumTotal(list).toLocaleString('pt-BR')} pares</strong></div><div class="modal-card-body"><table class="atelier-status-table"><thead><tr><th>Data corte</th><th>Sem entrada</th><th>Em produção</th></tr></thead><tbody>${rows}</tbody></table><p class="sector-status-note">Clique no valor para abrir modelos e talões deste ateliê.</p></div></div>`;
+        }).join('')||'<div class="modal-card full"><div class="modal-card-body">Nenhum componente pendente neste setor.</div></div>';
+        openModal(`Giro de ${cfg.name}`,`${pending.length.toLocaleString('pt-BR')} talões • ${sumTotal(pending).toLocaleString('pt-BR')} pares pendentes`,`<div class="modal-grid">${cards}</div>`);
+      }
+
+      function openMontagem(){
+        const totalLines=groupSum(docsMontagem,lineKey); const totalModels=groupSum(docsMontagem,modelKey).sort((a,b)=>b[1]-a[1]||compareText(a[0],b[0]));
+        const byDate=Array.from(groupDocs(filterBySelectedLines(allDocs).filter(isMissingMontagem),t=>toISODateOnly(t.dataCorte)||'Sem data').entries()).sort((a,b)=>compareText(a[0],b[0]));
+        const dateRows=byDate.map(([date,list])=>{const disponivel=list.filter(isAvailableMontagem); const linhas=groupSum(disponivel,lineKey).map(([l,v])=>`${l}: ${v.toLocaleString('pt-BR')}`).join(' • ')||'-'; const key=storeList(disponivel); const txt=dateLabel(date); return `<tr class="clickable-row" onclick="window.openGiroStoredModels('${key}','${encodeGiro(`Montagem ${txt} - Modelos`)}','${encodeGiro(`${disponivel.length.toLocaleString('pt-BR')} talões • ${sumTotal(disponivel).toLocaleString('pt-BR')} pares`)}')"><td class="date-title">${txt}</td><td>${escapeHTML(linhas)}</td><td class="num">${sumTotal(disponivel).toLocaleString('pt-BR')}</td><td class="num danger">${sumTotal(list).toLocaleString('pt-BR')}</td></tr>`}).join('')||'<tr><td colspan="4" class="empty-message">Nenhuma montagem em aberto.</td></tr>';
+        openModal('Giro da Montagem',`${docsMontagem.length.toLocaleString('pt-BR')} talões disponíveis • ${sumTotal(docsMontagem).toLocaleString('pt-BR')} pares`,`<div class="modal-grid"><div class="modal-card"><div class="modal-card-head"><h4>Total disponível por linha</h4><strong>${sumTotal(docsMontagem).toLocaleString('pt-BR')}</strong></div><div class="modal-card-body"><table><thead><tr><th>Linha</th><th class="num">Pares</th></tr></thead><tbody>${totalLines.map(([k,v])=>`<tr><td>${escapeHTML(k)}</td><td class="num">${v.toLocaleString('pt-BR')}</td></tr>`).join('')||'<tr><td colspan="2" class="empty-message">Nenhuma linha.</td></tr>'}</tbody></table></div></div><div class="modal-card"><div class="modal-card-head"><h4>Total disponível por modelo</h4><strong>${totalModels.length.toLocaleString('pt-BR')} modelos</strong></div><div class="modal-card-body"><table><thead><tr><th>Modelo</th><th class="num">Pares</th></tr></thead><tbody>${totalModels.map(([k,v])=>{const list=docsMontagem.filter(t=>modelKey(t)===k);const key=storeList(list);return `<tr class="clickable-row" onclick="window.openGiroStoredTaloes('${key}','${encodeGiro(`Talões - ${k}`)}','${encodeGiro(`${list.length.toLocaleString('pt-BR')} talões • ${v.toLocaleString('pt-BR')} pares`)}')"><td>${escapeHTML(k)}</td><td class="num">${v.toLocaleString('pt-BR')}</td></tr>`}).join('')||'<tr><td colspan="2" class="empty-message">Nenhum modelo.</td></tr>'}</tbody></table></div></div><div class="modal-card full"><div class="modal-card-head"><h4>Por data de corte</h4><strong>disponível x falta montar</strong></div><div class="modal-card-body"><table><thead><tr><th>Data corte</th><th>Disponível por linha</th><th class="num">Total disponível</th><th class="num">Total falta montar</th></tr></thead><tbody>${dateRows}</tbody></table><p class="small-note">Clique em uma data de corte para ver os modelos. Depois clique no valor do modelo/ateliê para abrir os talões.</p></div></div></div>`)
+      }
+
+      function addCardOpen(id,fn){const el=document.getElementById(id); el.addEventListener('click',fn); el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fn();}})}
+      addCardOpen('corteCard',openCorte); addCardOpen('costuraCard',openCostura); addCardOpen('palmilhaCard',()=>openAtelierSector('palmilha')); addCardOpen('solaCard',()=>openAtelierSector('sola')); addCardOpen('montagemCard',openMontagem);
+      closeModalButton.addEventListener('click',()=>modal.classList.remove('show')); modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('show')}); refreshButton.addEventListener('click',loadData);
+      auth.onAuthStateChanged(async user=>{if(!user){window.location.href='login.html';return}try{const userSnap=await db.collection('Usuario').doc(user.email||'').get(); if(!userSnap.exists){throw new Error('Perfil não encontrado. Entre novamente.');} if(userSnap.exists){const data=userSnap.data()||{}; window.Roma.validateProfile(user,data); currentUserName=data.Nome||''; currentUserLevel=data.nivelAcesso||''; localStorage.setItem('calcadosroma-65ac6:userNivelAcesso',currentUserLevel); localStorage.setItem('calcadosroma-65ac6:userName',currentUserName);} if(window.SistemaNavegacao){window.SistemaNavegacao.init({userLevel:currentUserLevel,userName:currentUserName||'',title:'Giro de Produção',onLogout:async()=>{await auth.signOut();localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');localStorage.removeItem('calcadosroma-65ac6:userName');window.location.href='login.html';}})} loadData();}catch(e){console.error(e);setStatus('Erro ao iniciar a página. Veja o console.');}});
+    })();
+  </script>
+</body>
+</html>

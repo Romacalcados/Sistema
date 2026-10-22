@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montagem - Calçados Roma</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .user-info {
+            font-size: 14px;
+            text-align: right;
+        }
+        .user-info span {
+            display: block;
+            font-weight: bold;
+        }
+        nav {
+            background-color: #555;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.8em
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+            display: block;
+        }
+        nav ul li a:hover {
+            background-color: #777;
+        }
+        .main-content {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .scanner-section, .list-section {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .scanner-section h2, .list-section h2 {
+            margin-top: 0;
+            color: #333;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        .barcode-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .barcode-input-group label {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .barcode-input-group input {
+            padding: 12px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 1.2em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .barcode-input-group input:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 0 4px rgba(0,123,255,0.25);
+        }
+        .trilho-options {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .trilho-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+        .trilho-option.selected {
+            background-color: #e2f0ff;
+            border-color: #007bff;
+        }
+        .trilho-option input[type="radio"] {
+            display: none;
+        }
+        .scanner-message {
+            margin-top: 10px;
+            font-size: 0.9em;
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .scanner-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .scanner-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        button#logoutButton {
+            background-color: #dc3545;
+            margin-left: 20px;
+        }
+        button#logoutButton:hover {
+            background-color: #c82333;
+        }
+        
+        #scannedListTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        #scannedListTable th, #scannedListTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #scannedListTable th {
+            background-color: #f2f2f2;
+            color: #333;
+            font-weight: bold;
+        }
+        #scannedListTable tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .edit-button {
+            background-color: #ffc107;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .edit-button:hover {
+            background-color: #e0a800;
+        }
+        .periodo-producao-box {
+            margin-top: 6px;
+            padding: 14px;
+            border: 1px solid #cfd8e3;
+            border-radius: 8px;
+            background: #f7f9fc;
+        }
+        .periodo-producao-box label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+            color: #333;
+        }
+        .periodo-producao-box select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #6c757d;
+            border-radius: 7px;
+            background: #fff;
+            font-size: 1rem;
+        }
+        .periodo-producao-box small {
+            display: block;
+            margin-top: 8px;
+            color: #5b6570;
+            line-height: 1.35;
+        }
+        .periodo-status {
+            margin-top: 10px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: #e8f4ff;
+            color: #084b83;
+            font-weight: bold;
+            text-align: center;
+        }
+        .periodo-status.manual {
+            background: #fff3cd;
+            color: #7a5600;
+            border: 1px solid #ffe08a;
+        }
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .edit-period-button {
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .edit-period-button:hover {
+            background-color: #0b5ed7;
+        }
+    </style>
+  <script src="navegacao.js"></script>
+</head>
+<body>
+
+    <div class="main-content">
+        <div class="scanner-section">
+            <h2>Montagem</h2>
+            <div class="barcode-input-group">
+                <label for="barcodeInputMontagem">Escaneamento para Montagem:</label>
+                <input type="text" id="barcodeInputMontagem" placeholder="Leia o código de barras aqui" autofocus>
+                <div class="trilho-options">
+                    <label class="trilho-option" id="trilho-01">
+                        <input type="radio" name="trilho" value="Trilho - 01">
+                        Trilho - 01
+                    </label>
+                    <label class="trilho-option" id="trilho-02">
+                        <input type="radio" name="trilho" value="Trilho - 02">
+                        Trilho - 02
+                    </label>
+                    <label class="trilho-option" id="trilho-03">
+                        <input type="radio" name="trilho" value="Trilho - 03">
+                        Trilho - 03
+                    </label>
+                    <label class="trilho-option" id="trilho-04">
+                        <input type="radio" name="trilho" value="Trilho - 04">
+                        Trilho - 04
+                    </label>
+                    <label class="trilho-option" id="trilho-05">
+                        <input type="radio" name="trilho" value="Trilho - 05">
+                        Trilho - 05
+                    </label>
+                </div>
+                <div class="periodo-producao-box">
+                    <label for="periodoProducaoSelect">Horário em que a produção será contabilizada</label>
+                    <select id="periodoProducaoSelect">
+                        <option value="">Automático pelo horário da leitura</option>
+                        <option value="08:00">08:00</option>
+                        <option value="09:00">09:00</option>
+                        <option value="10:00">10:00</option>
+                        <option value="11:18">11:18</option>
+                        <option value="14:00">14:00</option>
+                        <option value="15:00">15:00</option>
+                        <option value="16:00">16:00</option>
+                    </select>
+                    <small>Quando uma baixa atrasar, selecione o horário correto antes de ler o lote. Exemplo: às 10:05, selecione 09:00 para lançar os talões no cartão das 09:00. Volte para Automático ao terminar.</small>
+                    <div id="periodoProducaoStatus" class="periodo-status">Modo automático ativo</div>
+                </div>
+                <div id="montagemMessage" class="scanner-message"></div>
+            </div>
+        </div>
+
+        <div class="list-section">
+            <h2>Últimos Talões Lidos</h2>
+            <div id="scannedListContainer">
+                <table id="scannedListTable">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Linha</th>
+                            <th>Modelo</th>
+                            <th>Trilho</th>
+                            <th>Horário produção</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scannedListBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const firebaseConfig = window.FIREBASE_CONFIG;
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const menuNav = document.getElementById('menuNav');
+        const userNameDisplay = document.getElementById('userNameDisplay');
+        const userNivelDisplay = document.getElementById('userNivelDisplay');
+        const logoutButton = document.getElementById('logoutButton');
+        const barcodeInputMontagem = document.getElementById('barcodeInputMontagem');
+        const montagemMessageDiv = document.getElementById('montagemMessage');
+        const scannedListBody = document.getElementById('scannedListBody');
+        const trilhoOptions = document.querySelectorAll('.trilho-option');
+        const periodoProducaoSelect = document.getElementById('periodoProducaoSelect');
+        const periodoProducaoStatus = document.getElementById('periodoProducaoStatus');
+
+        let allTaloes = [];
+        let currentUserEmail = '';
+        let currentUserName = '';
+        const LIST_LIMIT = 100;
+
+        // Carrega a lista do localStorage ao iniciar
+        let lastScannedTaloes = JSON.parse(localStorage.getItem('calcadosroma-65ac6:montagem_scanned_taloes')) || [];
+
+    //Login
+    const nivelNomes = window.Roma.ROLES;
+    //Paginas
+    const pages = window.SistemaNavegacao.pages;
+
+
+    //Funçoes
+
+
+        
+        function iniciarNavegacaoPadrao(nivelAcesso, nomeUsuario) {
+            if (!window.SistemaNavegacao) return;
+            localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', String(nivelAcesso || ''));
+            localStorage.setItem('calcadosroma-65ac6:userName', nomeUsuario || 'Usuário');
+            window.SistemaNavegacao.init({
+                userLevel: nivelAcesso,
+                userName: nomeUsuario,
+                title: 'Controle de produção Calçados Roma',
+                onLogout: async () => {
+                    try {
+                        await signOut(auth);
+                    } catch (error) {
+                        console.error('Erro ao fazer logout:', error);
+                    } finally {
+                        localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                        localStorage.removeItem('calcadosroma-65ac6:userName');
+                        window.location.href = 'login.html';
+                    }
+                }
+            });
+        }
+
+        function generateMenu(userLevel, userName) {
+            menuNav.innerHTML = '';
+            const userNivelText = nivelNomes[userLevel] || `Nível ${userLevel}`;
+            userNameDisplay.textContent = `Olá, ${userName || 'Usuário'}!`;
+            userNivelDisplay.textContent = `Setor: ${userNivelText}`;
+
+            pages.forEach(page => {
+                if (page.levels.includes(userLevel)) {
+                    const listItem = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.href = page.href; 
+                    link.textContent = page.name;
+                    listItem.appendChild(link);
+                    menuNav.appendChild(listItem);
+                }
+            });
+        }
+
+        function renderScannedList() {
+            scannedListBody.innerHTML = '';
+            lastScannedTaloes.forEach(talao => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${talao.codigoBarrasIdentificador}</td>
+                    <td>${talao.linha}</td>
+                    <td>${talao.modelo}</td>
+                    <td>${talao.trilhoProduzido || 'N/A'}</td>
+                    <td>${talao.periodoProducao || 'Automático'}</td>
+                    <td class="actions-cell">
+                        <button ${window.Roma.canWrite('montagem')?'':'disabled'} class="edit-button" data-talao-id="${talao.id}">Editar Trilho</button>
+                        <button ${window.Roma.canWrite('montagem')?'':'disabled'} class="edit-period-button" data-talao-id="${talao.id}">Editar Horário</button>
+                    </td>
+                `;
+                scannedListBody.appendChild(row);
+            });
+            // Adiciona listener para os novos botões
+            document.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', handleEditTrilho);
+            });
+            document.querySelectorAll('.edit-period-button').forEach(button => {
+                button.addEventListener('click', handleEditPeriodo);
+            });
+        }
+        
+        // Função auxiliar para formatar a data para DD/MM/AAAA
+        function formatDateToDDMMYYYY(dateString) {
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+        
+        async function handleEditTrilho(event) {
+            if(!window.Roma.canWrite('montagem'))return;
+            const talaoId = event.target.dataset.talaoId;
+            const trilhoAtual = lastScannedTaloes.find(t => t.id === talaoId)?.trilhoProduzido || 'N/A';
+            const novoTrilho = prompt(`Digite o novo trilho para o talão ${talaoId} (atual: ${trilhoAtual}):`);
+            
+            if (novoTrilho && ['Trilho - 01', 'Trilho - 02', 'Trilho - 03', 'Trilho - 04', 'Trilho - 05'].includes(novoTrilho.trim())) {
+                try {
+                    const talaoRef = doc(db, 'taloes', talaoId);
+                    await updateDoc(talaoRef, { trilhoProduzido: novoTrilho.trim() });
+                    alert('Trilho atualizado com sucesso!');
+                    // Atualiza a lista local para refletir a mudança
+                    const talaoIndex = lastScannedTaloes.findIndex(t => t.id === talaoId);
+                    if (talaoIndex !== -1) {
+                        lastScannedTaloes[talaoIndex].trilhoProduzido = novoTrilho.trim();
+                        saveScannedList(); // Salva a lista após a edição
+                        renderScannedList();
+                    }
+                } catch (error) {
+                    console.error("Erro ao atualizar o trilho:", error);
+                    alert("Erro ao atualizar o trilho. Tente novamente.");
+                }
+            } else if (novoTrilho !== null) {
+                alert("Entrada inválida. Por favor, escolha um trilho válido (ex: 'Trilho - 01').");
+            }
+        }
+
+        const PERIODOS_PRODUCAO_VALIDOS = ['08:00', '09:00', '10:00', '11:18', '14:00', '15:00', '16:00'];
+
+        function atualizarStatusPeriodo() {
+            const periodo = periodoProducaoSelect.value;
+            if (periodo) {
+                periodoProducaoStatus.textContent = `Modo manual ativo: os próximos talões serão contabilizados às ${periodo}`;
+                periodoProducaoStatus.classList.add('manual');
+            } else {
+                periodoProducaoStatus.textContent = 'Modo automático ativo';
+                periodoProducaoStatus.classList.remove('manual');
+            }
+        }
+
+        async function handleEditPeriodo(event) {
+            if(!window.Roma.canWrite('montagem'))return;
+            const talaoId = event.target.dataset.talaoId;
+            const talaoLocal = lastScannedTaloes.find(t => t.id === talaoId);
+            const periodoAtual = talaoLocal?.periodoProducao || 'Automático';
+            const novoPeriodo = prompt(
+                `Informe o horário correto para este talão. Atual: ${periodoAtual}.\n` +
+                `Opções: ${PERIODOS_PRODUCAO_VALIDOS.join(', ')}.\n` +
+                `Digite AUTO para voltar ao horário automático.`
+            );
+
+            if (novoPeriodo === null) return;
+            const valor = novoPeriodo.trim().toUpperCase();
+            const automatico = valor === 'AUTO' || valor === 'AUTOMATICO' || valor === 'AUTOMÁTICO' || valor === '';
+            const periodoNormalizado = automatico ? '' : novoPeriodo.trim();
+
+            if (!automatico && !PERIODOS_PRODUCAO_VALIDOS.includes(periodoNormalizado)) {
+                alert('Horário inválido. Use um dos horários exibidos na mensagem.');
+                return;
+            }
+
+            try {
+                const talaoRef = doc(db, 'taloes', talaoId);
+                const dataRef = talaoLocal?.dataReferenciaProducao || talaoLocal?.dataEntradaMontagem || new Date().toISOString().split('T')[0];
+                await updateDoc(talaoRef, {
+                    periodoProducao: periodoNormalizado,
+                    dataReferenciaProducao: dataRef,
+                    periodoProducaoEditadoPor: currentUserName,
+                    periodoProducaoEditadoEm: Timestamp.now()
+                });
+
+                if (talaoLocal) {
+                    talaoLocal.periodoProducao = periodoNormalizado;
+                    talaoLocal.dataReferenciaProducao = dataRef;
+                    saveScannedList();
+                    renderScannedList();
+                }
+                alert(automatico ? 'Horário automático restaurado.' : `Produção movida para ${periodoNormalizado}.`);
+            } catch (error) {
+                console.error('Erro ao atualizar o horário de produção:', error);
+                alert('Não foi possível atualizar o horário de produção.');
+            }
+        }
+
+        periodoProducaoSelect.addEventListener('change', () => {
+            atualizarStatusPeriodo();
+            barcodeInputMontagem.focus();
+        });
+        atualizarStatusPeriodo();
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserEmail = user.email;
+                const userDocRef = doc(db, 'Usuario', user.email);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();  window.Roma.validateProfile(user,userData); if(!window.Roma.canWrite('montagem')){ document.querySelectorAll('input[id^=barcode],input[name=trilho],#periodoProducao').forEach(el=>el.disabled=true); const info=document.createElement('p');info.textContent='Modo consulta. As leituras são realizadas pela Montagem ou pelo Admin.';info.style.cssText='padding:12px;background:#e7f1ff;color:#084298';(document.querySelector('.container')||document.body).prepend(info); }
+                    const nivelAcesso = userData.nivelAcesso;
+                    currentUserName = userData.Nome;
+
+                    if (!window.SistemaNavegacao.podeAcessar(nivelAcesso, 'montagem.html')) {
+                        alert('Você não tem permissão para acessar esta página.');
+                        await signOut(auth);
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    iniciarNavegacaoPadrao(nivelAcesso, currentUserName);
+                    listenToTaloes();
+                    renderScannedList(); // Renderiza a lista do localStorage ao iniciar
+                } else {
+                    alert('Dados do usuário não encontrados. Faça login novamente.');
+                    await signOut(auth);
+                    window.location.href = 'login.html';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+function listenToTaloes() {
+            const q = collection(db, 'taloes');
+            onSnapshot(q, (snapshot) => {
+                allTaloes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }, (error) => {
+                console.error("Erro ao escutar talões:", error);
+            });
+        }
+        
+        function saveScannedList() {
+            localStorage.setItem('calcadosroma-65ac6:montagem_scanned_taloes', JSON.stringify(lastScannedTaloes));
+        }
+
+        async function updateTalaoInFirestore(talaoId, updates, talaoData, messageDiv) {
+            window.Roma.requireWrite('montagem');
+            try {
+                const talaoRef = doc(db, 'taloes', talaoId);
+                await updateDoc(talaoRef, updates);
+                
+                // Atualiza o objeto local com as novas informações antes de inseri-lo na lista
+                talaoData.trilhoProduzido = updates.trilhoProduzido;
+                talaoData.dataProducao = updates.dataProducao;
+                talaoData.dataLeituraMontagem = updates.dataLeituraMontagem;
+                talaoData.periodoProducao = updates.periodoProducao;
+                talaoData.dataReferenciaProducao = updates.dataReferenciaProducao;
+                if(updates.dataEntradaTalonagem) {
+                    talaoData.dataEntradaTalonagem = updates.dataEntradaTalonagem;
+                }
+                if(updates.usuarioTalonagem) {
+                    talaoData.usuarioTalonagem = updates.usuarioTalonagem;
+                }
+                if(updates.statusGeral) {
+                    talaoData.statusGeral = updates.statusGeral;
+                }
+
+                lastScannedTaloes.unshift(talaoData);
+                if (lastScannedTaloes.length > LIST_LIMIT) {
+                    lastScannedTaloes.pop();
+                }
+
+                saveScannedList(); // Salva a lista após cada nova entrada
+                renderScannedList();
+
+                messageDiv.textContent = 'Sucesso!';
+                messageDiv.className = 'scanner-message success';
+                setTimeout(() => {
+                    messageDiv.textContent = '';
+                    barcodeInputMontagem.focus();
+                }, 3000);
+            } catch (error) {
+                console.error(`Erro ao atualizar talão ${talaoId}:`, error);
+                messageDiv.textContent = `Erro: ${error.message}`;
+                messageDiv.className = 'scanner-message error';
+                setTimeout(() => {
+                    messageDiv.textContent = '';
+                    barcodeInputMontagem.focus();
+                }, 5000);
+            }
+        }
+
+        trilhoOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                trilhoOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                option.querySelector('input').checked = true;
+                barcodeInputMontagem.focus();
+            });
+        });
+
+        barcodeInputMontagem.addEventListener('keypress', async (event) => {
+            if(!window.Roma.canWrite('montagem'))return;
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const barcode = barcodeInputMontagem.value.trim();
+                barcodeInputMontagem.value = '';
+                montagemMessageDiv.textContent = 'Processando...';
+                montagemMessageDiv.className = 'scanner-message';
+
+                if (!barcode) {
+                    montagemMessageDiv.textContent = 'Código de barras vazio.';
+                    montagemMessageDiv.className = 'scanner-message error';
+                    return;
+                }
+
+                const selectedTrilho = document.querySelector('input[name="trilho"]:checked');
+                if (!selectedTrilho) {
+                    montagemMessageDiv.textContent = 'Por favor, selecione um trilho.';
+                    montagemMessageDiv.className = 'scanner-message error';
+                    return;
+                }
+
+                const processedBarcode = barcode.startsWith('1') ? barcode : '1' + barcode.substring(1);
+                const talao = allTaloes.find(t => t.codigoBarrasIdentificador === processedBarcode);
+
+                if (!talao) {
+                    montagemMessageDiv.textContent = `Talão com código ${processedBarcode} não encontrado.`;
+                    montagemMessageDiv.className = 'scanner-message error';
+                    return;
+                }
+                
+                // Validação para evitar leituras duplicadas de Montagem
+                if (talao.dataEntradaMontagem) {
+                    const formattedDate = formatDateToDDMMYYYY(talao.dataEntradaMontagem);
+                    montagemMessageDiv.textContent = `Erro: Talão já lido em Montagem. Data: ${formattedDate}`;
+                    montagemMessageDiv.className = 'scanner-message error';
+                    return;
+                }
+                
+                const momentoLeitura = Timestamp.now();
+                const dataMontagemISO = new Date().toISOString().split('T')[0];
+                const periodoSelecionado = periodoProducaoSelect.value;
+                const updates = {
+                    statusGeral: 'Montado',
+                    dataEntradaMontagem: dataMontagemISO,
+                    trilhoProduzido: selectedTrilho.value,
+                    dataProducao: momentoLeitura, // Mantido para compatibilidade com as páginas existentes
+                    dataLeituraMontagem: momentoLeitura, // Horário real da leitura para auditoria
+                    periodoProducao: periodoSelecionado, // Horário de referência usado no controle
+                    dataReferenciaProducao: dataMontagemISO,
+                    periodoProducaoDefinidoPor: periodoSelecionado ? currentUserName : '',
+                    usuarioMontagem: currentUserName
+                };
+
+                // Lógica para registrar data de talonagem se estiver vazia
+                if (!talao.dataEntradaTalonagem) {
+                    updates.dataEntradaTalonagem = new Date().toISOString().split('T')[0];
+                    updates.usuarioTalonagem = currentUserName;
+                }
+
+                // Lógica para registrar data de distribuição se estiver vazia
+                if (!talao.dataEntradaDistribuicao) {
+                    updates.dataEntradaDistribuicao = new Date().toISOString().split('T')[0];
+                    updates.usuarioDistribuicao = currentUserName;
+                }
+
+                //Logica para registrar a costura datas
+
+
+
+                await updateTalaoInFirestore(talao.id, updates, talao, montagemMessageDiv);
+            }
+        });
+
+        window.onload = function() {
+            barcodeInputMontagem.focus();
+        };
+    </script>
+</body>
+
+</html>
+

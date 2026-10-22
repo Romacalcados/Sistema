@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<!-- modelos.html - cadastro de modelos, componentes e preços - Financeiro/Admin -->
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+<script src="roma-modelos.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Modelos e Preços - Calçados Roma</title>
+<style>
+:root{
+  --bg:#f4f4f4;--card:#fff;--ink:#111;--muted:#60656f;--bd:#ddd;
+  --pri:#007bff;--ok:#198754;--danger:#dc3545;--warn:#ffc107;
+  --chip:#f8f8f8;--shadow:0 4px 14px rgba(0,0,0,.08)
+}
+*{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;color:var(--ink)}
+body.auth-loading main,body.auth-loading .modal-backdrop{display:none!important}
+button{font-family:inherit}
+main{width:100%;padding:14px 0 22px;display:flex;flex-direction:column;align-items:center;gap:12px;overflow-x:hidden}
+.card{width:96%;background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:16px 18px}
+.compact-page-card,.models-card{width:min(85%,1560px);min-width:760px}
+.page-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.page-title{margin:0 0 4px;font-size:1.45rem}
+.page-subtitle{margin:0;color:var(--muted);font-size:.92rem;line-height:1.35}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.section-title{margin:0;font-size:1.1rem}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-weight:700;color:#374151;font-size:.82rem}
+.form-group input,.form-group select,textarea{padding:8px 10px;border:1px solid #cfcfcf;border-radius:7px;font-size:.92rem;background:#fff;width:100%}
+textarea{min-height:54px;resize:vertical}
+.btn{padding:9px 14px;border:0;border-radius:8px;cursor:pointer;font-size:.92rem;white-space:nowrap}
+.btn-primary{background:var(--pri);color:#fff}.btn-secondary{background:#e9ecef;color:#222}.btn-success{background:var(--ok);color:#fff}.btn-warning{background:var(--warn);color:#111}.btn-danger{background:var(--danger);color:#fff}.btn-small{padding:6px 9px;font-size:.78rem}.btn:disabled{opacity:.55;cursor:not-allowed}
+.message{margin-top:10px;padding:10px;border-radius:8px;font-size:.9rem;display:none}.message.show{display:block}.message.info{background:#d1ecf1;color:#0c5460}.message.success{background:#d4edda;color:#155724}.message.error{background:#f8d7da;color:#721c24}.message.warning{background:#fff3cd;color:#664d03}.hidden{display:none!important}
+.filter-bar{display:grid;grid-template-columns:minmax(170px,260px) minmax(150px,210px) minmax(150px,210px) auto;gap:8px;align-items:end;margin-top:12px}
+.table-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.table-wrap{width:100%;overflow-y:auto;overflow-x:auto;border:1px solid var(--bd);border-radius:10px;background:#fff;max-height:70vh}
+table{width:100%;border-collapse:collapse;font-size:.84rem;min-width:0}
+th,td{border:1px solid var(--bd);padding:8px 10px;text-align:center;white-space:nowrap}
+thead th{background:#f2f2f2;position:sticky;top:0;z-index:2}
+.models-card .table-wrap{overflow-x:auto}
+.models-card table{table-layout:fixed;min-width:0;font-size:.80rem}
+.models-card th,.models-card td{padding:7px 7px;white-space:normal;vertical-align:middle}
+.models-card th:nth-child(1),.models-card td:nth-child(1){width:6%}
+.models-card th:nth-child(2),.models-card td:nth-child(2){width:7%}
+.models-card th:nth-child(3),.models-card td:nth-child(3){width:10%}
+.models-card th:nth-child(4),.models-card td:nth-child(4){width:11%}
+.models-card th:nth-child(5),.models-card td:nth-child(5){width:8%}
+.models-card th:nth-child(6),.models-card td:nth-child(6){width:43%}
+.models-card th:nth-child(7),.models-card td:nth-child(7){width:9%}
+.models-card th:nth-child(8),.models-card td:nth-child(8){width:6%}
+tbody tr:nth-child(even){background:#fafafa}
+tbody tr.model-row{cursor:pointer;transition:background .15s ease}
+tbody tr.model-row:hover{background:#eaf4ff}
+tbody tr.model-row.no-price{background:#ffe3e8!important;color:#7f1d1d}
+tbody tr.model-row.no-price:hover{background:#ffd2da!important}
+tbody tr.model-row.no-price td{border-color:#f3a8b5}
+.price-missing-badge{display:inline-block;background:#dc3545;color:#fff;border-radius:999px;padding:4px 9px;font-size:.72rem;font-weight:900;letter-spacing:.02em}
+.price-warning-text{display:block;color:#b42318;font-size:.70rem;font-weight:800;margin-top:2px}
+.cell-left{text-align:left}.money{text-align:right}.tag{display:inline-block;border:1px solid #d8d8d8;border-radius:999px;padding:3px 7px;background:#fff;margin:2px;font-size:.72rem;line-height:1.15}.tag.empty{color:#777;background:#f2f2f2}.models-card .cell-left{line-height:1.45}.mini-help{font-size:.8rem;color:var(--muted);line-height:1.35}.empty-state{padding:24px;text-align:center;color:#666}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.50);display:none;align-items:center;justify-content:center;padding:14px;z-index:5000}.modal-backdrop.show{display:flex}
+.modal{background:#fff;width:min(880px,97vw);max-height:96vh;overflow:auto;border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,.25);padding:0}
+.modal-header{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #e5e7eb;padding:9px 14px;position:sticky;top:0;background:#fff;z-index:5}
+.modal-header h3{display:inline-block;background:#dbeafe;color:#063b72;border:1px solid #93c5fd;border-radius:5px;padding:6px 9px;font-size:1rem;line-height:1;margin:0}
+.modal-close{border:1px solid #cfd6df;background:#f3f4f6;color:#111;border-radius:6px;cursor:pointer;padding:7px 16px}
+.modal-body{padding:10px 14px}
+.compact-card{border:1px solid #d8dde5;background:#fff;border-radius:9px;padding:10px 12px;margin-bottom:10px}
+.compact-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px}.compact-title strong{font-size:.96rem}
+.model-grid{display:grid;grid-template-columns:76px 82px minmax(120px,1fr) minmax(120px,1fr) 100px minmax(150px,1.2fr);gap:7px;align-items:end}
+.modal .form-group{gap:3px}.modal .form-group label{font-size:.75rem}.modal .form-group input,.modal textarea{padding:6px 8px;border-radius:5px;font-size:.84rem}.modal textarea{min-height:38px}
+.modal-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:7px 0 10px}.total-box{background:#f8fafc;border:1px solid #d8dde5;border-radius:7px;padding:7px;text-align:center}.total-box strong{display:block;font-size:.98rem;margin-bottom:2px}.total-box small{font-weight:800;text-transform:uppercase;font-size:.66rem}.total-box.ok{background:#edf8f1;border-color:#cfead8}.total-box.warn{background:#fff6d8;border-color:#ffe69c}
+.sector-list{display:block}.sector-table-wrap{border:1px solid #d8dde5;border-radius:8px;overflow:hidden;background:#fff}.sector-table{width:100%;min-width:0;border-collapse:collapse;font-size:.78rem;table-layout:fixed}.sector-table th{position:static;background:#f3f4f6;color:#374151;text-transform:uppercase;font-size:.68rem;letter-spacing:.02em}.sector-table th,.sector-table td{padding:4px 5px;border:1px solid #e1e5ea;white-space:normal}.sector-table th:nth-child(1),.sector-table td:nth-child(1){width:27%}.sector-table th:nth-child(2),.sector-table td:nth-child(2){width:112px}.sector-table th:nth-child(4),.sector-table td:nth-child(4){width:82px;text-align:center}.sector-name-input,.sector-value-input,.sector-note-input{height:28px;border:1px solid #cfd6df!important;border-radius:5px!important;padding:4px 6px!important;font-size:.82rem!important}.sector-name-input{font-weight:800;background:#f9fafb!important}.sector-value-input{text-align:right}.sector-note-input{font-size:.8rem!important}.sector-remove{border:0;background:#dc3545;color:#fff;border-radius:5px;padding:5px 7px;cursor:pointer;font-size:.72rem;width:100%}.sector-empty{border:1px dashed #cfd6df;border-radius:7px;padding:12px;text-align:center;color:#6b7280;background:#fafafa}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:6px}.history-list{display:flex;flex-direction:column;gap:7px;max-height:170px;overflow:auto;padding-right:2px}.history-item{border:1px solid #e5e7eb;border-radius:8px;background:#fff;padding:7px}.history-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px;font-size:.78rem;color:#374151}.history-note{background:#f9fafb;border-left:3px solid #d1d5db;padding:5px 7px;border-radius:6px;margin:5px 0;color:#374151;font-size:.78rem}.changes-table{width:100%;min-width:0;font-size:.74rem}.changes-table th,.changes-table td{padding:4px 6px;white-space:normal}.changes-table th{position:static;background:#f3f4f6}.change-field{text-align:left;font-weight:800}.sistema-menu-lista{background:transparent!important;box-shadow:none!important;font-size:inherit!important}.sistema-menu-lista a{font-weight:500!important}
+@media(max-width:1100px){.compact-page-card,.models-card{width:96%;min-width:0}.table-wrap{max-height:72vh}}
+@media(max-width:760px){.filter-bar{grid-template-columns:1fr}.model-grid{grid-template-columns:1fr 1fr}.modal-summary{grid-template-columns:1fr}.card{padding:14px}.models-card table{font-size:.74rem}.models-card th,.models-card td{padding:6px 5px}.tag{font-size:.68rem;padding:3px 6px}.sector-table-wrap{overflow:auto}.sector-table{min-width:640px}}
+@media(max-width:520px){.model-grid{grid-template-columns:1fr}}
+</style>
+<script src="navegacao.js"></script>
+</head>
+<body class="auth-loading">
+<main>
+<section class="card compact-page-card">
+  <div class="page-head">
+    <div>
+      <h2 class="page-title">Modelos e Preços</h2>
+      <p class="page-subtitle">Cadastre e edite os modelos salvos na coleção <strong>modelos</strong>. Clique em qualquer linha da tabela para editar.</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-warning" id="adjustPricesButton" type="button">Reajustar preços</button>
+      <button class="btn btn-success" id="createModelButton" type="button">Criar modelo</button>
+      <button class="btn btn-secondary" id="refreshButton" type="button">Atualizar</button>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <div class="form-group">
+      <label for="modelFilterInput">Modelo / linha</label>
+      <input type="text" id="modelFilterInput" placeholder="Ex: 101, 7142.101 ou 7142" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label for="categoriaFilterInput">Categoria</label>
+      <input type="text" id="categoriaFilterInput" placeholder="Ex: Feminino" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label for="subcategoriaFilterInput">Subcategoria</label>
+      <input type="text" id="subcategoriaFilterInput" placeholder="Ex: Sandália" autocomplete="off" />
+    </div>
+    <button class="btn btn-secondary" id="clearFilterButton" type="button">Limpar</button>
+  </div>
+  <div id="messageBox" class="message"></div>
+</section>
+
+<section class="card models-card">
+  <div class="table-actions">
+    <h3 class="section-title">Modelos cadastrados</h3>
+    <span class="mini-help" id="listInfo">Carregando...</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Linha</th>
+          <th>Modelo</th>
+          <th>Categoria</th>
+          <th>Subcategoria</th>
+          <th>Preço</th>
+          <th>Setores</th>
+          <th>Total setores</th>
+          <th>Saldo</th>
+        </tr>
+      </thead>
+      <tbody id="modelsTableBody"></tbody>
+    </table>
+  </div>
+</section>
+</main>
+
+<div class="modal-backdrop" id="modelModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h3 id="modelModalTitle">Criar modelo</h3>
+      <button class="modal-close" id="closeModelModalButton" type="button">Fechar</button>
+    </div>
+    <div class="modal-body">
+      <div class="compact-card">
+        <div class="compact-title"><strong>Dados do modelo</strong></div>
+        <div class="model-grid">
+          <div class="form-group"><label for="linhaInput">Linha</label><input type="text" id="linhaInput" placeholder="4134" autocomplete="off" /></div>
+          <div class="form-group"><label for="modeloInput">Modelo</label><input type="text" id="modeloInput" placeholder="1017" autocomplete="off" /></div>
+          <div class="form-group"><label for="categoriaInput">Categoria</label><input type="text" id="categoriaInput" placeholder="Ex: Feminino" autocomplete="off" /></div>
+          <div class="form-group"><label for="subcategoriaInput">Subcategoria</label><input type="text" id="subcategoriaInput" placeholder="Ex: Sandália" autocomplete="off" /></div>
+          <div class="form-group"><label for="precoInput">Preço</label><input type="text" id="precoInput" placeholder="R$ 0,00" autocomplete="off" /></div>
+          <div class="form-group"><label for="motivoInput">Motivo</label><input type="text" id="motivoInput" placeholder="Ex: ajuste de preço" autocomplete="off" /></div>
+        </div>
+        <div class="form-group" style="margin-top:9px"><label for="observacaoInput">Observações do modelo</label><textarea id="observacaoInput" placeholder="Ex: Modelo igual ao 7142.118, ajuste especial, orientação da fábrica..."></textarea></div>
+      </div>
+
+      <fieldset class="compact-card" id="modelComponents" style="border:1px solid #d7dce4">
+        <legend><strong>Componentes do modelo</strong></legend>
+        <p class="mini-help" style="margin-top:0">Marque o que este modelo contém. Cabedal, Forro, Tiras e Aviamentos serão controlados pelo Corte; Palmilha e Sola terão controles próprios. Os talões novos receberão esta composição.</p>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <label><input type="checkbox" data-component="cabedal" checked> Cabedal</label>
+          <label><input type="checkbox" data-component="forro" checked> Forro</label>
+          <label><input type="checkbox" data-component="tiras" checked> Tiras</label>
+          <label><input type="checkbox" data-component="aviamentos" checked> Aviamentos</label>
+          <label><input type="checkbox" data-component="palmilha"> Palmilha</label>
+          <label><input type="checkbox" data-component="sola"> Sola</label>
+        </div>
+      </fieldset>
+
+      <div class="compact-card">
+        <div class="compact-title">
+          <div><strong>Valores do modelo</strong><br><span class="mini-help">Altere o valor e registre uma observação específica do setor quando necessário. Campos vazios ou zerados não serão salvos.</span></div>
+          <button class="btn btn-secondary btn-small" id="addSectorButton" type="button">Adicionar setor</button>
+        </div>
+        <div class="modal-summary">
+          <div class="total-box"><strong id="formPreco">R$ 0,00</strong><small>Preço</small></div>
+          <div class="total-box ok"><strong id="formTotalSetores">R$ 0,00</strong><small>Total setores</small></div>
+          <div class="total-box warn"><strong id="formSaldo">R$ 0,00</strong><small>Saldo</small></div>
+        </div>
+        <div id="sectorList" class="sector-list"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-success" id="saveModelButton" type="button">Salvar alteração</button>
+      </div>
+
+      <div class="compact-card" id="historyBlock">
+        <div class="compact-title"><strong id="historyTitle">Histórico</strong></div>
+        <div id="historyList" class="history-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="adjustModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h3>Reajuste geral</h3>
+      <button class="modal-close" id="closeAdjustModalButton" type="button">Fechar</button>
+    </div>
+    <div class="modal-body">
+      <div class="compact-card">
+        <div class="compact-title"><strong>Aplicar percentual em todos os modelos</strong></div>
+        <p class="mini-help" style="margin-top:0">Use percentual positivo para aumento, exemplo <strong>10</strong>. Use percentual negativo para redução, exemplo <strong>-5</strong>. O reajuste será aplicado no preço e em todos os setores com valor.</p>
+        <div class="model-grid" style="grid-template-columns:120px minmax(180px,1fr) minmax(180px,1fr)">
+          <div class="form-group"><label for="adjustPercentInput">Percentual</label><input type="text" id="adjustPercentInput" placeholder="Ex: 10 ou -5" autocomplete="off" /></div>
+          <div class="form-group"><label for="adjustMotivoInput">Motivo</label><input type="text" id="adjustMotivoInput" placeholder="Ex: reajuste tabela Beira Rio" autocomplete="off" /></div>
+          <div class="form-group"><label for="adjustConfirmInput">Confirmação</label><input type="text" id="adjustConfirmInput" placeholder="Digite REAJUSTAR" autocomplete="off" /></div>
+        </div>
+        <div class="form-group" style="margin-top:9px"><label for="adjustObsInput">Observação do reajuste</label><textarea id="adjustObsInput" placeholder="Ex: aumento geral informado pela fábrica, redução de negociação, ajuste anual..."></textarea></div>
+        <div id="adjustPreview" class="message info show" style="display:block;margin-top:10px">Informe o percentual para visualizar o reajuste.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-warning" id="applyAdjustmentButton" type="button">Aplicar reajuste</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+const firebaseConfig = window.FIREBASE_CONFIG;
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,setDoc,collection,getDocs,serverTimestamp,writeBatch,arrayUnion}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const FULL_ACCESS_LEVELS=new Set(["08","09"]);
+let currentUser=null,currentUserLevel="",models=[],currentEditingId=null,currentEditingModel=null;
+
+const $=id=>document.getElementById(id);
+const els={
+  createModelButton:$("createModelButton"),adjustPricesButton:$("adjustPricesButton"),refreshButton:$("refreshButton"),clearFilterButton:$("clearFilterButton"),modelFilterInput:$("modelFilterInput"),categoriaFilterInput:$("categoriaFilterInput"),subcategoriaFilterInput:$("subcategoriaFilterInput"),messageBox:$("messageBox"),listInfo:$("listInfo"),modelsTableBody:$("modelsTableBody"),
+  modelModalBackdrop:$("modelModalBackdrop"),modelModalTitle:$("modelModalTitle"),closeModelModalButton:$("closeModelModalButton"),linhaInput:$("linhaInput"),modeloInput:$("modeloInput"),categoriaInput:$("categoriaInput"),subcategoriaInput:$("subcategoriaInput"),precoInput:$("precoInput"),motivoInput:$("motivoInput"),observacaoInput:$("observacaoInput"),
+  sectorList:$("sectorList"),addSectorButton:$("addSectorButton"),formPreco:$("formPreco"),formTotalSetores:$("formTotalSetores"),formSaldo:$("formSaldo"),saveModelButton:$("saveModelButton"),historyBlock:$("historyBlock"),historyTitle:$("historyTitle"),historyList:$("historyList"),
+  adjustModalBackdrop:$("adjustModalBackdrop"),closeAdjustModalButton:$("closeAdjustModalButton"),adjustPercentInput:$("adjustPercentInput"),adjustMotivoInput:$("adjustMotivoInput"),adjustConfirmInput:$("adjustConfirmInput"),adjustObsInput:$("adjustObsInput"),adjustPreview:$("adjustPreview"),applyAdjustmentButton:$("applyAdjustmentButton")
+};
+
+function redirectUnauthorized(){alert("Seu nível de acesso não permite abrir esta página. Você será redirecionado para o início.");window.location.replace("index.html");}
+onAuthStateChanged(auth,async user=>{
+  if(!user){window.location.href="login.html";return;}
+  currentUser=user;
+  try{
+    const userSnap=await getDoc(doc(db,"Usuario",user.email));
+    if(!userSnap.exists()){alert("Dados do usuário não encontrados. Faça login novamente.");await signOut(auth);window.location.href="login.html";return;}
+    if(!FULL_ACCESS_LEVELS.has(String(userSnap.data().nivelAcesso||""))){redirectUnauthorized();return;}const userData=window.Roma.validateProfile(user,userSnap.data());
+    currentUserLevel=String(userData.nivelAcesso||"");
+    const userName=userData.Nome||user.email||"Usuário";
+    localStorage.setItem("calcadosroma-65ac6:userNivelAcesso",currentUserLevel);
+    localStorage.setItem("calcadosroma-65ac6:userName",userName);
+    if(window.SistemaNavegacao){
+      if(Array.isArray(window.SistemaNavegacao.pages)&&!window.SistemaNavegacao.pages.some(p=>String(p.href||"").toLowerCase()==="modelos.html")){
+        window.SistemaNavegacao.pages.push({group:"Cadastro",name:"Modelos e Preços",href:"modelos.html",levels:["08","09"]});
+      }
+    }
+  }catch(err){console.error(err);alert("Erro ao validar usuário. Confira se a coleção Usuario permite leitura. Detalhe: "+err.message);window.location.replace("index.html");return;}
+  if(!FULL_ACCESS_LEVELS.has(currentUserLevel)){redirectUnauthorized();return;}
+  document.body.classList.remove("auth-loading");
+  if(window.SistemaNavegacao){
+    window.SistemaNavegacao.init({
+      userLevel:currentUserLevel,
+      userName:localStorage.getItem("calcadosroma-65ac6:userName")||currentUser.email||"Usuário",
+      title:"Modelos e Preços",
+      onLogout:async()=>{
+        await signOut(auth);
+        localStorage.removeItem("calcadosroma-65ac6:userNivelAcesso");
+        localStorage.removeItem("calcadosroma-65ac6:userName");
+        window.location.href="login.html";
+      }
+    });
+  }
+  renderSectorInputs({});
+  try{await loadModels();}catch(err){console.error(err);showMessage("error","Usuário validado, mas não consegui acessar a coleção modelos. Confira as regras do Firebase. Detalhe: "+err.message);els.listInfo.textContent="Sem permissão para carregar modelos.";}
+});
+
+function showMessage(type,text){els.messageBox.className=text?`message show ${type}`:"message";els.messageBox.textContent=text||"";}
+function onlyDigits(v){return String(v||"").replace(/\D/g,"");}
+function modelId(linha,modelo){return `${onlyDigits(linha)}.${onlyDigits(modelo)}`;}
+function normalizeText(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();}
+function parseNumber(value){
+  if(value===null||value===undefined)return null;
+  if(typeof value==="number")return Number.isFinite(value)?value:null;
+  let s=String(value).trim();
+  if(!s||s==="-"||s.toLowerCase()==="nan")return null;
+  s=s.replace(/R\$|\s/g,"");
+  if(s.includes(",")&&s.includes("."))s=s.replace(/\./g,"").replace(",",".");
+  else if(s.includes(","))s=s.replace(",",".");
+  s=s.replace(/[^0-9.\-]/g,"");
+  const n=parseFloat(s);
+  return Number.isFinite(n)?n:null;
+}
+function round3(n){return Math.round((Number(n)||0)*1000)/1000;}
+function formatMoney(v){return (Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL",minimumFractionDigits:2,maximumFractionDigits:2});}
+function formatNumber(v){return (Number(v)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:3});}
+function formatMoneyInput(v){return formatMoney(v);}
+function formatDecimalInput(v){return (Number(v)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:3});}
+function formatDateTime(value){
+  if(!value)return "-";
+  try{if(value.toDate)return value.toDate().toLocaleString("pt-BR");return new Date(value).toLocaleString("pt-BR");}catch{return String(value);}
+}
+function sumSectors(setores){return Object.values(setores||{}).reduce((s,v)=>s+(Number(v)||0),0);}
+function escapeHtml(str){return String(str??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]));}
+function valueText(v){return v===undefined||v===null||v===""?"-":(typeof v==="number"?formatMoney(v):String(v));}
+function sectorOrder(name){
+  const n=normalizeText(name);
+  const priority={corte:0,costura:1,palmilha:2,pre:3};
+  if(n==="montagem")return {group:999,name:n};
+  if(Object.prototype.hasOwnProperty.call(priority,n))return {group:priority[n],name:n};
+  return {group:50,name:n};
+}
+function orderedSectorEntries(setores={}){
+  return Object.entries(setores||{}).filter(([,v])=>Number(v)!==0).sort(([a],[b])=>{
+    const oa=sectorOrder(a),ob=sectorOrder(b);
+    if(oa.group!==ob.group)return oa.group-ob.group;
+    return oa.name.localeCompare(ob.name,"pt-BR",{numeric:true});
+  });
+}
+function sortedSectorsObject(setores={}){
+  const out={};
+  orderedSectorEntries(setores).forEach(([k,v])=>out[k]=round3(v));
+  return out;
+}
+
+function renderSectorInputs(setores={}){
+  const entries=orderedSectorEntries(setores);
+  if(!entries.length){
+    els.sectorList.innerHTML=`<div class="sector-empty">Nenhum setor com valor salvo. Clique em <strong>Adicionar setor</strong> para incluir.</div>`;
+  }else{
+    els.sectorList.innerHTML=`<div class="sector-table-wrap"><table class="sector-table"><thead><tr><th>Setor</th><th>Valor</th><th>Observação desta alteração</th><th>Ação</th></tr></thead><tbody>${entries.map(([name,value])=>sectorRowHtml(name,value)).join("")}</tbody></table></div>`;
+  }
+  bindSectorEvents();
+  updateFormTotals();
+}
+function ensureSectorTable(){
+  if(!els.sectorList.querySelector(".sector-table tbody")){
+    els.sectorList.innerHTML=`<div class="sector-table-wrap"><table class="sector-table"><thead><tr><th>Setor</th><th>Valor</th><th>Observação desta alteração</th><th>Ação</th></tr></thead><tbody></tbody></table></div>`;
+  }
+  return els.sectorList.querySelector(".sector-table tbody");
+}
+function bindSectorEvents(){
+  els.sectorList.querySelectorAll("input").forEach(input=>input.addEventListener("input",updateFormTotals));
+  els.sectorList.querySelectorAll(".sector-value-input").forEach(input=>input.addEventListener("blur",()=>{const n=parseNumber(input.value);input.value=n===null||n===0?"":formatMoneyInput(n);updateFormTotals();}));
+  els.sectorList.querySelectorAll("button[data-remove-sector]").forEach(btn=>btn.addEventListener("click",()=>{
+    btn.closest(".sector-row").remove();
+    if(!els.sectorList.querySelector(".sector-row"))els.sectorList.innerHTML=`<div class="sector-empty">Nenhum setor com valor salvo. Clique em <strong>Adicionar setor</strong> para incluir.</div>`;
+    updateFormTotals();
+  }));
+}
+function sectorRowHtml(name,value,note=""){
+  const shown=value===undefined||value===null||Number(value)===0?"":formatMoneyInput(value);
+  return `<tr class="sector-row">
+    <td><input class="sector-name-input" type="text" value="${escapeHtml(name)}" aria-label="Nome do setor" /></td>
+    <td><input class="sector-value-input" type="text" value="${escapeHtml(shown)}" placeholder="R$ 0,00" aria-label="Valor do setor" /></td>
+    <td><input class="sector-note-input" type="text" value="${escapeHtml(note)}" placeholder="Ex: reajuste Beira Rio" aria-label="Observação do setor" /></td>
+    <td><button class="sector-remove" type="button" title="Remover setor" data-remove-sector>Remover</button></td>
+  </tr>`;
+}
+function getSectorRows(){return Array.from(els.sectorList.querySelectorAll(".sector-row"));}
+function getSectorNotes(){
+  const notes={};
+  getSectorRows().forEach(row=>{
+    const name=row.querySelector(".sector-name-input").value.trim();
+    const note=row.querySelector(".sector-note-input")?.value.trim()||"";
+    if(name&&note)notes[name]=note;
+  });
+  return notes;
+}
+function setComponentInputs(data){
+  const values=window.Roma.normalizeComponents(data);
+  document.querySelectorAll("[data-component]").forEach(input=>{input.checked=values[input.dataset.component]===true;});
+}
+function readComponents(){return Object.fromEntries([...document.querySelectorAll("[data-component]")].map(input=>[input.dataset.component,input.checked]));}
+function componentText(data){const values=window.Roma.normalizeComponents(data);return Object.keys(values).filter(key=>values[key]).map(key=>window.RomaModelos.labels[key]).join(", ")||"Nenhum";}
+function queueModelProjections(batch,id,data){
+  const projection=window.RomaModelos.projections(data,serverTimestamp());
+  batch.set(doc(db,"modelosOperacionais",id),projection.operacional);
+  batch.set(doc(db,"precosAtelier",id),projection.precos);
+}
+function getFormData(){
+  const linha=onlyDigits(els.linhaInput.value),modelo=onlyDigits(els.modeloInput.value),categoria=els.categoriaInput.value.trim(),subcategoria=els.subcategoriaInput.value.trim(),precoUnitario=parseNumber(els.precoInput.value)||0,observacaoModelo=els.observacaoInput.value.trim();
+  const setores={};
+  getSectorRows().forEach(row=>{
+    const name=row.querySelector(".sector-name-input").value.trim();
+    const val=parseNumber(row.querySelector(".sector-value-input").value);
+    if(name&&val!==null&&val!==0)setores[name]=round3(val);
+  });
+  const setoresOrdenados=sortedSectorsObject(setores);
+  const totalSetores=round3(sumSectors(setoresOrdenados));
+  const saldo=round3(precoUnitario-totalSetores);
+  return {linha,modelo,categoria,subcategoria,observacaoModelo,componentes:readComponents(),chave:modelId(linha,modelo),preco:{valor:round3(precoUnitario),setores:setoresOrdenados},totalSetores,saldo,ativo:true};
+}
+function updateFormTotals(){
+  const data=getFormData();
+  els.formPreco.textContent=formatMoney(data.preco.valor);
+  els.formTotalSetores.textContent=formatMoney(data.totalSetores);
+  els.formSaldo.textContent=formatMoney(data.saldo);
+}
+function resetFormFields(){
+  setComponentInputs({});
+  els.linhaInput.disabled=false;els.modeloInput.disabled=false;
+  els.linhaInput.value="";els.modeloInput.value="";els.categoriaInput.value="";els.subcategoriaInput.value="";els.precoInput.value="";els.motivoInput.value="";els.observacaoInput.value="";renderSectorInputs({});
+}
+function openCreateModal(){
+  currentEditingId=null;currentEditingModel=null;resetFormFields();
+  els.modelModalTitle.textContent="Novo modelo";
+  els.historyBlock.classList.add("hidden");
+  els.modelModalBackdrop.classList.add("show");
+  setTimeout(()=>els.linhaInput.focus(),50);
+}
+function openEditModal(model){
+  currentEditingId=model.id;currentEditingModel=model;
+  setComponentInputs(model);
+  els.linhaInput.disabled=true;els.modeloInput.disabled=true;
+  els.modelModalTitle.textContent=model.id;
+  els.linhaInput.value=model.linha||"";els.modeloInput.value=model.modelo||"";els.categoriaInput.value=model.categoria||"";els.subcategoriaInput.value=model.subcategoria||"";els.precoInput.value=formatMoneyInput(model.preco?.valor||0);els.motivoInput.value="";els.observacaoInput.value=model.observacaoModelo||model.observacao||"";
+  renderSectorInputs(model.preco?.setores||{});
+  els.historyBlock.classList.remove("hidden");
+  renderHistory(model);
+  els.modelModalBackdrop.classList.add("show");
+}
+function closeModal(){els.modelModalBackdrop.classList.remove("show");}
+
+async function loadModels(){
+  els.listInfo.textContent="Carregando...";
+  const snap=await getDocs(collection(db,"modelos"));
+  models=snap.docs.map(d=>({id:d.id,...d.data()}));
+  models.sort((a,b)=>(Number(a.linha)-Number(b.linha))||(Number(a.modelo)-Number(b.modelo))||String(a.id).localeCompare(String(b.id)));
+  renderModelsTable();
+}
+function modelSemPreco(model){
+  const valor=Number(model?.preco?.valor||0);
+  return !Number.isFinite(valor)||valor<=0;
+}
+function renderModelsTable(){
+  const term=normalizeText(els.modelFilterInput.value||"");
+  const categoriaTerm=normalizeText(els.categoriaFilterInput.value||"");
+  const subcategoriaTerm=normalizeText(els.subcategoriaFilterInput.value||"");
+  const filtered=models.filter(m=>{
+    const mainMatch=!term||normalizeText(`${m.id||""} ${m.linha||""} ${m.modelo||""}`).includes(term);
+    const categoriaMatch=!categoriaTerm||normalizeText(m.categoria||"").includes(categoriaTerm);
+    const subcategoriaMatch=!subcategoriaTerm||normalizeText(m.subcategoria||"").includes(subcategoriaTerm);
+    return mainMatch&&categoriaMatch&&subcategoriaMatch;
+  });
+  const semPrecoCount=filtered.filter(modelSemPreco).length;
+  els.listInfo.textContent=semPrecoCount?`${filtered.length} de ${models.length} modelo(s) • ${semPrecoCount} sem preço`:`${filtered.length} de ${models.length} modelo(s)`;
+  if(!filtered.length){els.modelsTableBody.innerHTML=`<tr><td colspan="8" class="empty-state">Nenhum modelo encontrado.</td></tr>`;return;}
+  els.modelsTableBody.innerHTML=filtered.map(m=>{
+    const setores=m.preco?.setores||{};
+    const semPreco=modelSemPreco(m);
+    const sectorTags=orderedSectorEntries(setores).length?orderedSectorEntries(setores).map(([k,v])=>`<span class="tag">${escapeHtml(k)}: ${formatMoney(v)}</span>`).join(""):`<span class="tag empty">Sem setores</span>`;
+    const priceContent=semPreco?`<span class="price-missing-badge">SEM PREÇO</span><span class="price-warning-text">Cadastrar valor</span>`:`<strong>${formatMoney(m.preco?.valor||0)}</strong>`;
+    return `<tr class="model-row${semPreco?" no-price":""}" data-open-model="${escapeHtml(m.id)}" title="Clique para editar ${escapeHtml(m.id)}">
+      <td>${escapeHtml(m.linha||"")}</td>
+      <td><strong>${escapeHtml(window.RomaModelos.modelKey(m.linha,m.modelo)||m.chave||m.id||"")}</strong><br><small>${escapeHtml(componentText(m))}</small></td>
+      <td>${escapeHtml(m.categoria||"-")}</td>
+      <td>${escapeHtml(m.subcategoria||"-")}</td>
+      <td class="money">${priceContent}</td>
+      <td class="cell-left">${sectorTags}</td>
+      <td class="money">${formatMoney(m.totalSetores||0)}</td>
+      <td class="money"><strong>${formatMoney(m.saldo||0)}</strong></td>
+    </tr>`;
+  }).join("");
+  els.modelsTableBody.querySelectorAll("tr[data-open-model]").forEach(row=>row.addEventListener("click",()=>{const item=models.find(m=>m.id===row.dataset.openModel);if(item)openEditModal(item);}));
+}
+
+function snapshotForCompare(data){
+  const setores=sortedSectorsObject(data?.preco?.setores||{});
+  return {linha:String(data?.linha||""),modelo:String(data?.modelo||""),categoria:String(data?.categoria||""),subcategoria:String(data?.subcategoria||""),observacaoModelo:String(data?.observacaoModelo||data?.observacao||""),componentes:componentText(data),preco:round3(data?.preco?.valor||0),setores};
+}
+function buildChanges(oldData,newData,sectorNotes={},globalNote=""){
+  if(!oldData){
+    const changes=[{campo:"Modelo criado",anterior:"-",novo:`${newData.linha}.${newData.modelo}`,observacao:globalNote}];
+    if(newData.categoria)changes.push({campo:"Categoria",anterior:"-",novo:newData.categoria,observacao:globalNote});
+    if(newData.subcategoria)changes.push({campo:"Subcategoria",anterior:"-",novo:newData.subcategoria,observacao:globalNote});
+    if(newData.observacaoModelo)changes.push({campo:"Observações do modelo",anterior:"-",novo:newData.observacaoModelo,observacao:""});
+    changes.push({campo:"Componentes",anterior:"-",novo:componentText(newData),observacao:globalNote});
+    changes.push({campo:"Preço",anterior:"-",novo:newData.preco.valor,observacao:globalNote});
+    orderedSectorEntries(newData.preco.setores||{}).forEach(([k,v])=>changes.push({campo:k,anterior:"-",novo:v,observacao:sectorNotes[k]||globalNote}));
+    return changes;
+  }
+  const oldSnap=snapshotForCompare(oldData),newSnap=snapshotForCompare(newData),changes=[];
+  if(oldSnap.linha!==newSnap.linha)changes.push({campo:"Linha",anterior:oldSnap.linha,novo:newSnap.linha,observacao:globalNote});
+  if(oldSnap.modelo!==newSnap.modelo)changes.push({campo:"Modelo",anterior:oldSnap.modelo,novo:newSnap.modelo,observacao:globalNote});
+  if(oldSnap.categoria!==newSnap.categoria)changes.push({campo:"Categoria",anterior:oldSnap.categoria||"-",novo:newSnap.categoria||"-",observacao:globalNote});
+  if(oldSnap.subcategoria!==newSnap.subcategoria)changes.push({campo:"Subcategoria",anterior:oldSnap.subcategoria||"-",novo:newSnap.subcategoria||"-",observacao:globalNote});
+  if(oldSnap.observacaoModelo!==newSnap.observacaoModelo)changes.push({campo:"Observações do modelo",anterior:oldSnap.observacaoModelo||"-",novo:newSnap.observacaoModelo||"-",observacao:""});
+  if(oldSnap.componentes!==newSnap.componentes)changes.push({campo:"Componentes",anterior:oldSnap.componentes,novo:newSnap.componentes,observacao:globalNote});
+  if(oldSnap.preco!==newSnap.preco)changes.push({campo:"Preço",anterior:oldSnap.preco,novo:newSnap.preco,observacao:globalNote});
+  const sectorNames=Array.from(new Set([...Object.keys(oldSnap.setores),...Object.keys(newSnap.setores)])).sort((a,b)=>{
+    const oa=sectorOrder(a),ob=sectorOrder(b);return oa.group!==ob.group?oa.group-ob.group:oa.name.localeCompare(ob.name,"pt-BR",{numeric:true});
+  });
+  sectorNames.forEach(name=>{
+    const oldVal=oldSnap.setores[name]??0,newVal=newSnap.setores[name]??0;
+    if(oldVal!==newVal)changes.push({campo:name,anterior:oldVal||"-",novo:newVal||"-",observacao:sectorNotes[name]||globalNote});
+  });
+  return changes;
+}
+async function saveModelFromForm(){
+  window.Roma.requireWrite("modelos");
+  const data=getFormData();
+  if(!data.linha||!data.modelo){showMessage("warning","Informe linha e modelo antes de salvar.");return;}
+  if(data.preco.valor<0||Object.values(data.preco.setores).some(value=>value<0)){showMessage("warning","Os preços não podem ser negativos.");return;}
+  const ref=doc(db,"modelos",currentEditingId||data.chave);
+  const oldSnap=await getDoc(ref);
+  const oldData=oldSnap.exists()?oldSnap.data():null;
+  const motivo=els.motivoInput.value.trim()||(oldData?"Edição manual":"Criação manual");
+  const sectorNotes=getSectorNotes();
+  const changes=buildChanges(oldData,data,sectorNotes,"");
+  if(oldData&&changes.length===0){showMessage("warning","Nenhuma alteração encontrada para salvar.");return;}
+  const historico=Array.isArray(oldData?.historico)?oldData.historico.filter(h=>!isImportHistory(h)):[];
+  const docData={...oldData,...data,origem:"Manual",criadoEm:oldData?.criadoEm||serverTimestamp(),atualizadoEm:serverTimestamp(),atualizadoPor:currentUser.email,historico:[...historico,{data:new Date().toISOString(),motivo,observacao:"",usuario:currentUser.email,alteracoes:changes,tipo:"manual"}]};
+  const batch=writeBatch(db);
+  batch.set(ref,docData);
+  queueModelProjections(batch,ref.id,docData);
+  await batch.commit();
+  showMessage("success",`Modelo ${data.chave} salvo com sucesso.`);
+  await loadModels();
+  closeModal();
+}
+
+function isImportHistory(h){return /import/i.test(String(h?.motivo||h?.origem||h?.tipo||""));}
+function changesFromLegacyHistory(h){
+  if(Array.isArray(h.alteracoes))return h.alteracoes.map(c=>({...c,campo:String(c.campo||"").replace(/^Setor\s+/i,"")}));
+  const oldSnap=snapshotForCompare(h.valorAnterior||{}),newSnap=snapshotForCompare(h.valorNovo||{}),changes=[];
+  if(oldSnap.linha!==newSnap.linha)changes.push({campo:"Linha",anterior:oldSnap.linha||"-",novo:newSnap.linha||"-"});
+  if(oldSnap.modelo!==newSnap.modelo)changes.push({campo:"Modelo",anterior:oldSnap.modelo||"-",novo:newSnap.modelo||"-"});
+  if(oldSnap.categoria!==newSnap.categoria)changes.push({campo:"Categoria",anterior:oldSnap.categoria||"-",novo:newSnap.categoria||"-"});
+  if(oldSnap.subcategoria!==newSnap.subcategoria)changes.push({campo:"Subcategoria",anterior:oldSnap.subcategoria||"-",novo:newSnap.subcategoria||"-"});
+  if(oldSnap.observacaoModelo!==newSnap.observacaoModelo)changes.push({campo:"Observações do modelo",anterior:oldSnap.observacaoModelo||"-",novo:newSnap.observacaoModelo||"-"});
+  if(oldSnap.preco!==newSnap.preco)changes.push({campo:"Preço",anterior:oldSnap.preco||"-",novo:newSnap.preco||"-"});
+  const sectorNames=Array.from(new Set([...Object.keys(oldSnap.setores),...Object.keys(newSnap.setores)])).sort((a,b)=>{
+    const oa=sectorOrder(a),ob=sectorOrder(b);return oa.group!==ob.group?oa.group-ob.group:oa.name.localeCompare(ob.name,"pt-BR",{numeric:true});
+  });
+  sectorNames.forEach(name=>{
+    const oldVal=oldSnap.setores[name]??0,newVal=newSnap.setores[name]??0;
+    if(oldVal!==newVal)changes.push({campo:name,anterior:oldVal||"-",novo:newVal||"-"});
+  });
+  return changes;
+}
+function renderHistory(model){
+  els.historyTitle.textContent=`Histórico ${model.id}`;
+  const hist=Array.isArray(model.historico)?[...model.historico].filter(h=>!isImportHistory(h)).reverse():[];
+  if(!hist.length){els.historyList.innerHTML=`<div class="empty-state">Nenhuma alteração manual registrada.</div>`;return;}
+  els.historyList.innerHTML=hist.map(h=>{
+    const changes=changesFromLegacyHistory(h).filter(c=>c.campo);
+    const rows=changes.length?changes.map(c=>`<tr><td class="change-field">${escapeHtml(c.campo)}</td><td>${escapeHtml(valueText(c.anterior))}</td><td>${escapeHtml(valueText(c.novo))}</td><td>${escapeHtml(c.observacao||"")}</td></tr>`).join(""):`<tr><td colspan="4">Sem detalhes da alteração.</td></tr>`;
+    return `<div class="history-item">
+      <div class="history-meta"><strong>${formatDateTime(h.data)}</strong><span>${escapeHtml(h.usuario||"")}</span></div>
+      <table class="changes-table"><thead><tr><th>Alterado</th><th>Antes</th><th>Depois</th><th>Observação</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
+  }).join("");
+}
+
+
+function formatPercentValue(value){
+  return (Number(value)||0).toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:3})+"%";
+}
+function openAdjustModal(){
+  if(!models.length){showMessage("warning","Carregue a lista de modelos antes de aplicar reajuste.");return;}
+  els.adjustPercentInput.value="";
+  els.adjustMotivoInput.value="";
+  els.adjustConfirmInput.value="";
+  els.adjustObsInput.value="";
+  updateAdjustPreview();
+  els.adjustModalBackdrop.classList.add("show");
+  setTimeout(()=>els.adjustPercentInput.focus(),50);
+}
+function closeAdjustModal(){els.adjustModalBackdrop.classList.remove("show");}
+function updateAdjustPreview(){
+  const pct=parseNumber(els.adjustPercentInput.value);
+  const loadedCount=models.length;
+  if(pct===null||pct===0){
+    els.adjustPreview.className="message info show";
+    els.adjustPreview.textContent=`Informe um percentual diferente de zero. Existem ${loadedCount} modelo(s) carregado(s).`;
+    return;
+  }
+  const tipo=pct>0?"aumento":"redução";
+  els.adjustPreview.className="message warning show";
+  els.adjustPreview.textContent=`Será aplicado ${tipo} de ${formatPercentValue(Math.abs(pct))} em todos os modelos da coleção. Preço e setores serão reajustados e o histórico manual será registrado em cada modelo alterado.`;
+}
+function adjustedValue(value,percent){
+  const base=parseNumber(value);
+  return round3((base===null?0:base)*(1+(Number(percent)||0)/100));
+}
+function adjustedModelDataFrom(oldModel,percent){
+  const oldSectors=oldModel?.preco?.setores||{};
+  const newSectors={};
+  Object.entries(oldSectors).forEach(([name,value])=>{
+    const n=adjustedValue(value,percent);
+    if(n!==0)newSectors[name]=n;
+  });
+  const preco=adjustedValue(oldModel?.preco?.valor||0,percent);
+  const setoresOrdenados=sortedSectorsObject(newSectors);
+  const totalSetores=round3(sumSectors(setoresOrdenados));
+  const saldo=round3(preco-totalSetores);
+  const linha=String(oldModel?.linha||String(oldModel?.id||"").split(".")[0]||"");
+  const modelo=String(oldModel?.modelo||String(oldModel?.id||"").split(".")[1]||"");
+  return {
+    linha,modelo,
+    componentes:window.Roma.normalizeComponents(oldModel),
+    categoria:String(oldModel?.categoria||""),
+    subcategoria:String(oldModel?.subcategoria||""),
+    observacaoModelo:String(oldModel?.observacaoModelo||oldModel?.observacao||""),
+    chave:oldModel?.chave||oldModel?.id||modelId(linha,modelo),
+    preco:{valor:preco,setores:setoresOrdenados},
+    totalSetores,saldo,
+    ativo:oldModel?.ativo!==false
+  };
+}
+const ADJUSTMENT_SESSION_KEY="calcadosroma-65ac6:modelosPendingBulkAdjustment";
+function setAdjustStatus(type,text){
+  els.adjustPreview.className=`message ${type} show`;
+  els.adjustPreview.textContent=text;
+}
+function makeAdjustmentRunId(){
+  if(globalThis.crypto&&typeof globalThis.crypto.randomUUID==="function")return globalThis.crypto.randomUUID();
+  return `ajuste-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+}
+function getAdjustmentRunState(pct,motivo,observacao){
+  const signature=JSON.stringify({pct:round3(pct),motivo:String(motivo||""),observacao:String(observacao||"")});
+  try{
+    const saved=JSON.parse(sessionStorage.getItem(ADJUSTMENT_SESSION_KEY)||"null");
+    if(saved?.id&&saved.signature===signature&&Array.isArray(saved.committedIds))return saved;
+  }catch{}
+  const state={id:makeAdjustmentRunId(),signature,criadoEm:new Date().toISOString(),committedIds:[]};
+  try{sessionStorage.setItem(ADJUSTMENT_SESSION_KEY,JSON.stringify(state));}catch{}
+  return state;
+}
+function saveAdjustmentRunState(state){
+  try{sessionStorage.setItem(ADJUSTMENT_SESSION_KEY,JSON.stringify(state));}catch{}
+}
+function clearAdjustmentRun(){
+  try{sessionStorage.removeItem(ADJUSTMENT_SESSION_KEY);}catch{}
+}
+async function applyBulkAdjustment(){
+  window.Roma.requireWrite("modelos");
+  const pct=parseNumber(els.adjustPercentInput.value);
+  if(pct===null||pct===0){setAdjustStatus("warning","Informe um percentual diferente de zero para reajustar.");return;}
+  if(String(els.adjustConfirmInput.value||"").trim().toUpperCase()!=="REAJUSTAR"){
+    setAdjustStatus("warning","Digite REAJUSTAR no campo de confirmação para aplicar o reajuste geral.");
+    return;
+  }
+  const motivo=els.adjustMotivoInput.value.trim()||`Reajuste geral ${pct>0?"+":""}${formatPercentValue(pct)}`;
+  const observacao=els.adjustObsInput.value.trim();
+  const mensagem=`Confirmar reajuste geral de ${pct>0?"+":""}${formatPercentValue(pct)} em todos os modelos? Essa ação vai alterar os preços e setores dos modelos.`;
+  if(!confirm(mensagem))return;
+
+  els.applyAdjustmentButton.disabled=true;
+  let committedUpdated=0,totalDocs=0,runState=null;
+  try{
+    runState=getAdjustmentRunState(pct,motivo,observacao);
+    const committedSet=new Set(runState.committedIds||[]);
+    setAdjustStatus("info","Preparando reajuste e conferindo os modelos...");
+    const snap=await getDocs(collection(db,"modelos"));
+    const docs=snap.docs;
+    totalDocs=docs.length;
+    if(!totalDocs){clearAdjustmentRun();setAdjustStatus("warning","Nenhum modelo foi encontrado para reajustar.");return;}
+
+    const now=new Date().toISOString();
+    const BATCH_SIZE=99;
+    let batch=writeBatch(db),batchOps=0,pendingInBatch=0,pendingIds=[],processed=0,skipped=0,unchanged=0;
+
+    const commitCurrentBatch=async()=>{
+      if(batchOps===0)return;
+      setAdjustStatus("info",`Reajustando... ${processed} de ${totalDocs} modelo(s) analisados. Confirmando ${pendingInBatch} alteração(ões)...`);
+      await batch.commit();
+      committedUpdated+=pendingInBatch;
+      pendingIds.forEach(id=>committedSet.add(id));
+      runState.committedIds=Array.from(committedSet);
+      saveAdjustmentRunState(runState);
+      batch=writeBatch(db);
+      batchOps=0;
+      pendingInBatch=0;
+      pendingIds=[];
+    };
+
+    for(const docSnap of docs){
+      processed++;
+      const oldData=docSnap.data();
+
+      // Se um lote anterior desta mesma tentativa já foi confirmado,
+      // evita aplicar a porcentagem novamente ao repetir a operação.
+      if(committedSet.has(docSnap.id)){skipped++;continue;}
+
+      const oldModel={id:docSnap.id,...oldData};
+      const newData=adjustedModelDataFrom(oldModel,pct);
+      const changes=buildChanges(oldData,newData,{},observacao).filter(c=>c.campo);
+      if(!changes.length){unchanged++;continue;}
+
+      const historyEntry={data:now,motivo,observacao,usuario:currentUser.email,alteracoes:changes,tipo:"manual-reajuste"};
+
+      // Atualiza somente os campos ligados ao reajuste. Isso preserva
+      // quaisquer outros campos existentes no documento do modelo.
+      batch.update(docSnap.ref,{
+        "preco.valor":newData.preco.valor,
+        "preco.setores":newData.preco.setores,
+        totalSetores:newData.totalSetores,
+        saldo:newData.saldo,
+        origem:"Reajuste geral",
+        atualizadoEm:serverTimestamp(),
+        atualizadoPor:currentUser.email,
+        historico:arrayUnion(historyEntry)
+      });
+      queueModelProjections(batch,docSnap.id,{...oldData,...newData});
+      batchOps+=3;
+      pendingInBatch++;
+      pendingIds.push(docSnap.id);
+
+      if(batchOps>=BATCH_SIZE)await commitCurrentBatch();
+      else if(processed%25===0)setAdjustStatus("info",`Reajustando... ${processed} de ${totalDocs} modelo(s) analisados.`);
+    }
+
+    await commitCurrentBatch();
+    clearAdjustmentRun();
+    closeAdjustModal();
+    await loadModels();
+    const extras=[];
+    if(skipped)extras.push(`${skipped} já pertenciam a esta mesma tentativa e foram ignorados`);
+    if(unchanged)extras.push(`${unchanged} não precisaram de alteração`);
+    showMessage("success",`Reajuste aplicado com sucesso em ${committedUpdated} modelo(s)${extras.length?`. ${extras.join("; ")}.`:"."}`);
+  }catch(err){
+    console.error(err);
+    const partial=(runState?.committedIds?.length||committedUpdated)>0?` ${runState?.committedIds?.length||committedUpdated} modelo(s) já foram confirmados antes da falha.`:"";
+    setAdjustStatus("error",`O reajuste encontrou um erro.${partial} Mantenha exatamente o mesmo percentual, motivo e observação e clique novamente em Aplicar reajuste para continuar sem repetir os lotes já confirmados. Detalhe: ${err.message}`);
+    showMessage("error","Erro ao aplicar reajuste geral: "+err.message);
+  }finally{
+    els.applyAdjustmentButton.disabled=false;
+  }
+}
+
+els.createModelButton.addEventListener("click",openCreateModal);
+els.adjustPricesButton.addEventListener("click",openAdjustModal);
+els.closeAdjustModalButton.addEventListener("click",closeAdjustModal);
+els.adjustModalBackdrop.addEventListener("click",e=>{if(e.target===els.adjustModalBackdrop)closeAdjustModal();});
+els.adjustPercentInput.addEventListener("input",updateAdjustPreview);
+els.applyAdjustmentButton.addEventListener("click",applyBulkAdjustment);
+els.refreshButton.addEventListener("click",async()=>{try{await loadModels();showMessage("success","Lista atualizada.");}catch(err){console.error(err);showMessage("error","Não consegui carregar a coleção modelos. Detalhe: "+err.message);}});
+els.clearFilterButton.addEventListener("click",()=>{els.modelFilterInput.value="";els.categoriaFilterInput.value="";els.subcategoriaFilterInput.value="";renderModelsTable();});
+els.modelFilterInput.addEventListener("input",renderModelsTable);
+els.categoriaFilterInput.addEventListener("input",renderModelsTable);
+els.subcategoriaFilterInput.addEventListener("input",renderModelsTable);
+els.addSectorButton.addEventListener("click",()=>{
+  const name=prompt("Nome do novo setor:");
+  if(!name||!name.trim())return;
+  const tbody=ensureSectorTable();
+  tbody.insertAdjacentHTML("beforeend",sectorRowHtml(name.trim(),"",""));
+  bindSectorEvents();
+  updateFormTotals();
+});
+els.precoInput.addEventListener("input",updateFormTotals);
+els.precoInput.addEventListener("blur",()=>{const n=parseNumber(els.precoInput.value);els.precoInput.value=n===null||n===0?"":formatMoneyInput(n);updateFormTotals();});
+els.saveModelButton.addEventListener("click",async()=>{els.saveModelButton.disabled=true;try{await saveModelFromForm();}catch(err){console.error(err);showMessage("error","Erro ao salvar modelo: "+err.message);}finally{els.saveModelButton.disabled=false;}});
+els.closeModelModalButton.addEventListener("click",closeModal);
+els.modelModalBackdrop.addEventListener("click",e=>{if(e.target===els.modelModalBackdrop)closeModal();});
+</script>
+</body>
+</html>

@@ -1,0 +1,4292 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <script src="roma-producao.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <link rel="stylesheet" href="styles.css">
+<title>Cronograma de Talões</title>
+  <style>
+    :root { --bg:#f4f4f4; --ink:#333; --ink-2:#555; --card:#fff; --muted:#777;
+      --pri:#007bff; --pri-700:#0056b3; --danger:#dc3545; --danger-700:#c82333; --ok:#345fec; --bd:#ddd; --chip:#f0f0f0; }
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;min-height:100vh;display:flex;flex-direction:column}
+    .main-content{flex:1;padding:16px;display:flex;flex-direction:column;align-items:center}
+    /* Aumento o gap e centralizo para acomodar os novos botões */
+    .filters-container{background:var(--card);padding:10px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08);width:100%;max-width:95%;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:flex-end}
+    .form-group{display:flex;flex-direction:column;min-width:120px}
+    .filters-container label{margin-bottom:3px;color:var(--ink-2);font-weight:700;font-size:.8em}
+    .filters-container input,.filters-container select{padding:8px;border:1px solid #ccc;border-radius:8px;font-size:.9em}
+    .filter-linha{min-width:90px;max-width:105px;flex:0 0 100px}
+    .filter-modelo{min-width:105px;max-width:125px;flex:0 0 115px}
+    .filter-remessa{min-width:118px;max-width:140px;flex:0 0 130px}
+    .filter-linha input,.filter-modelo input,.filter-remessa input{width:100%}
+    .report-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+    .report-header h2{margin:0}
+    .report-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .check-action{display:inline-flex;align-items:center;gap:6px;font-weight:700;white-space:nowrap}
+    .check-action input{width:16px;height:16px}
+    .btn{padding:10px 14px;border:none;border-radius:8px;cursor:pointer;font-size:.9em;transition:background .2s,transform .02s;display:inline-flex;gap:.5rem;align-items:center}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:var(--pri);color:#fff}
+    .btn-primary:hover{background:var(--pri-700)}
+    .btn-secondary{background:#e9ecef;color:#111}
+    .btn-secondary:hover{background:#dde2e6}
+    /* Estilo para os botões de Resumo */
+    .btn-resumo{background:#6c757d;color:#fff; min-width: 140px;}
+    .btn-resumo:hover{background:#5a6268}
+    /* NOVO: Estilo para o container dos botões de resumo dentro do relatório */
+    #resumoButtonsContainer {
+        display: flex; 
+        gap: 12px; 
+        margin: 12px 0; 
+        padding: 8px 0;
+        border-top: 1px dashed var(--bd);
+        border-bottom: 1px dashed var(--bd);
+        justify-content: center;
+        width: 100%;
+    }
+
+
+    
+    
+    .container{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.08);width:100%;max-width:1200px}
+    .summary-info{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;background:var(--chip);padding:8px;border-radius:8px;margin-bottom:12px;font-size:.9em}
+    .summary-item{
+      background:#fff;border:1px solid var(--bd);border-radius:10px;padding:8px 10px;text-align:center;
+      flex-grow: 1; 
+      min-width: 100px;
+    }
+    .summary-item strong{display:block;font-size:1.15em}
+    /* Estilos para os novos filtros (links) */
+    .filter-link {
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--ink);
+        transition: background .1s;
+    }
+    .filter-link:hover {
+        background: #e0e0e0;
+    }
+    .filter-link.active-filter {
+        background: #add8e6; /* Azul claro para filtro ativo */
+        border: 1px solid var(--pri);
+    }
+    
+    /* Regra para ocultar colunas */
+    .hidden-column {
+        display: none !important;
+    }
+
+    /* Estilo para o Menu de Controle de Colunas e Linhas */
+    #columnControlMenu, #lineFilterContainer {
+        background: var(--card);
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,.08);
+        width: 100%;
+        max-width: 1200px;
+        margin-bottom: 14px;
+        text-align: left;
+        font-size: 0.9em;
+        border: 1px solid var(--bd);
+    }
+    #columnControlMenu h4, #lineFilterContainer h4 {
+        margin: 0 0 8px 0;
+        color: var(--ink-2);
+    }
+    .column-checkboxes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 15px;
+    }
+    .column-checkboxes label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-weight: normal;
+    }
+    .column-checkboxes input[type="checkbox"] {
+        margin-right: 5px;
+    }
+
+    .table-container{width:100%;overflow:auto}
+    table{width:100%;border-collapse:collapse;font-size:.78em}
+    th,td{padding:5px 6px;text-align:center;border:1px solid var(--bd);white-space:nowrap}
+    thead th{background:#f2f2f2;font-weight:700}
+    .separator-border{border-right:3px solid #666}
+
+    .exportacao-row:nth-child(odd) { background-color: #add8e6; } /* Azul claro */
+    .exportacao-row:nth-child(even) { background-color: #6dd6ff; } /* Azul mais escuro */
+
+    .cliente-especial-row:nth-child(odd) { background-color: #ffdfe3; } /* Rosa claro */
+    .cliente-especial-row:nth-child(even) { background-color: #d6a4bd; } /* Rosa mais escuro */
+
+    .mercado-interno-row:nth-child(odd) { background-color: #ffffff; } /* Branco */
+    .mercado-interno-row:nth-child(even) { background-color: #f5f5f5; } /* Cinza claro */
+
+    .estoque-row:nth-child(odd) { background-color: #fdfd96; } /* Amarelo claro */
+    .estoque-row:nth-child(even) { background-color: #b8b874; } /* Amarelo mais escuro */
+
+    .amostra-row:nth-child(odd) { background-color: #90ee90; } /* Verde claro */
+    .amostra-row:nth-child(even) { background-color: #6b9c6b; } /* Verde mais escuro */
+
+    .remessa-link{color:var(--ink);text-decoration:underline;cursor:pointer}
+    .remessa-link:hover{color:#000000}
+    .loader{text-align:center;padding:16px;color:#555}
+    .status-check{color:var(--ok);font-weight:500}
+    /* Modal */
+    .modal{display:none;position:fixed;z-index:10;inset:0;background:rgba(0,0,0,.4);padding:12px}
+    .modal-content{background:#fff;margin:auto;padding:12px;border:1px solid #888;width:98%;max-width:1400px;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.2);animation:animatetop .25s;position:relative}
+    @keyframes animatetop{from{transform:translateY(-10px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .close-btn{position:absolute;right:10px;top:6px;color:#888;font-size:26px;font-weight:700;cursor:pointer}
+    .close-btn:hover{color:#000}
+    .modal-head{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    /* CLASSE APLICADA À ESTRUTURA DA TABELA DE DETALHES */
+    #detailsTableContainer {
+        overflow:auto; 
+        max-height:80vh;
+        /* Garante que o container da tabela de detalhes tenha uma altura máxima e scroll */
+    }
+    .modal-body-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.8em;table-layout:auto}
+    .modal-body-table th,.modal-body-table td{border:1px solid var(--bd);padding:6px;text-align:center;white-space:nowrap}
+    .modal-body-table th{background:#f2f2f2}
+    
+    /* Estilos Específicos para Resumo (Cards) - Usado para Giro, Corte e Costura */
+    .resumo-cards-wrapper { /* Novo wrapper para os cards de resumo */
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+        max-height: 80vh; /* Limite de altura para o scroll */
+        overflow-y: auto; /* Adiciona scroll se necessário */
+        padding-right: 15px; /* Espaço para a barra de rolagem */
+    }
+    .atelie-card {
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background-color: var(--chip);
+        display: flex;
+        flex-direction: column;
+    }
+    .atelie-card h4 {
+        margin-top: 0;
+        margin-bottom: 8px;
+        font-size: 1.1em;
+        color: var(--pri-700);
+        border-bottom: 2px solid var(--pri);
+        padding-bottom: 4px;
+    }
+    .model-list {
+        flex-grow: 1; /* Permite que a lista cresça e ocupe o espaço */
+    }
+    .model-list p {
+        margin: 4px 0;
+        font-size: 0.9em;
+        font-weight: 500;
+        display: flex;
+        justify-content: space-between;
+    }
+    .model-list span:last-child {
+        font-weight: 700;
+        color: var(--ink-2);
+    }
+    /* NOVO: Estilo para o total de pares dentro de cada card */
+    .card-total {
+        margin-top: 10px !important; 
+        padding-top: 5px;
+        border-top: 1px dashed var(--muted);
+        font-size: 1.0em !important;
+        font-weight: 700 !important;
+        color: var(--ink); /* Cor padrão */
+    }
+    .card-total span:last-child {
+        color: var(--pri) !important; /* Destaque azul para o total do card */
+    }
+    
+    /* Estilos específicos para a tabela dentro do modal de remessa */
+    #remessaFilterTable th, #remessaFilterTable td {
+        padding: 6px;
+        border: 1px solid var(--bd);
+        white-space: normal;
+    }
+    #remessaFilterTable th {
+        background-color: #f2f2f2;
+    }
+    #remessaFilterTable tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .date-range-field { min-width: 170px; }
+    .date-range-button {
+        width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 8px;
+        background: #fff; cursor: pointer; font-size: .9em; text-align: left;
+    }
+    .date-range-button:hover { background:#f7f7f7; }
+    .date-picker-content { max-width: 520px; padding: 14px 16px; }
+    .date-picker-header { display:flex; align-items:center; justify-content:space-between; margin: 6px 0 8px; }
+    .date-picker-header button { border:none; background:#fff; font-size:30px; cursor:pointer; color:#444; padding: 2px 10px; }
+    .date-picker-month-title { font-size: 1.05em; font-weight: 700; color:#444; }
+    .date-picker-weekdays, .date-picker-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap: 0; }
+    .date-picker-weekdays div { text-align:center; font-weight:700; color:#555; padding:5px 0; font-size:.85em; }
+    .date-picker-day {
+        min-height: 34px; border:0; background:#fff; cursor:pointer; font-size:.92em; color:#555;
+        display:flex; align-items:center; justify-content:center; position:relative;
+    }
+    .date-picker-day:hover { background:#eef7e9; }
+    .date-picker-day.out-month { color:#aaa; background:#fff; }
+    .date-picker-day.in-range { background:#e6f3df; }
+    .date-picker-day.range-start, .date-picker-day.range-end { background:#35a80d; color:#fff; border-radius:50%; font-weight:700; }
+    .date-picker-actions { display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:12px; }
+    .date-picker-hint { color:var(--muted); font-size:.84em; line-height:1.25; }
+    .quick-filters-list { display:flex; flex-direction:column; gap:12px; margin-top:16px; }
+    .quick-filter-option {
+        width:100%; border:none; background:#e9ecef; padding:12px 16px; border-radius:8px;
+        text-align:left; font-size:1em; cursor:pointer;
+    }
+    .quick-filter-option:hover { background:#dde2e6; }
+    .whats-message-box{width:100%;min-height:340px;resize:vertical;border:1px solid #ccc;border-radius:8px;padding:10px;font-family:Arial,Helvetica,sans-serif;font-size:.95em;line-height:1.35}
+    .whats-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+
+
+    
+    @media (max-width:768px){.filters-container{justify-content:stretch}.form-group{flex:1}.modal-content{width:98%;max-width:98%}.modal-body-table{font-size:.74em}}
+    .modal-body-table tr:nth-child(even) {background-color: #f2f2f2;}
+
+
+    /* === AJUSTES MOBILE - Cronograma === */
+    @media (max-width: 768px){
+      html, body { width: 100%; overflow-x: hidden; }
+      body { font-size: 14px; }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      .main-content { padding: 8px; align-items: stretch; }
+      .filters-container {
+        max-width: 100%;
+        width: 100%;
+        padding: 9px;
+        gap: 8px;
+        justify-content: flex-start;
+        align-items: stretch;
+      }
+      .form-group,
+      .filter-linha,
+      .filter-modelo,
+      .filter-remessa,
+      .date-range-field {
+        min-width: 0 !important;
+        max-width: none !important;
+        flex: 1 1 calc(50% - 8px) !important;
+      }
+      .filters-container label { font-size: .72em; }
+      .filters-container input,
+      .filters-container select,
+      .date-range-button {
+        width: 100%;
+        padding: 7px;
+        font-size: .78em;
+      }
+      .filters-container .btn {
+        flex: 1 1 calc(50% - 8px);
+        justify-content: center;
+        padding: 8px 7px;
+        font-size: .80em;
+        white-space: normal;
+        text-align: center;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px;
+        border-radius: 9px;
+      }
+      .report-header { gap: 8px; align-items: flex-start; }
+      .report-header h2 { font-size: 1.1em; width: 100%; }
+      .report-actions { width: 100%; gap: 6px; }
+      .check-action { width: 100%; font-size: .78em; }
+      .check-action input { width: 14px; height: 14px; }
+      .report-actions .btn {
+        flex: 1 1 calc(50% - 6px);
+        justify-content: center;
+        padding: 8px 6px;
+        font-size: .76em;
+      }
+
+      #lineFilterContainer {
+        max-width: 100%;
+        padding: 8px;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      #lineFilterContainer h4 { width: 100%; font-size: .82em; margin-bottom: 2px; }
+      #lineCheckboxes { gap: 6px 10px; font-size: .76em; }
+      #selectRemessasButton {
+        width: 100%;
+        justify-content: center;
+        padding: 8px;
+        font-size: .75em;
+      }
+
+      .summary-info {
+        gap: 6px;
+        padding: 6px;
+        margin-bottom: 8px;
+        font-size: .76em;
+      }
+      .summary-item {
+        min-width: calc(50% - 6px);
+        padding: 7px 5px;
+        border-radius: 8px;
+      }
+      .summary-item strong { font-size: 1.05em; }
+
+      #resumoButtonsContainer {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin: 8px 0;
+        padding: 8px 0;
+        overflow: visible;
+      }
+      #resumoButtonsContainer .btn-resumo,
+      .btn-resumo {
+        min-width: 0 !important;
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
+        line-height: 1.15;
+        padding: 9px 6px;
+        font-size: .76em;
+        border-radius: 7px;
+      }
+
+      #columnControlMenu {
+        max-width: 100%;
+        padding: 8px;
+        font-size: .76em;
+        margin-bottom: 8px;
+      }
+      #columnControlMenu h4 { font-size: .86em; }
+      .column-checkboxes { gap: 6px 10px; }
+      .column-checkboxes label { align-items: center; }
+
+      .table-container {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      table { font-size: .68em; }
+      th, td { padding: 4px 5px; }
+
+      .modal { padding: 6px; }
+      .modal-content { width: 100%; max-width: 100%; padding: 10px; }
+      .date-picker-content { max-width: 96vw; }
+      .date-picker-header button { font-size: 24px; padding: 0 8px; }
+      .date-picker-weekdays div { font-size: .75em; padding: 4px 0; }
+      .date-picker-day { min-height: 30px; font-size: .82em; }
+      .date-picker-actions { gap: 8px; }
+      .date-picker-hint { font-size: .75em; }
+      .resumo-cards-wrapper {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        max-height: 72vh;
+        padding-right: 4px;
+      }
+      .atelie-card { padding: 10px; }
+      .atelie-card h4 { font-size: 1em; }
+      .model-list p { font-size: .82em; }
+      .whats-message-box { min-height: 300px; font-size: .82em; }
+      .whats-actions .btn { flex: 1 1 100%; justify-content: center; }
+    }
+
+    @media (max-width: 380px){
+      .main-content { padding: 6px; }
+      .filters-container { padding: 8px; gap: 7px; }
+      .filters-container label { font-size: .68em; }
+      .filters-container input,
+      .filters-container select,
+      .date-range-button { font-size: .74em; padding: 7px 6px; }
+      .filters-container .btn { font-size: .76em; padding: 8px 5px; }
+      .container { padding: 9px; }
+      .report-actions .btn { font-size: .72em; }
+      #resumoButtonsContainer { gap: 6px; }
+      #resumoButtonsContainer .btn-resumo,
+      .btn-resumo { font-size: .70em; padding: 8px 4px; }
+      .summary-info { font-size: .72em; }
+      .summary-item { padding: 6px 4px; }
+      #lineCheckboxes { font-size: .72em; }
+      #columnControlMenu { font-size: .72em; }
+      table { font-size: .64em; }
+      th, td { padding: 3px 4px; }
+    }
+
+
+    /* Correção mobile: evita que o checkbox de linhas fique por cima do número */
+    #lineCheckboxes label {
+      gap: 7px;
+      min-width: 58px;
+      padding: 4px 6px;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    #lineCheckboxes input[type="checkbox"] {
+      width: 18px !important;
+      min-width: 18px !important;
+      height: 18px !important;
+      margin: 0 !important;
+      flex: 0 0 18px !important;
+      display: inline-block !important;
+    }
+    @media (max-width: 768px){
+      #lineCheckboxes {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(70px, 1fr));
+        gap: 8px;
+        width: 100%;
+      }
+      #lineCheckboxes label {
+        min-width: 0;
+        padding: 6px 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #fff;
+        font-size: .82em;
+      }
+      #lineCheckboxes input[type="checkbox"] {
+        width: 18px !important;
+        min-width: 18px !important;
+        height: 18px !important;
+      }
+    }
+    @media (max-width: 380px){
+      #lineCheckboxes {
+        grid-template-columns: repeat(2, minmax(80px, 1fr));
+      }
+    }
+
+
+    /* ==========================================================
+       LAYOUT NOVO - Painel de Cronograma
+       Mantém os IDs e funções originais. Alteração visual apenas.
+       ========================================================== */
+    :root{
+      --bg:#edf3f0;
+      --ink:#20322d;
+      --ink-2:#5d6d67;
+      --card:#ffffff;
+      --muted:#7b8782;
+      --pri:#0f7f4f;
+      --pri-700:#075f3a;
+      --pri-soft:#e5f4ec;
+      --danger:#e5484d;
+      --danger-700:#c9363c;
+      --ok:#12805c;
+      --bd:#dce5e0;
+      --chip:#f6faf8;
+      --shadow:0 12px 32px rgba(24,54,43,.10);
+      --shadow-soft:0 6px 18px rgba(24,54,43,.08);
+    }
+    body{
+      background:
+        radial-gradient(circle at top left, rgba(15,127,79,.12), transparent 34%),
+        linear-gradient(180deg,#f6faf8 0%,#edf3f0 100%);
+      color:var(--ink);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    .main-content{
+      max-width:1480px;
+      width:100%;
+      margin:0 auto;
+      padding:18px;
+      gap:12px;
+    }
+
+    /* Painel de filtros superior */
+    .main-content > .filters-container:first-child{
+      max-width:100%;
+      width:100%;
+      display:grid;
+      grid-template-columns: repeat(12, minmax(0,1fr));
+      gap:12px;
+      align-items:end;
+      justify-content:stretch;
+      background:rgba(255,255,255,.92);
+      border:1px solid rgba(220,229,224,.9);
+      border-radius:22px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .main-content > .filters-container:first-child::before{
+      content:"Busca rápida do cronograma";
+      grid-column:1 / -1;
+      font-weight:800;
+      font-size:1.02em;
+      color:#173a2e;
+      padding-left:12px;
+      border-left:5px solid var(--pri);
+      line-height:1.25;
+    }
+    .main-content > .filters-container:first-child::after{
+      content:"";
+      position:absolute;
+      right:-48px; top:-48px;
+      width:150px;height:150px;border-radius:50%;
+      background:rgba(15,127,79,.08);
+      pointer-events:none;
+    }
+    .main-content > .filters-container:first-child .form-group{
+      min-width:0;
+      background:#f9fcfa;
+      border:1px solid #e5eee9;
+      border-radius:14px;
+      padding:9px 10px;
+      box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
+    }
+    .main-content > .filters-container:first-child label{
+      color:#3b514a;
+      font-size:.74em;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      margin-bottom:5px;
+    }
+    .main-content > .filters-container:first-child input,
+    .main-content > .filters-container:first-child select,
+    .main-content > .filters-container:first-child .date-range-button{
+      border:0;
+      background:transparent;
+      padding:4px 0;
+      font-size:.92em;
+      outline:none;
+      color:#13251f;
+      height:28px;
+    }
+    .main-content > .filters-container:first-child select{cursor:pointer;}
+    .main-content > .filters-container:first-child .date-range-button{
+      text-align:left;
+      width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      color:#0b6f43;
+      font-weight:700;
+    }
+    .filter-linha{grid-column:span 1; max-width:none; flex:auto;}
+    .filter-modelo{grid-column:span 2; max-width:none; flex:auto;}
+    .filter-remessa{grid-column:span 2; max-width:none; flex:auto;}
+    .date-range-field{grid-column:span 2; min-width:0;}
+    .main-content > .filters-container:first-child .form-group:not(.filter-linha):not(.filter-modelo):not(.filter-remessa):not(.date-range-field){grid-column:span 2;}
+    .main-content > .filters-container:first-child .btn{
+      grid-column:span 2;
+      min-height:48px;
+      justify-content:center;
+      border-radius:14px;
+      font-weight:800;
+      box-shadow:var(--shadow-soft);
+    }
+    .btn-primary{
+      background:linear-gradient(135deg,#12805c,#0a6b42);
+      color:#fff;
+    }
+    .btn-primary:hover{background:linear-gradient(135deg,#0f744f,#075f3a)}
+    .btn-secondary{
+      background:#eef3f0;
+      color:#213731;
+      border:1px solid #dbe5df;
+    }
+    .btn-secondary:hover{background:#e3ebe6;}
+
+    /* Área principal */
+    .container{
+      max-width:100%;
+      background:transparent;
+      box-shadow:none;
+      padding:0;
+    }
+    .report-header{
+      background:#fff;
+      border:1px solid #dce5e0;
+      border-radius:22px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      align-items:center;
+      margin-bottom:12px;
+    }
+    .report-header h2{
+      font-size:1.55em;
+      letter-spacing:-.35px;
+      color:#173a2e;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .report-header h2::before{
+      content:"▦";
+      width:36px;height:36px;border-radius:12px;
+      background:var(--pri-soft);
+      color:var(--pri-700);
+      display:inline-flex;
+      align-items:center;justify-content:center;
+      font-size:.9em;
+    }
+    .report-actions{
+      background:#f6faf8;
+      border:1px solid #e5eee9;
+      border-radius:16px;
+      padding:8px;
+      gap:8px;
+    }
+    .check-action{
+      background:#fff;
+      border:1px solid #e5eee9;
+      border-radius:12px;
+      padding:9px 12px;
+      color:#173a2e;
+    }
+    .check-action input{accent-color:var(--pri);}
+    .btn-whats::before{content:"✆";font-weight:800;}
+
+    /* Filtro de linhas/remessas como régua operacional */
+    #lineFilterContainer{
+      background:#fff;
+      border:1px solid #dce5e0;
+      border-radius:20px;
+      box-shadow:var(--shadow-soft);
+      max-width:100%;
+      padding:14px;
+      align-items:center !important;
+      gap:12px;
+    }
+    #lineFilterContainer h4{
+      width:100%;
+      font-size:.92em !important;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color:#53665f !important;
+      margin:0 0 2px 0 !important;
+    }
+    #lineCheckboxes{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      flex:1;
+    }
+    #lineCheckboxes label{
+      border:1px solid #dce5e0;
+      background:#f8fbf9;
+      border-radius:999px;
+      padding:8px 12px;
+      min-width:auto;
+      font-weight:800;
+      color:#27453b;
+      gap:7px;
+      transition:.15s;
+    }
+    #lineCheckboxes label:has(input:checked){
+      background:#e2f6eb;
+      border-color:#8bd5ab;
+      color:#075f3a;
+    }
+    #lineCheckboxes input[type="checkbox"]{accent-color:var(--pri);}
+    #selectRemessasButton{
+      margin-left:auto;
+      border-radius:999px;
+      min-height:40px;
+      padding:8px 18px !important;
+      white-space:nowrap;
+    }
+
+    /* Resumo estilo linha de produção */
+    .summary-info{
+      display:grid;
+      grid-template-columns: repeat(7, minmax(120px,1fr));
+      gap:10px;
+      background:transparent;
+      padding:0;
+      margin:0 0 12px;
+    }
+    .summary-item{
+      min-width:0;
+      border:1px solid #dce5e0;
+      border-radius:18px;
+      background:#fff;
+      padding:14px 12px;
+      text-align:left;
+      box-shadow:var(--shadow-soft);
+      position:relative;
+      overflow:hidden;
+      color:#273b35;
+    }
+    .summary-item::after{
+      content:"";
+      position:absolute;
+      right:-28px;top:-28px;
+      width:74px;height:74px;border-radius:50%;
+      background:rgba(15,127,79,.08);
+    }
+    .summary-item strong{
+      font-size:1.45em;
+      color:#122a23;
+      margin-top:3px;
+      letter-spacing:-.35px;
+    }
+    .summary-info .summary-item:nth-child(1),
+    .summary-info .summary-item:nth-child(2){
+      background:linear-gradient(135deg,#11835b,#075f3a) !important;
+      color:#fff !important;
+      border-color:transparent;
+    }
+    .summary-info .summary-item:nth-child(1) strong,
+    .summary-info .summary-item:nth-child(2) strong{color:#fff;}
+    .filter-link{
+      text-decoration:none;
+      transition:.15s;
+    }
+    .filter-link:hover{
+      transform:translateY(-1px);
+      background:#f8fbf9;
+      border-color:#96d6af;
+    }
+    .filter-link.active-filter{
+      background:#e1f6ea;
+      border:2px solid var(--pri);
+      box-shadow:0 10px 24px rgba(15,127,79,.14);
+    }
+
+    /* Botões de relatórios: formato lista/atalhos */
+    #resumoButtonsContainer{
+      background:#fff;
+      border:1px solid #dce5e0;
+      border-radius:20px;
+      box-shadow:var(--shadow-soft);
+      margin:0 0 12px;
+      padding:10px;
+      display:grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap:10px;
+    }
+    #resumoButtonsContainer::before{
+      content:"Atalhos de análise";
+      grid-column:1 / -1;
+      font-weight:800;
+      color:#173a2e;
+      font-size:.95em;
+      padding:2px 4px 4px;
+    }
+    .btn-resumo{
+      min-width:0;
+      width:100%;
+      background:#f4f7f5;
+      color:#1f3930;
+      border:1px solid #dce5e0;
+      border-radius:14px;
+      justify-content:center;
+      font-weight:800;
+      padding:12px 8px;
+    }
+    .btn-resumo:hover{
+      background:var(--pri-soft);
+      color:var(--pri-700);
+      border-color:#98d8b0;
+    }
+    #resumoCorteButton::before{content:"✂";}
+    #resumoCosturaButton::before{content:"◌";}
+    #resumoGiroFabricaButton::before{content:"↻";}
+    #resumoProntoCosturaButton::before{content:"✓";}
+    #resumoFaltaMontarButton::before{content:"▣";}
+
+
+
+    /* Lista operacional de remessas - nova visão rápida */
+    .remessa-card-list{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+      gap:10px;
+      margin:0 0 12px;
+    }
+    .remessa-list-head{
+      grid-column:1 / -1;
+      background:#173a2e;
+      color:#fff;
+      border-radius:18px;
+      padding:10px 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      box-shadow:var(--shadow-soft);
+    }
+    .remessa-list-head span{font-size:.86em;color:#dff7eb;font-weight:700;}
+    .remessa-card{
+      background:#fff;
+      border:1px solid #dce5e0;
+      border-radius:18px;
+      box-shadow:var(--shadow-soft);
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-width:0;
+    }
+    .remessa-card-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+      border-bottom:1px solid #eef3f0;
+      padding-bottom:8px;
+    }
+    .remessa-card-title{display:flex;flex-direction:column;gap:3px;}
+    .remessa-card-title small{color:#60756d;font-weight:700;}
+    .remessa-card-meta{
+      text-align:right;
+      font-size:.78em;
+      color:#60756d;
+      font-weight:700;
+      line-height:1.35;
+      white-space:nowrap;
+    }
+    .remessa-current-stage{
+      align-self:flex-start;
+      background:#fff3cd;
+      border:1px solid #ffe69c;
+      color:#664d03;
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:.78em;
+      font-weight:800;
+    }
+    .remessa-current-stage.done{
+      background:#e4f8ed;
+      border-color:#9fe0ba;
+      color:#075f3a;
+    }
+    .stage-chip-row{
+      display:grid;
+      grid-template-columns:repeat(5,minmax(0,1fr));
+      gap:6px;
+    }
+    .stage-chip{
+      border-radius:12px;
+      border:1px solid #e2ebe6;
+      background:#f8fbf9;
+      padding:7px 5px;
+      min-height:48px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:2px;
+      text-align:center;
+      font-size:.72em;
+      line-height:1.15;
+      color:#3b514a;
+      overflow:hidden;
+    }
+    .stage-chip b{font-size:.86em;color:#183b2f;}
+    .stage-chip.stage-done{
+      background:#e4f8ed;
+      border-color:#a9e3c0;
+      color:#075f3a;
+    }
+    .stage-chip.stage-open{
+      background:#fffaf0;
+      border-color:#ffe0a6;
+      color:#744b00;
+    }
+    .remessa-card.exportacao-row{background:#f5fbff;}
+    .remessa-card.cliente-especial-row{background:#fff8fa;}
+    .remessa-card.estoque-row{background:#fffdf0;}
+    .remessa-card.amostra-row{background:#f6fff5;}
+
+    /* Colunas e tabela */
+    #columnControlMenu{
+      max-width:100%;
+      border:1px solid #dce5e0;
+      background:#fff;
+      border-radius:18px;
+      box-shadow:var(--shadow-soft);
+      padding:12px;
+    }
+    #columnControlMenu h4{
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      font-size:.85em;
+      color:#60756d;
+    }
+    #checkboxContainer label{
+      background:#f7faf8;
+      border:1px solid #e1eae5;
+      border-radius:999px;
+      padding:7px 11px;
+      font-weight:700;
+      color:#3a5149;
+    }
+    #checkboxContainer input{accent-color:var(--pri);}
+
+    .table-container{
+      background:#fff;
+      border:1px solid #dce5e0;
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:auto;
+      max-height:68vh;
+    }
+    table{
+      border-collapse:separate;
+      border-spacing:0;
+      font-size:.8em;
+    }
+    thead th{
+      background:#eef6f1;
+      color:#183b2f;
+      position:sticky;
+      top:0;
+      z-index:2;
+      border-color:#dce5e0;
+      padding:9px 8px;
+    }
+    td{
+      border-color:#edf2ef;
+      padding:7px 8px;
+    }
+    tbody tr:hover{
+      filter:saturate(1.05);
+      outline:2px solid rgba(15,127,79,.22);
+      outline-offset:-2px;
+    }
+    .remessa-link{
+      font-weight:800;
+      color:#075f3a;
+      text-decoration:none;
+      background:#e7f6ee;
+      border:1px solid #bfe7cf;
+      border-radius:999px;
+      padding:3px 8px;
+      display:inline-flex;
+    }
+    .status-check{
+      color:#075f3a;
+      font-weight:800;
+      background:#e4f8ed;
+      border-radius:999px;
+      padding:3px 8px;
+      display:inline-flex;
+    }
+    .separator-border{border-right:2px solid #9fb4aa !important;}
+
+    /* Cores por cliente com visual mais suave */
+    .exportacao-row:nth-child(odd), .exportacao-row:nth-child(even){background:#e5f4ff;}
+    .cliente-especial-row:nth-child(odd), .cliente-especial-row:nth-child(even){background:#fff0f4;}
+    .mercado-interno-row:nth-child(odd), .mercado-interno-row:nth-child(even){background:#ffffff;}
+    .estoque-row:nth-child(odd), .estoque-row:nth-child(even){background:#fff9d8;}
+    .amostra-row:nth-child(odd), .amostra-row:nth-child(even){background:#e9fae8;}
+
+    /* Loader/vazio */
+    .loader{
+      background:#fff;
+      border:1px dashed #cfdcd5;
+      border-radius:18px;
+      margin:12px 0;
+      color:#60756d;
+      box-shadow:var(--shadow-soft);
+    }
+
+    /* Modais */
+    .modal{background:rgba(15,27,22,.54);backdrop-filter:blur(3px);}
+    .modal-content{
+      border:1px solid #dce5e0;
+      border-radius:22px;
+      box-shadow:0 22px 70px rgba(0,0,0,.28);
+    }
+    .modal-head h3,
+    #modalTitle{
+      color:#173a2e;
+      letter-spacing:-.25px;
+    }
+    .close-btn,.quick-close-btn,#whatsMessageClose,#datePickerClose{
+      color:#173a2e !important;
+    }
+    .resumo-cards-wrapper{
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:12px;
+    }
+    .atelie-card{
+      background:#fff !important;
+      border:1px solid #dce5e0;
+      border-radius:18px;
+      box-shadow:var(--shadow-soft);
+    }
+    .atelie-card h4{
+      color:#075f3a;
+      border-bottom:1px solid #dce5e0;
+    }
+
+    /* Calendário menor e mais parecido com seletor nativo */
+    .date-picker-content{max-width:460px;}
+    .date-picker-day{min-height:31px;border-radius:10px;}
+    .date-picker-day.in-range{background:#e5f4ec;}
+    .date-picker-day.range-start,.date-picker-day.range-end{background:#12965f;color:#fff;border-radius:12px;}
+
+    @media (max-width: 1100px){
+      .main-content > .filters-container:first-child{grid-template-columns: repeat(6,minmax(0,1fr));}
+      .filter-linha,.filter-modelo,.filter-remessa,.date-range-field,
+      .main-content > .filters-container:first-child .form-group:not(.filter-linha):not(.filter-modelo):not(.filter-remessa):not(.date-range-field){grid-column:span 2;}
+      .main-content > .filters-container:first-child .btn{grid-column:span 2;}
+      .summary-info{grid-template-columns:repeat(4,minmax(0,1fr));}
+      #resumoButtonsContainer{grid-template-columns:repeat(3,minmax(0,1fr));}
+    }
+
+    @media (max-width: 768px){
+      
+      
+      
+      .main-content{padding:8px;gap:10px;}
+      .main-content > .filters-container:first-child{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        border-radius:18px;
+        padding:12px;
+        gap:9px;
+      }
+      .main-content > .filters-container:first-child::before{
+        font-size:.92em;
+        padding-left:9px;
+      }
+      .main-content > .filters-container:first-child .form-group,
+      .filter-linha,.filter-modelo,.filter-remessa,.date-range-field,
+      .main-content > .filters-container:first-child .form-group:not(.filter-linha):not(.filter-modelo):not(.filter-remessa):not(.date-range-field){
+        grid-column:span 1 !important;
+        flex:auto !important;
+      }
+      .main-content > .filters-container:first-child .btn{grid-column:span 1;min-height:42px;}
+      .report-header{border-radius:18px;padding:12px;}
+      .report-header h2{font-size:1.18em;}
+      .report-header h2::before{width:30px;height:30px;border-radius:10px;}
+      .report-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;}
+      .check-action{grid-column:1/-1;}
+      #lineFilterContainer{border-radius:18px;}
+      #lineCheckboxes{grid-template-columns:repeat(3,minmax(0,1fr));}
+      #lineCheckboxes label{border-radius:12px;justify-content:flex-start;font-size:.82em;}
+      #selectRemessasButton{margin:0;width:100%;border-radius:12px;}
+      .summary-info{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .summary-item{border-radius:16px;padding:12px 10px;}
+      .summary-item strong{font-size:1.25em;}
+      #resumoButtonsContainer{grid-template-columns:repeat(2,minmax(0,1fr));border-radius:18px;}
+      #resumoButtonsContainer::before{font-size:.9em;}
+      #columnControlMenu{border-radius:18px;}
+      #checkboxContainer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+      #checkboxContainer label{border-radius:12px;font-size:.78em;}
+      .table-container{border-radius:18px;max-height:none;}
+      table{font-size:.69em;}
+      th,td{padding:6px 6px;}
+      .date-picker-content{max-width:94vw;}
+    }
+
+    @media (max-width: 420px){
+      .main-content > .filters-container:first-child{grid-template-columns:1fr;}
+      .main-content > .filters-container:first-child .form-group,
+      .main-content > .filters-container:first-child .btn{grid-column:span 1 !important;}
+      .report-actions{grid-template-columns:1fr;}
+      #lineCheckboxes{grid-template-columns:repeat(2,minmax(0,1fr));}
+      .summary-info{grid-template-columns:1fr 1fr;}
+      #resumoButtonsContainer{grid-template-columns:1fr 1fr;}
+    }
+
+
+    @media (max-width:768px){
+      .remessa-card-list{grid-template-columns:1fr;gap:9px;}
+      .remessa-list-head{border-radius:16px;font-size:.88em;align-items:flex-start;flex-direction:column;}
+      .remessa-card{border-radius:16px;padding:10px;}
+      .remessa-card-top{gap:8px;}
+      .remessa-card-meta{font-size:.72em;}
+      .stage-chip-row{grid-template-columns:repeat(5,minmax(58px,1fr));gap:5px;overflow-x:auto;padding-bottom:2px;}
+      .stage-chip{min-height:44px;font-size:.66em;padding:6px 4px;}
+      .remessa-current-stage{font-size:.72em;}
+    }
+
+    @media (max-width:420px){
+      .stage-chip-row{grid-template-columns:repeat(5,64px);}
+    }
+
+  
+
+    /* ==========================================================
+       AJUSTE: remessas em cards horizontais, uma abaixo da outra
+       Tema neutro cinza/preto, preservando funções e IDs.
+       ========================================================== */
+    :root{
+      --bg:#f3f4f5;
+      --ink:#222;
+      --ink-2:#4f4f4f;
+      --card:#ffffff;
+      --muted:#747474;
+      --pri:#343a40;
+      --pri-700:#1f2327;
+      --pri-soft:#eeeeee;
+      --ok:#333333;
+      --bd:#d9d9d9;
+      --chip:#eeeeee;
+      --shadow:0 8px 24px rgba(0,0,0,.08);
+      --shadow-soft:0 4px 14px rgba(0,0,0,.07);
+    }
+    body{
+      background:#f3f4f5 !important;
+      color:var(--ink);
+    }
+    
+    
+    .main-content > .filters-container:first-child,
+    .report-header,
+    #lineFilterContainer,
+    #resumoButtonsContainer,
+    #columnControlMenu,
+    .full-table-details{
+      border-color:#d9d9d9 !important;
+      box-shadow:var(--shadow-soft) !important;
+    }
+    .report-header h2{color:#222 !important;}
+    .report-header h2::before{
+      background:#eeeeee !important;
+      color:#333 !important;
+    }
+    .check-action,
+    .report-actions,
+    #lineCheckboxes label,
+    #checkboxContainer label,
+    .btn-resumo{
+      background:#f5f5f5 !important;
+      border-color:#d9d9d9 !important;
+      color:#333 !important;
+    }
+    #lineCheckboxes label:has(input:checked){
+      background:#e9ecef !important;
+      border-color:#aeb4ba !important;
+      color:#111 !important;
+    }
+    input[type="checkbox"]{accent-color:#333;}
+    .summary-info .summary-item:nth-child(1),
+    .summary-info .summary-item:nth-child(2){
+      background:#333 !important;
+      color:#fff !important;
+    }
+    .summary-item::after{background:rgba(0,0,0,.06) !important;}
+    .filter-link.active-filter{
+      background:#eceff1 !important;
+      border-color:#333 !important;
+      box-shadow:0 6px 18px rgba(0,0,0,.10) !important;
+    }
+
+    .remessa-card-list{
+      display:flex !important;
+      flex-direction:column;
+      gap:10px;
+      margin:0 0 14px;
+    }
+    .remessa-list-head{
+      background:#333 !important;
+      color:#fff !important;
+      border-radius:14px !important;
+      padding:10px 14px !important;
+      box-shadow:var(--shadow-soft) !important;
+    }
+    .remessa-list-head span{color:#eeeeee !important;}
+    .remessa-card{
+      background:#fff !important;
+      border:1px solid #d9d9d9 !important;
+      border-radius:16px !important;
+      box-shadow:var(--shadow-soft) !important;
+      padding:10px 14px !important;
+      display:block !important;
+    }
+    .remessa-card.exportacao-row,
+    .remessa-card.cliente-especial-row,
+    .remessa-card.estoque-row,
+    .remessa-card.amostra-row,
+    .remessa-card.mercado-interno-row{
+      background:#fff !important;
+    }
+    .remessa-card-main{
+      display:grid;
+      grid-template-columns:minmax(210px,1.25fr) minmax(100px,.55fr) minmax(140px,.75fr) minmax(390px,1.7fr);
+      gap:12px;
+      align-items:center;
+    }
+    .remessa-card-ident{min-width:0;}
+    .remessa-number-pill{
+      display:inline-flex;
+      align-items:center;
+      max-width:100%;
+      min-width:170px;
+      padding:6px 14px;
+      border-radius:999px;
+      background:#eeeeee;
+      border:1px solid #d1d1d1;
+      color:#111 !important;
+      font-weight:900;
+      font-size:1.08em;
+      text-decoration:none !important;
+      letter-spacing:.2px;
+    }
+    .remessa-number-pill:hover{background:#e2e2e2;color:#000 !important;}
+    .remessa-subline{
+      margin-top:5px;
+      color:#4d4d4d;
+      font-weight:800;
+      font-size:.86em;
+      line-height:1.25;
+    }
+    .remessa-card-meta{
+      text-align:center !important;
+      font-size:.86em !important;
+      color:#4a4a4a !important;
+      font-weight:800 !important;
+      white-space:nowrap;
+      line-height:1.25;
+    }
+    .remessa-card-meta strong{
+      display:block;
+      color:#333;
+      font-size:1.02em;
+    }
+    .remessa-card-meta span{display:block;}
+    .remessa-current-stage{
+      justify-self:center;
+      align-self:center !important;
+      background:#fff1c7 !important;
+      border:1px solid #efcf72 !important;
+      color:#5b4300 !important;
+      border-radius:999px !important;
+      padding:8px 14px !important;
+      font-size:.88em !important;
+      font-weight:900 !important;
+      white-space:nowrap;
+    }
+    .remessa-current-stage.done{
+      background:#eeeeee !important;
+      border-color:#d1d1d1 !important;
+      color:#222 !important;
+    }
+    .stage-chip-row{
+      display:grid !important;
+      grid-template-columns:repeat(5,minmax(62px,1fr)) !important;
+      gap:6px !important;
+      min-width:0;
+    }
+    .stage-chip{
+      border-radius:12px !important;
+      border:1px solid #d6d6d6 !important;
+      background:#f6f6f6 !important;
+      padding:6px 5px !important;
+      min-height:54px !important;
+      display:flex !important;
+      flex-direction:column !important;
+      justify-content:center !important;
+      gap:1px !important;
+      text-align:center !important;
+      font-size:.74em !important;
+      line-height:1.15 !important;
+      color:#333 !important;
+    }
+    .stage-chip b{font-size:.86em !important;color:#222 !important;}
+    .stage-chip span{font-weight:900;}
+    .stage-chip small{font-size:.92em;color:#333;font-weight:800;}
+    .stage-chip.stage-done{
+      background:#f1f1f1 !important;
+      border-color:#d0d0d0 !important;
+      color:#222 !important;
+    }
+    .stage-chip.stage-open{
+      background:#fff7e5 !important;
+      border-color:#e2c47c !important;
+      color:#4d3a00 !important;
+    }
+    .full-table-details{
+      background:#fff;
+      border:1px solid #d9d9d9;
+      border-radius:16px;
+      padding:0;
+      margin-top:12px;
+      overflow:hidden;
+    }
+    .full-table-details > summary{
+      cursor:pointer;
+      list-style:none;
+      padding:12px 14px;
+      font-weight:900;
+      color:#333;
+      background:#f2f2f2;
+      border-bottom:1px solid #d9d9d9;
+    }
+    .full-table-details > summary::-webkit-details-marker{display:none;}
+    .full-table-details > summary::after{
+      content:"▾";
+      float:right;
+      color:#555;
+    }
+    .full-table-details:not([open]) > summary::after{content:"▸";}
+    .full-table-details #columnControlMenu{
+      margin:12px !important;
+      width:auto !important;
+    }
+    .full-table-details #tableContainer{
+      margin:0 12px 12px;
+    }
+
+    @media (max-width:1100px){
+      .remessa-card-main{
+        grid-template-columns:minmax(190px,1fr) minmax(95px,.45fr) minmax(130px,.6fr);
+      }
+      .stage-chip-row{grid-column:1 / -1;}
+    }
+    @media (max-width:760px){
+      .remessa-card{padding:10px !important;border-radius:14px !important;}
+      .remessa-card-main{
+        grid-template-columns:1fr;
+        gap:8px;
+      }
+      .remessa-number-pill{min-width:0;width:100%;justify-content:center;font-size:1em;}
+      .remessa-subline{text-align:center;font-size:.82em;}
+      .remessa-card-meta{text-align:center !important;}
+      .remessa-current-stage{justify-self:center;width:100%;text-align:center;}
+      .stage-chip-row{grid-template-columns:repeat(5,minmax(0,1fr)) !important;gap:4px !important;}
+      .stage-chip{font-size:.62em !important;min-height:48px !important;padding:5px 2px !important;}
+      .stage-chip b{font-size:.78em !important;}
+      .remessa-list-head{align-items:flex-start !important;flex-direction:column !important;gap:4px !important;}
+    }
+
+  
+
+    /* ===== AJUSTE FINAL: cards de remessas em 2 colunas no PC e 1 coluna no celular ===== */
+    .remessa-card-list{
+      display:grid !important;
+      grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+      gap:10px !important;
+      margin:0 0 14px !important;
+      align-items:stretch !important;
+    }
+    .remessa-list-head{
+      grid-column:1 / -1 !important;
+      background:#303030 !important;
+      color:#fff !important;
+      border-radius:12px !important;
+      padding:10px 14px !important;
+      box-shadow:0 4px 12px rgba(0,0,0,.10) !important;
+    }
+    .remessa-list-head span{color:#f1f1f1 !important;}
+
+    .remessa-card{
+      background:#fff !important;
+      border:1px solid #d7d7d7 !important;
+      border-left:7px solid #bdbdbd !important;
+      border-radius:14px !important;
+      box-shadow:0 4px 12px rgba(0,0,0,.10) !important;
+      padding:9px 10px !important;
+      min-width:0 !important;
+    }
+    .remessa-card-main{
+      display:grid !important;
+      grid-template-columns:minmax(150px, 1.08fr) minmax(86px, .48fr) minmax(112px, .62fr) minmax(255px, 1.55fr) !important;
+      gap:8px !important;
+      align-items:center !important;
+    }
+    .remessa-card-ident{min-width:0 !important;}
+    .remessa-number-pill{
+      min-width:150px !important;
+      padding:6px 12px !important;
+      border-radius:999px !important;
+      background:#eeeeee !important;
+      border:1px solid #cccccc !important;
+      color:#111 !important;
+      font-size:1em !important;
+      font-weight:900 !important;
+      line-height:1 !important;
+      box-shadow:inset 0 -1px 0 rgba(0,0,0,.04) !important;
+    }
+    .remessa-subline{
+      margin-top:5px !important;
+      color:#4d4d4d !important;
+      font-weight:800 !important;
+      font-size:.82em !important;
+      line-height:1.22 !important;
+    }
+    .remessa-extra-info{
+      margin-top:6px !important;
+      padding:7px 9px !important;
+      border-radius:10px !important;
+      background:rgba(255,255,255,.72) !important;
+      border:1px solid rgba(0,0,0,.08) !important;
+      color:#333 !important;
+      font-size:.76em !important;
+      line-height:1.25 !important;
+      font-weight:700 !important;
+      display:flex !important;
+      flex-direction:column !important;
+      gap:2px !important;
+    }
+    .remessa-extra-info span{
+      display:block !important;
+      min-width:0 !important;
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+      white-space:nowrap !important;
+    }
+    .remessa-extra-info b{
+      color:#111 !important;
+      font-weight:900 !important;
+      margin-right:4px !important;
+    }
+    .remessa-extra-info .js-extra-full{
+      cursor:pointer !important;
+      border-radius:7px !important;
+      padding:2px 3px !important;
+      margin:-2px -3px !important;
+      transition:background .15s, transform .12s !important;
+    }
+    .remessa-extra-info .js-extra-full:hover{
+      background:rgba(0,0,0,.06) !important;
+    }
+    .extra-full-modal{
+      padding:6px 2px 2px;
+    }
+    .extra-full-card{
+      border:1px solid #d9d9d9;
+      border-radius:14px;
+      background:#fff;
+      padding:14px;
+      box-shadow:0 4px 12px rgba(0,0,0,.08);
+    }
+    .extra-full-label{
+      font-weight:900;
+      color:#111;
+      margin-bottom:8px;
+      font-size:1.02em;
+    }
+    .extra-full-text{
+      white-space:pre-wrap;
+      word-break:break-word;
+      line-height:1.45;
+      color:#222;
+      font-size:.98em;
+      font-weight:700;
+    }
+    .remessa-card-meta{
+      text-align:center !important;
+      color:#333 !important;
+      font-size:.84em !important;
+      font-weight:900 !important;
+      line-height:1.18 !important;
+      white-space:nowrap !important;
+    }
+    .remessa-card-meta strong{font-size:1em !important;color:#222 !important;}
+
+    .remessa-current-stage{
+      justify-self:center !important;
+      width:100% !important;
+      max-width:150px !important;
+      text-align:center !important;
+      background:#fff1bf !important;
+      border:1px solid #efcf72 !important;
+      color:#4f3b00 !important;
+      border-radius:999px !important;
+      padding:7px 8px !important;
+      font-size:.82em !important;
+      font-weight:900 !important;
+      white-space:nowrap !important;
+    }
+    .remessa-current-stage.done{
+      background:#e4f8ed !important;
+      border-color:#95d8b2 !important;
+      color:#075f3a !important;
+    }
+
+    .stage-chip-row{
+      display:grid !important;
+      grid-template-columns:repeat(5, minmax(0, 1fr)) !important;
+      gap:5px !important;
+      min-width:0 !important;
+    }
+    .stage-chip{
+      border-radius:11px !important;
+      padding:5px 3px !important;
+      min-height:50px !important;
+      font-size:.66em !important;
+      line-height:1.12 !important;
+      font-weight:800 !important;
+    }
+    .stage-chip b{font-size:.82em !important;color:#202020 !important;}
+    .stage-chip span{font-weight:900 !important;}
+    .stage-chip small{font-size:.9em !important;font-weight:800 !important;}
+    .stage-chip.stage-done{
+      background:#dff7ea !important;
+      border-color:#95d8b2 !important;
+      color:#075f3a !important;
+    }
+    .stage-chip.stage-open{
+      background:#fff6df !important;
+      border-color:#efcf72 !important;
+      color:#5b4300 !important;
+    }
+
+    /* Cores por tipo de cliente, preservando o padrão antigo da página */
+    .remessa-card.exportacao-row{
+      background:#eef8ff !important;
+      border-left-color:#0d8edb !important;
+    }
+    .remessa-card.exportacao-row .remessa-number-pill{
+      background:#cfeeff !important;
+      border-color:#63b9ea !important;
+      color:#063f63 !important;
+    }
+    .remessa-card.cliente-especial-row{
+      background:#fff3f7 !important;
+      border-left-color:#d66d9d !important;
+    }
+    .remessa-card.cliente-especial-row .remessa-number-pill{
+      background:#ffe0eb !important;
+      border-color:#e7a4bf !important;
+      color:#6b2240 !important;
+    }
+    .remessa-card.mercado-interno-row{
+      background:#ffffff !important;
+      border-left-color:#9e9e9e !important;
+    }
+    .remessa-card.mercado-interno-row .remessa-number-pill{
+      background:#eeeeee !important;
+      border-color:#cccccc !important;
+      color:#111 !important;
+    }
+    .remessa-card.estoque-row{
+      background:#fffbea !important;
+      border-left-color:#e4c640 !important;
+    }
+    .remessa-card.estoque-row .remessa-number-pill{
+      background:#fff3b0 !important;
+      border-color:#e7ce55 !important;
+      color:#4b3f00 !important;
+    }
+    .remessa-card.amostra-row{
+      background:#f1fff1 !important;
+      border-left-color:#6dbd6d !important;
+    }
+    .remessa-card.amostra-row .remessa-number-pill{
+      background:#dff6df !important;
+      border-color:#9bd89b !important;
+      color:#165c16 !important;
+    }
+
+    @media (max-width:1450px){
+      .remessa-card-main{
+        grid-template-columns:minmax(145px, 1fr) minmax(82px,.45fr) minmax(108px,.58fr) !important;
+      }
+      .stage-chip-row{grid-column:1 / -1 !important;}
+    }
+    @media (max-width:900px){
+      .remessa-card-list{grid-template-columns:1fr !important;}
+      .remessa-card-main{grid-template-columns:1fr !important;gap:8px !important;}
+      .remessa-number-pill{width:100% !important;min-width:0 !important;justify-content:center !important;}
+      .remessa-subline{text-align:center !important;}
+      .remessa-extra-info{text-align:left !important;font-size:.74em !important;}
+      .remessa-extra-info span{white-space:normal !important;}
+      .remessa-current-stage{max-width:100% !important;}
+      .stage-chip-row{grid-template-columns:repeat(5, minmax(0, 1fr)) !important;gap:4px !important;}
+      .stage-chip{font-size:.62em !important;min-height:48px !important;padding:5px 2px !important;}
+    }
+    @media (max-width:420px){
+      .stage-chip-row{grid-template-columns:repeat(5, minmax(42px, 1fr)) !important;overflow-x:auto !important;padding-bottom:2px !important;}
+      .stage-chip{min-width:42px !important;}
+    }
+
+
+
+    /* ===== AJUSTE: cards agrupados por linha + modal de talões em aberto ===== */
+    .remessa-line-title{
+      grid-column:1 / -1 !important;
+      font-size:1.05em !important;
+      font-weight:900 !important;
+      color:#111 !important;
+      padding:6px 10px 2px !important;
+      margin-top:2px !important;
+    }
+    .remessa-card.is-incomplete{cursor:pointer;}
+    .remessa-card.is-incomplete:hover{
+      transform:translateY(-1px);
+      box-shadow:0 7px 18px rgba(0,0,0,.14) !important;
+    }
+    .remessa-card .remessa-link,
+    .remessa-card .stage-chip,
+    .remessa-card .remessa-current-stage{position:relative;z-index:2;}
+    .stage-chip,
+    .remessa-current-stage{
+      font-family:inherit !important;
+      cursor:default;
+    }
+    .stage-chip.js-open-stage,
+    .remessa-current-stage.js-open-stage{cursor:pointer !important;}
+    .stage-chip.js-open-stage:hover,
+    .remessa-current-stage.js-open-stage:hover{filter:brightness(.97);}
+    .open-stage-modal{padding:8px 2px 2px;}
+    .open-stage-summary{
+      background:#f2f2f2;
+      border:1px solid #d8d8d8;
+      border-radius:12px;
+      padding:12px 14px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      margin-bottom:10px;
+      color:#222;
+    }
+    .open-stage-summary strong{font-size:1.05em;}
+    .open-stage-summary span{font-weight:800;color:#555;}
+    .open-stage-list{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-height:65vh;
+      overflow:auto;
+      padding-right:4px;
+    }
+    .open-stage-item{
+      display:grid;
+      grid-template-columns:90px 1fr 100px minmax(110px,.7fr);
+      gap:10px;
+      align-items:center;
+      background:#fff;
+      border:1px solid #e0e0e0;
+      border-radius:10px;
+      padding:9px 10px;
+      color:#222;
+      font-size:.95em;
+    }
+    .open-stage-item span:first-child{font-weight:900;}
+    .open-stage-item strong{font-weight:900;}
+    .open-stage-item span:nth-child(3){text-align:right;font-weight:800;}
+    .open-stage-item em{font-style:normal;font-weight:800;color:#555;text-align:right;}
+    @media (max-width:900px){
+      .remessa-line-title{font-size:1em !important;padding-left:4px !important;}
+      .open-stage-summary{align-items:flex-start;flex-direction:column;gap:4px;}
+      .open-stage-item{
+        grid-template-columns:1fr;
+        gap:3px;
+      }
+      .open-stage-item span:nth-child(3),
+      .open-stage-item em{text-align:left;}
+    }
+
+
+    /* ===== AJUSTES FINAIS: card compacto + modal em tabela ===== */
+    .remessa-card-main{
+      grid-template-columns:minmax(250px,1.15fr) minmax(132px,.55fr) minmax(260px,1.25fr) !important;
+      gap:10px !important;
+    }
+    .remessa-id-row{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      min-width:0;
+    }
+    .remessa-id-row .remessa-card-meta{
+      text-align:left !important;
+      font-size:.86em !important;
+      line-height:1.15 !important;
+      white-space:nowrap;
+      color:#111 !important;
+    }
+    .remessa-id-row .remessa-card-meta strong{
+      display:block;
+      font-size:1.02em !important;
+      color:#111 !important;
+    }
+    .remessa-current-stage{
+      min-width:148px !important;
+      max-width:100% !important;
+      text-align:center !important;
+      line-height:1.15 !important;
+      padding:8px 12px !important;
+      overflow:visible !important;
+      text-overflow:clip !important;
+      white-space:nowrap !important;
+      font-size:.84em !important;
+    }
+    .stage-chip-row{
+      grid-template-columns:repeat(5,minmax(48px,1fr)) !important;
+      gap:5px !important;
+    }
+    .stage-chip{
+      min-width:0 !important;
+      padding:6px 4px !important;
+    }
+    .open-stage-modal{padding:4px 0 0;}
+    .open-stage-card-head{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      background:#eef8ff;
+      border-left:5px solid #0d8edb;
+      padding:8px 10px;
+      margin-bottom:8px;
+      width:max-content;
+      max-width:100%;
+    }
+    .open-stage-remessa-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:170px;
+      padding:6px 14px;
+      border-radius:999px;
+      background:#cfeeff;
+      border:1px solid #63b9ea;
+      color:#063f63;
+      font-size:1.15em;
+      font-weight:900;
+    }
+    .open-stage-head-info{
+      color:#333;
+      font-weight:900;
+      line-height:1.2;
+    }
+    .open-stage-head-info-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      flex:1 1 360px;
+      min-width:260px;
+    }
+    .open-stage-full-info{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+      background:#fff;
+      border:1px solid #d9d9d9;
+      border-radius:9px;
+      padding:7px 9px;
+      color:#222;
+      font-weight:700;
+      line-height:1.25;
+      max-width:760px;
+    }
+    .open-stage-full-info div{
+      white-space:normal;
+      overflow-wrap:anywhere;
+      word-break:normal;
+    }
+    .open-stage-full-info b{
+      color:#111;
+      margin-right:4px;
+    }
+    .open-stage-summary-line{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin:6px 0 8px;
+      color:#333;
+      font-weight:800;
+      font-size:.92em;
+    }
+    .open-stage-table-wrap{
+      width:100%;
+      overflow:auto;
+      border:1px solid #d9d9d9;
+      border-radius:10px;
+      background:#fff;
+    }
+    .open-stage-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:.86em;
+      min-width:1180px;
+    }
+    .open-stage-table th,
+    .open-stage-table td{
+      border:1px solid #d9d9d9;
+      padding:7px 8px;
+      text-align:center;
+      white-space:nowrap;
+    }
+    .open-stage-table th{
+      background:#f2f2f2;
+      color:#111;
+      font-weight:900;
+    }
+    .open-stage-table td:nth-child(6){text-align:left;}
+    .open-stage-table tbody tr:nth-child(even){background:#f7f7f7;}
+    @media (max-width:900px){
+      .remessa-card-main{grid-template-columns:1fr !important;gap:8px !important;}
+      .remessa-id-row{flex-direction:column;align-items:stretch;gap:6px;}
+      .remessa-id-row .remessa-card-meta{text-align:center !important;}
+      .remessa-current-stage{width:100% !important;min-width:0 !important;white-space:normal !important;}
+      .open-stage-card-head{width:100%;}
+      .open-stage-remessa-pill{width:100%;min-width:0;}
+      .open-stage-head-info{text-align:center;width:100%;}
+      .open-stage-head-info-wrap{width:100%;min-width:0;align-items:stretch;}
+      .open-stage-full-info{text-align:left;max-width:100%;}
+      .open-stage-summary-line{flex-direction:column;align-items:flex-start;}
+    }
+
+  
+
+    /* ===== AJUSTE: painel mais compacto + linhas agrupadas uma única vez ===== */
+    @media (min-width:901px){
+      .main-content{padding:12px !important;gap:8px !important;}
+      .main-content > .filters-container:first-child{
+        grid-template-columns:82px 140px 140px 190px 150px 150px 190px 130px 130px 130px !important;
+        gap:8px !important;
+        padding:10px 12px !important;
+        border-radius:16px !important;
+        align-items:end !important;
+      }
+      .main-content > .filters-container:first-child::before{
+        font-size:.9em !important;
+        padding-left:8px !important;
+        margin-bottom:0 !important;
+      }
+      .main-content > .filters-container:first-child .form-group,
+      .main-content > .filters-container:first-child .btn{
+        grid-column:auto !important;
+      }
+      .main-content > .filters-container:first-child .form-group{
+        padding:6px 8px !important;
+        border-radius:12px !important;
+      }
+      .main-content > .filters-container:first-child label{
+        font-size:.66em !important;
+        margin-bottom:3px !important;
+      }
+      .main-content > .filters-container:first-child input,
+      .main-content > .filters-container:first-child select,
+      .main-content > .filters-container:first-child .date-range-button{
+        height:22px !important;
+        font-size:.86em !important;
+        padding:1px 0 !important;
+      }
+      .main-content > .filters-container:first-child .btn{
+        min-height:38px !important;
+        padding:6px 10px !important;
+        border-radius:12px !important;
+        font-size:.9em !important;
+      }
+      .report-header{padding:12px 14px !important;border-radius:16px !important;margin-bottom:8px !important;}
+      .report-header h2{font-size:1.35em !important;}
+      .report-actions{padding:6px !important;gap:6px !important;}
+      .check-action{padding:7px 10px !important;font-size:.9em !important;}
+      .btn-whats{padding:8px 12px !important;font-size:.88em !important;}
+      #lineFilterContainer{
+        padding:9px 12px !important;
+        gap:8px !important;
+        border-radius:15px !important;
+        margin-bottom:10px !important;
+      }
+      #lineFilterContainer h4{
+        width:auto !important;
+        min-width:112px !important;
+        margin:0 !important;
+        font-size:.78em !important;
+      }
+      #lineCheckboxes{gap:6px !important;align-items:center !important;}
+      #lineCheckboxes label{
+        padding:5px 9px !important;
+        border-radius:999px !important;
+        font-size:.82em !important;
+        gap:5px !important;
+      }
+      #lineCheckboxes input[type="checkbox"]{
+        width:15px !important;
+        height:15px !important;
+        margin:0 !important;
+      }
+      #selectRemessasButton{
+        padding:7px 14px !important;
+        min-height:34px !important;
+        font-size:.84em !important;
+      }
+      .summary-info{gap:8px !important;margin-bottom:10px !important;}
+      .summary-item{padding:8px 10px !important;min-height:62px !important;font-size:.86em !important;}
+      .summary-item strong{font-size:1.2em !important;}
+      #resumoButtonsContainer{padding:8px !important;gap:8px !important;margin-bottom:10px !important;}
+      .btn-resumo{padding:8px 10px !important;font-size:.84em !important;min-height:36px !important;}
+    }
+
+    #remessaCardList.remessa-card-list{
+      display:block !important;
+      margin-top:8px !important;
+    }
+    .remessa-line-section{
+      margin:0 0 14px !important;
+    }
+    .remessa-line-title{
+      display:flex !important;
+      align-items:center !important;
+      justify-content:space-between !important;
+      gap:10px !important;
+      font-size:1em !important;
+      font-weight:900 !important;
+      color:#111 !important;
+      padding:4px 8px 6px !important;
+      margin:0 !important;
+      border-bottom:1px solid rgba(0,0,0,.08) !important;
+    }
+    .remessa-line-title span{
+      font-size:.72em !important;
+      font-weight:800 !important;
+      color:#666 !important;
+      background:#eeeeee !important;
+      border:1px solid #d5d5d5 !important;
+      border-radius:999px !important;
+      padding:4px 8px !important;
+      white-space:nowrap !important;
+    }
+    .remessa-line-grid{
+      display:grid !important;
+      grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+      gap:9px 12px !important;
+      align-items:start !important;
+    }
+    .remessa-line-grid .remessa-card{
+      margin:0 !important;
+    }
+    @media (max-width:900px){
+      .remessa-line-grid{grid-template-columns:1fr !important;gap:8px !important;}
+      .remessa-line-title{padding:4px 2px 6px !important;}
+      .remessa-line-title span{font-size:.68em !important;}
+    }
+    @media (min-width:901px) and (max-width:1450px){
+      .remessa-line-grid{grid-template-columns:1fr !important;}
+    }
+    .open-stage-table{min-width:1080px !important;}
+
+  
+
+    /* ===== AJUSTE MOBILE: card de remessa mais horizontal e compacto ===== */
+    @media (max-width: 900px){
+      .remessa-line-section{
+        margin:0 0 10px !important;
+      }
+      .remessa-line-title{
+        padding:3px 5px 5px !important;
+        font-size:.98em !important;
+        border-bottom:0 !important;
+      }
+      .remessa-line-title span{
+        padding:3px 8px !important;
+        font-size:.66em !important;
+      }
+      .remessa-line-grid{
+        gap:7px !important;
+      }
+      .remessa-line-grid .remessa-card,
+      .remessa-card{
+        padding:7px 8px !important;
+        border-radius:13px !important;
+        border-left-width:5px !important;
+        box-shadow:0 3px 8px rgba(0,0,0,.10) !important;
+      }
+      .remessa-card-main{
+        display:grid !important;
+        grid-template-columns:minmax(0, 1fr) minmax(118px, auto) !important;
+        grid-template-areas:
+          "ident status"
+          "chips chips" !important;
+        gap:5px 7px !important;
+        align-items:center !important;
+      }
+      .remessa-card-ident{
+        grid-area:ident !important;
+        min-width:0 !important;
+      }
+      .remessa-id-row{
+        flex-direction:row !important;
+        align-items:center !important;
+        justify-content:flex-start !important;
+        gap:6px !important;
+        min-width:0 !important;
+      }
+      .remessa-number-pill{
+        width:auto !important;
+        min-width:118px !important;
+        max-width:132px !important;
+        justify-content:center !important;
+        padding:5px 9px !important;
+        font-size:.98em !important;
+        line-height:1 !important;
+        white-space:nowrap !important;
+      }
+      .remessa-id-row .remessa-card-meta{
+        text-align:left !important;
+        font-size:.78em !important;
+        line-height:1.05 !important;
+        white-space:nowrap !important;
+        flex:0 0 auto !important;
+      }
+      .remessa-id-row .remessa-card-meta strong{
+        font-size:.98em !important;
+        line-height:1.05 !important;
+      }
+      .remessa-subline{
+        text-align:left !important;
+        margin-top:4px !important;
+        font-size:.76em !important;
+        line-height:1.12 !important;
+        font-weight:800 !important;
+      }
+      .remessa-current-stage{
+        grid-area:status !important;
+        width:100% !important;
+        min-width:118px !important;
+        max-width:130px !important;
+        justify-self:end !important;
+        padding:7px 8px !important;
+        font-size:.78em !important;
+        line-height:1.05 !important;
+        white-space:nowrap !important;
+        border-radius:999px !important;
+      }
+      .stage-chip-row{
+        grid-area:chips !important;
+        grid-column:1 / -1 !important;
+        display:grid !important;
+        grid-template-columns:repeat(5, minmax(0, 1fr)) !important;
+        gap:4px !important;
+        overflow:visible !important;
+        padding:0 !important;
+      }
+      .stage-chip{
+        min-width:0 !important;
+        min-height:46px !important;
+        padding:4px 2px !important;
+        border-radius:9px !important;
+        font-size:.56em !important;
+        line-height:1.05 !important;
+      }
+      .stage-chip b{
+        font-size:.78em !important;
+        line-height:1 !important;
+      }
+      .stage-chip span{
+        font-size:.98em !important;
+        line-height:1.05 !important;
+      }
+      .stage-chip small{
+        font-size:.86em !important;
+        line-height:1 !important;
+      }
+    }
+
+    @media (max-width: 380px){
+      .remessa-card-main{
+        grid-template-columns:minmax(0, 1fr) minmax(108px, auto) !important;
+        gap:5px !important;
+      }
+      .remessa-number-pill{
+        min-width:108px !important;
+        max-width:118px !important;
+        font-size:.92em !important;
+        padding:5px 7px !important;
+      }
+      .remessa-id-row .remessa-card-meta{
+        font-size:.72em !important;
+      }
+      .remessa-subline{
+        font-size:.70em !important;
+      }
+      .remessa-current-stage{
+        min-width:108px !important;
+        max-width:116px !important;
+        font-size:.72em !important;
+        padding:7px 5px !important;
+      }
+      .stage-chip{
+        min-height:43px !important;
+        font-size:.51em !important;
+        border-radius:8px !important;
+      }
+    }
+
+  
+
+    /* ===== AJUSTES: modal de talões em aberto com rolagem + totais por setor ===== */
+    #detailsModal{
+      overflow-y:auto !important;
+      -webkit-overflow-scrolling:touch !important;
+    }
+    #detailsModal .modal-content{
+      max-height:calc(100vh - 24px) !important;
+      overflow:hidden !important;
+      display:flex !important;
+      flex-direction:column !important;
+    }
+    #detailsModal .modal-head{
+      flex:0 0 auto !important;
+      padding-right:34px !important;
+    }
+    #modalBodyContent{
+      flex:1 1 auto !important;
+      min-height:0 !important;
+      overflow:auto !important;
+      padding:0 2px 2px 0 !important;
+      -webkit-overflow-scrolling:touch !important;
+    }
+    .open-stage-modal{
+      min-height:0 !important;
+    }
+    .open-stage-card-head{
+      width:100% !important;
+      align-items:flex-start !important;
+    }
+    .open-stage-head-info{
+      padding-top:7px !important;
+    }
+    .open-stage-head-totals{
+      display:flex !important;
+      flex-wrap:wrap !important;
+      gap:6px !important;
+      align-items:center !important;
+      margin-left:auto !important;
+      max-width:100% !important;
+    }
+    .stage-total-chip,
+    .line-remessas-total{
+      display:inline-flex !important;
+      align-items:center !important;
+      gap:4px !important;
+      border:1px solid #d5d5d5 !important;
+      border-radius:999px !important;
+      padding:5px 8px !important;
+      font-size:.72em !important;
+      font-weight:900 !important;
+      line-height:1 !important;
+      white-space:nowrap !important;
+      background:#eeeeee !important;
+      color:#333 !important;
+    }
+    .stage-total-chip small{
+      font-size:.92em !important;
+      font-weight:800 !important;
+      color:inherit !important;
+    }
+    .stage-total-chip.is-open{
+      background:#fff6df !important;
+      border-color:#efcf72 !important;
+      color:#5b4300 !important;
+    }
+    .stage-total-chip.is-ok{
+      background:#e4f8ed !important;
+      border-color:#95d8b2 !important;
+      color:#075f3a !important;
+    }
+    .line-title-left{
+      display:inline-flex !important;
+      align-items:center !important;
+      white-space:nowrap !important;
+      font-weight:900 !important;
+      color:#111 !important;
+    }
+    .line-title-totals{
+      display:flex !important;
+      align-items:center !important;
+      justify-content:flex-end !important;
+      flex-wrap:wrap !important;
+      gap:6px !important;
+      margin-left:auto !important;
+    }
+    .remessa-line-title{
+      align-items:center !important;
+      flex-wrap:wrap !important;
+    }
+    .remessa-line-title .line-title-totals span{
+      font-size:.72em !important;
+      padding:5px 8px !important;
+      border-radius:999px !important;
+      white-space:nowrap !important;
+    }
+    .open-stage-table-wrap{
+      width:100% !important;
+      max-height:calc(100vh - 215px) !important;
+      overflow:auto !important;
+      -webkit-overflow-scrolling:touch !important;
+    }
+    .open-stage-table{
+      min-width:980px !important;
+      width:100% !important;
+    }
+    .open-stage-table th{
+      position:sticky !important;
+      top:0 !important;
+      z-index:2 !important;
+    }
+    .open-stage-table th,
+    .open-stage-table td{
+      padding:6px 7px !important;
+    }
+    .open-stage-table th:nth-child(1),
+    .open-stage-table td:nth-child(1){width:58px !important;}
+    .open-stage-table th:nth-child(2),
+    .open-stage-table td:nth-child(2){width:96px !important;}
+    .open-stage-table th:nth-child(3),
+    .open-stage-table td:nth-child(3){width:72px !important;}
+    .open-stage-table td:nth-child(5){text-align:left !important;}
+    @media (max-width:900px){
+      #detailsModal .modal-content{max-height:calc(100vh - 12px) !important;}
+      .open-stage-head-totals{margin-left:0 !important; width:100% !important; justify-content:flex-start !important;}
+      .line-title-left{width:100% !important; justify-content:flex-start !important;}
+      .line-title-totals{width:100% !important; justify-content:flex-start !important; margin-left:0 !important; overflow-x:auto !important; flex-wrap:nowrap !important; padding-bottom:2px !important;}
+      .open-stage-table-wrap{max-height:calc(100vh - 285px) !important;}
+      .open-stage-table{min-width:840px !important; font-size:.72em !important;}
+      .stage-total-chip,
+      .line-remessas-total{font-size:.66em !important; padding:4px 7px !important;}
+    }
+
+  
+
+    /* Navegação padrão externa (navegacao.js): a página não cria mais header/nav próprios. */
+    body{margin:0;}
+
+
+    /* ===== AJUSTE FINAL: calendário acima do menu + totais da linha sem rolagem lateral ===== */
+    .modal,
+    #dateRangePickerModal,
+    #detailsModal,
+    #quickFiltersModal,
+    #remessaFilterModal,
+    #whatsMessageModal{
+      z-index:999999 !important;
+    }
+    #dateRangePickerModal{
+      overflow-y:auto !important;
+      -webkit-overflow-scrolling:touch !important;
+      padding:calc(env(safe-area-inset-top, 0px) + 14px) 10px 24px !important;
+    }
+    #dateRangePickerModal .date-picker-content{
+      margin:0 auto 24px !important;
+      max-height:calc(100dvh - 38px) !important;
+      overflow:auto !important;
+    }
+
+    .remessa-line-title{
+      display:flex !important;
+      align-items:center !important;
+      justify-content:space-between !important;
+      gap:8px !important;
+      width:100% !important;
+      overflow:visible !important;
+    }
+    .line-title-left{
+      flex:0 0 auto !important;
+      width:auto !important;
+      min-width:max-content !important;
+      white-space:nowrap !important;
+    }
+    .line-title-totals{
+      flex:1 1 auto !important;
+      min-width:0 !important;
+      width:auto !important;
+      margin-left:8px !important;
+      display:grid !important;
+      grid-template-columns:repeat(3, minmax(72px, 1fr)) !important;
+      gap:7px !important;
+      overflow:visible !important;
+      flex-wrap:unset !important;
+      justify-content:stretch !important;
+      padding-bottom:0 !important;
+    }
+    .line-title-totals .line-remessas-total{
+      display:none !important;
+    }
+    .line-title-totals .stage-total-chip{
+      width:100% !important;
+      min-width:0 !important;
+      justify-content:center !important;
+      text-align:center !important;
+      white-space:normal !important;
+      line-height:1.05 !important;
+      gap:3px !important;
+      padding:6px 6px !important;
+      font-size:.70em !important;
+    }
+    .line-title-totals .stage-total-chip b,
+    .line-title-totals .stage-total-chip small{
+      white-space:nowrap !important;
+    }
+
+    @media (max-width:900px){
+      .remessa-line-title{
+        display:grid !important;
+        grid-template-columns:auto minmax(0, 1fr) !important;
+        align-items:center !important;
+        gap:7px !important;
+        padding:4px 2px 6px !important;
+      }
+      .line-title-left{
+        width:auto !important;
+        min-width:max-content !important;
+        font-size:.95em !important;
+      }
+      .line-title-totals{
+        width:100% !important;
+        margin-left:0 !important;
+        grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+        gap:5px !important;
+        overflow:visible !important;
+      }
+      .line-title-totals .stage-total-chip{
+        font-size:.60em !important;
+        padding:5px 3px !important;
+        border-radius:999px !important;
+      }
+      .line-title-totals .stage-total-chip small{
+        font-size:.9em !important;
+      }
+    }
+    @media (max-width:390px){
+      .line-title-left{font-size:.88em !important;}
+      .line-title-totals{gap:4px !important;}
+      .line-title-totals .stage-total-chip{
+        font-size:.55em !important;
+        padding:5px 2px !important;
+      }
+    }
+
+</style>
+    <script src="navegacao.js"></script>
+
+  <style id="roma-etapas-v2">.stage-na{color:#64748b;font-size:.86em}.stage-pending{color:#9a3412}.table-container,#detailsTableContainer,.open-stage-table-wrap{overflow-x:auto}#detailsTableContainer table{min-width:1500px}.stage-chip.stage-na{background:#f1f5f9;color:#64748b;cursor:default}</style>
+<style id="roma-mobile-etapas-v2">.summary-info{grid-template-columns:repeat(auto-fit,minmax(125px,1fr))!important}.stage-chip-row{grid-template-columns:repeat(7,minmax(62px,1fr))!important;overflow-x:auto!important}.stage-chip{min-width:62px!important;font-size:11px!important;min-height:56px!important;line-height:1.15!important}.stage-chip b{font-size:11px!important}.stage-chip span{font-size:12px!important}.stage-chip small{font-size:10px!important;white-space:normal!important}#resumoButtonsContainer{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))!important}.open-stage-table{min-width:1100px}@media(max-width:760px){.summary-info{grid-template-columns:repeat(2,minmax(0,1fr))!important}.stage-chip-row{grid-template-columns:repeat(4,minmax(0,1fr))!important;overflow-x:visible!important}.stage-chip{min-width:0!important}.remessa-card-main{min-width:0!important}.line-title-totals{flex-wrap:wrap!important}}</style>
+</head>
+<body>
+  <div class="main-content">
+    <div class="filters-container">
+      <div class="form-group filter-linha"><label for="filterLinha">Linha:</label><input type="text" id="filterLinha" placeholder="Ex: 7142" maxlength="5" /></div>
+      <div class="form-group filter-modelo"><label for="filterModelo">Modelo:</label><input type="text" id="filterModelo" placeholder="Ex: 522" maxlength="5" /></div>
+      <div class="form-group filter-remessa">
+          <label for="filterRemessa">Remessa:</label>
+          <input type="text" id="filterRemessa" placeholder="Ex: 2684982" maxlength="8" />
+      </div>
+      <div class="form-group date-range-field"><label>Data de Corte:</label><button type="button" class="date-range-button" id="openCorteDatePicker"><span id="corteRangeLabel">Selecionar data/período</span></button><input type="hidden" id="filterDataCorteInicio" /><input type="hidden" id="filterDataCorteFim" /></div>
+      <div class="form-group"><label for="filterTipoCliente">Tipo de Cliente:</label>
+        <select id="filterTipoCliente">
+          <option value="">Todos</option>
+          <option value="Exportacao">Exportação</option>
+          <option value="Cliente especial">Cliente Especial</option>
+          <option value="Mercado Interno">Mercado Interno</option>
+          <option value="Estoque">Estoque</option>
+          <option value="Amostra">Amostra</option>
+        </select>
+      </div>
+      <div class="form-group"><label for="filterSetorAtelie">Setor do ateliê:</label><select id="filterSetorAtelie"><option value="costura">Costura</option><option value="palmilha">Palmilha</option><option value="sola">Sola</option></select></div>
+      <div class="form-group"><label for="filterAtelie">Ateliê Responsável:</label>
+        <select id="filterAtelie"><option value="">Todos</option></select>
+      </div>
+      <div class="form-group date-range-field"><label>Data de Entrega:</label><button type="button" class="date-range-button" id="openEntregaDatePicker"><span id="entregaRangeLabel">Selecionar data/período</span></button><input type="hidden" id="filterDataEntregaInicio" /><input type="hidden" id="filterDataEntregaFim" /></div>
+      <button class="btn btn-primary" id="searchButton">Gerar Relatório</button>
+      <button class="btn btn-secondary" id="quickFiltersButton" title="Filtros rápidos">Filtros rápidos</button>
+      <button class="btn btn-secondary" id="clearFiltersButton" title="Limpar filtros">Limpar</button>
+      
+      </div>
+    <div class="container">
+      <div class="report-header">
+        <h2>Relatório de Cronograma</h2>
+        <div class="report-actions">
+          <label class="check-action"><input type="checkbox" id="naoExibirAmostras" checked> Não exibir amostras</label>
+          <button class="btn btn-secondary btn-whats" type="button" id="montagemWhatsButton" title="Gerar mensagem de talões faltando montagem">Montagem Whats</button>
+          <button class="btn btn-secondary btn-whats" type="button" id="costuraWhatsButton" title="Gerar mensagem de talões faltando costura">Costura Whats</button>
+          <button class="btn btn-secondary" type="button" data-roma-whats="palmilha">Palmilha Whats</button>
+          <button class="btn btn-secondary" type="button" data-roma-whats="sola">Sola Whats</button>
+        </div>
+      </div>
+        <div id="lineFilterContainer" class="filters-container" style="display:none; justify-content: flex-start; max-width: 1200px; margin-bottom: 14px; align-items: flex-start;">
+            <h4 style="margin: 5px 10px 0 0; color: var(--ink-2); font-size: 1em;">Filtrar Linhas:</h4>
+            <div id="lineCheckboxes" class="column-checkboxes">
+                </div>
+               <button class="btn btn-secondary" id="selectRemessasButton" disabled style="padding: 0 20; min-width: 120px;">
+                  <span id="remessaCount">0</span> Clique para Selecionar as Remessas
+              </button>
+
+
+        </div>
+      <div id="loading" class="loader" style="display:none">Carregando dados...</div>
+      <div id="noData" class="loader">Selecione ao menos um filtro para iniciar a busca.</div>
+      <div id="reportContent" style="display:none">
+        
+        <div id="summaryInfo" class="summary-info"></div>
+
+        <div id="resumoButtonsContainer">
+            <button class="btn btn-resumo" id="resumoCorteButton">Corte</button>
+            <button class="btn btn-resumo" id="resumoCosturaButton">Giro Costura</button>
+            <button class="btn btn-resumo" data-roma-summary="palmilha">Giro Palmilha</button>
+            <button class="btn btn-resumo" data-roma-summary="sola">Giro Sola</button>
+            <button class="btn btn-resumo" id="resumoGiroFabricaButton">Giro Fábrica</button>
+            <button class="btn btn-resumo" id="resumoProntoCosturaButton">Pronto Costura</button>
+            <button class="btn btn-resumo" id="resumoFaltaMontarButton">Falta Montar</button>
+        </div>
+        <div id="remessaCardList" class="remessa-card-list"></div>
+        <details id="fullTableDetails" class="full-table-details">
+          <summary>Ver tabela completa</summary>
+          <div id="columnControlMenu">
+            <h4>Mostrar Colunas:</h4>
+            <div id="checkboxContainer" class="column-checkboxes">
+              </div>
+          </div>
+          <div id="tableContainer" class="table-container">
+            <table>
+            <thead>
+              <tr>
+                <th rowspan="2" class="col-linha">Linha</th>
+                <th rowspan="2" class="col-remessa">Remessa</th>
+                <th rowspan="2" class="col-pares-ident">Pares</th> 
+                <th rowspan="2" class="col-taloes-ident">Talões</th> 
+                <th rowspan="2" class="col-data-corte">Data de Corte</th>
+                <th rowspan="2" class="col-data-entrega">Data de Entrega</th>
+                
+                <th colspan="2" class="separator-border col-corte-group">Cortar</th>
+                <th colspan="2" class="separator-border col-costura-group">Costurar</th>
+                <th colspan="2" class="separator-border col-palmilha-group">Palmilha</th>
+                <th colspan="2" class="separator-border col-sola-group">Sola</th>
+                <th colspan="2" class="separator-border col-distribuicao-group">Distribuir</th>
+                <th colspan="2" class="separator-border col-talonagem-group">Talonar</th>
+                <th colspan="2" class="col-montagem-group">Montar</th>
+              </tr>
+              <tr>
+                <th class="col-corte">Pares</th><th class="separator-border col-corte">Talões</th>
+                <th class="col-costura">Pares</th><th class="separator-border col-costura">Talões</th>
+                <th class="col-palmilha">Pares</th><th class="separator-border col-palmilha">Talões</th>
+                <th class="col-sola">Pares</th><th class="separator-border col-sola">Talões</th>
+                <th class="col-distribuicao">Pares</th><th class="separator-border col-distribuicao">Talões</th>
+                <th class="col-talonagem">Pares</th><th class="separator-border col-talonagem">Talões</th>
+                <th class="col-montagem">Pares</th><th class="col-montagem">Talões</th>
+              </tr>
+            </thead>
+            <tbody id="cronogramaTableBody"></tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+  
+  <div id="detailsModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <div class="modal-head"><h3 id="modalTitle" style="margin:0">Detalhes / Resumo</h3></div>
+      <div id="modalBodyContent">
+          </div>
+    </div>
+  </div>
+
+  <div id="remessaFilterModal" class="modal">
+    <div class="modal-content" style="max-width: 650px;">
+      <span class="close-btn remessa-close-btn">&times;</span>
+      <div class="modal-head"><h3 style="margin:0">Selecionar Remessas (Filtro)</h3></div>
+      <p style="font-size: 0.9em; color: var(--muted);">
+          *A busca é limitada às remessas carregadas no relatório principal.<br>
+          **Os dados de pares/linha/cliente são a consolidação de todos os talões da remessa.
+      </p>
+      <div id="remessaFilterListContainer" style="max-height: 400px; overflow-y: auto; padding: 8px 0;">
+        <table id="remessaFilterTable" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+            <thead>
+                <tr>
+                    <th style="width: 40px;"><input type="checkbox" id="selectAllRemessas" checked></th>
+                    <th>Remessa</th>
+                    <th>Linha(s)</th>
+                    <th>Pares Totais</th>
+                    <th>Tipo de Cliente</th>
+                </tr>
+            </thead>
+            <tbody id="remessaFilterTableBody"></tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: flex-end; padding-top: 10px; border-top: 1px solid var(--bd);">
+        <button class="btn btn-primary" id="saveRemessaSelectionButton">Salvar Seleção</button>
+      </div>
+    </div>
+  </div>
+  <div id="dateRangePickerModal" class="modal">
+    <div class="modal-content date-picker-content">
+      <button type="button" class="date-picker-close" id="datePickerClose" style="position:absolute; right:14px; top:10px; border:none; background:transparent; font-size:28px; font-weight:700; cursor:pointer;">&times;</button>
+      <div class="modal-head"><h3 id="datePickerTitle" style="margin:0">Selecionar período</h3></div>
+      <div class="date-picker-header">
+        <button type="button" id="datePickerPrev" aria-label="Mês anterior">‹</button>
+        <div id="datePickerMonthTitle" class="date-picker-month-title"></div>
+        <button type="button" id="datePickerNext" aria-label="Próximo mês">›</button>
+      </div>
+      <div class="date-picker-weekdays">
+        <div>DOM.</div><div>SEG.</div><div>TER.</div><div>QUA.</div><div>QUI.</div><div>SEX.</div><div>SÁB.</div>
+      </div>
+      <div id="datePickerGrid" class="date-picker-grid"></div>
+      <div class="date-picker-actions">
+        <span id="datePickerHint" class="date-picker-hint">Clique em uma data para buscar somente aquele dia, ou clique em duas datas para selecionar um período.</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" type="button" id="datePickerClear">Limpar</button>
+          <button class="btn btn-primary" type="button" id="datePickerApply">Aplicar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="quickFiltersModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <button type="button" class="quick-close-btn" id="quickFiltersClose" style="position:absolute; right:14px; top:10px; border:none; background:transparent; font-size:28px; font-weight:700; cursor:pointer;">&times;</button>
+      <div class="modal-head"><h3 style="margin:0">Filtros rápidos</h3></div>
+      <div class="quick-filters-list">
+        <button class="quick-filter-option" type="button" data-quick-filter="exportacao-hoje">Exportação de hoje</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="exportacao-segunda">Exportação de Segunda</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="exportacao-quinta">Exportação de Quinta</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="exportacoes-atraso">Exportações em atraso</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="semana-atual">Fechamento dessa semana</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="proxima-semana">Fechamento da próxima semana</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="semana-passada">Semana passada</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="mes-atual">Fechamento desse mês</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="mes-passado">Fechamento mês passado</button>
+        <button class="quick-filter-option" type="button" data-quick-filter="proximo-mes">Fechamento próximo mês</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="whatsMessageModal" class="modal">
+    <div class="modal-content" style="max-width: 720px;">
+      <button type="button" id="whatsMessageClose" style="position:absolute; right:14px; top:10px; border:none; background:transparent; font-size:28px; font-weight:700; cursor:pointer;">&times;</button>
+      <div class="modal-head"><h3 id="whatsMessageTitle" style="margin:0">Mensagem para WhatsApp</h3></div>
+      <textarea id="whatsMessageText" class="whats-message-box" readonly></textarea>
+      <div class="whats-actions">
+        <button class="btn btn-secondary" type="button" id="copyWhatsMessageButton">Copiar mensagem</button>
+        <button class="btn btn-primary" type="button" id="openWhatsMessageButton">Abrir WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // === Firebase ===
+    const firebaseConfig = window.FIREBASE_CONFIG;
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+    // === DOM ===
+    const filterSetorAtelie=document.getElementById('filterSetorAtelie');
+    const filterLinha=document.getElementById('filterLinha'), filterModelo=document.getElementById('filterModelo'), filterRemessa=document.getElementById('filterRemessa'), filterDataCorteInicio=document.getElementById('filterDataCorteInicio'), filterDataCorteFim=document.getElementById('filterDataCorteFim'), filterTipoCliente=document.getElementById('filterTipoCliente'), filterAtelie=document.getElementById('filterAtelie'), filterDataEntregaInicio=document.getElementById('filterDataEntregaInicio'), filterDataEntregaFim=document.getElementById('filterDataEntregaFim');
+    const corteRangeLabel=document.getElementById('corteRangeLabel'), entregaRangeLabel=document.getElementById('entregaRangeLabel');
+    const searchButton=document.getElementById('searchButton'), quickFiltersButton=document.getElementById('quickFiltersButton'), clearFiltersButton=document.getElementById('clearFiltersButton');
+    const openCorteDatePicker=document.getElementById('openCorteDatePicker'), openEntregaDatePicker=document.getElementById('openEntregaDatePicker');
+    const dateRangePickerModal=document.getElementById('dateRangePickerModal'), datePickerTitle=document.getElementById('datePickerTitle'), datePickerClose=document.getElementById('datePickerClose'), datePickerPrev=document.getElementById('datePickerPrev'), datePickerNext=document.getElementById('datePickerNext'), datePickerMonthTitle=document.getElementById('datePickerMonthTitle'), datePickerGrid=document.getElementById('datePickerGrid'), datePickerApply=document.getElementById('datePickerApply'), datePickerClear=document.getElementById('datePickerClear');
+    const quickFiltersModal=document.getElementById('quickFiltersModal'), quickFiltersClose=document.getElementById('quickFiltersClose');
+    const naoExibirAmostras=document.getElementById('naoExibirAmostras'), montagemWhatsButton=document.getElementById('montagemWhatsButton'), costuraWhatsButton=document.getElementById('costuraWhatsButton');
+    const whatsMessageModal=document.getElementById('whatsMessageModal'), whatsMessageClose=document.getElementById('whatsMessageClose'), whatsMessageTitle=document.getElementById('whatsMessageTitle'), whatsMessageText=document.getElementById('whatsMessageText'), copyWhatsMessageButton=document.getElementById('copyWhatsMessageButton'), openWhatsMessageButton=document.getElementById('openWhatsMessageButton');
+    
+    // NOVAS REFERÊNCIAS DE BOTÕES (AGORA NO CORPO DO RELATÓRIO)
+    const resumoCorteButton=document.getElementById('resumoCorteButton'), resumoCosturaButton=document.getElementById('resumoCosturaButton'), resumoGiroFabricaButton=document.getElementById('resumoGiroFabricaButton'), resumoProntoCosturaButton=document.getElementById('resumoProntoCosturaButton'), resumoFaltaMontarButton=document.getElementById('resumoFaltaMontarButton');
+    
+    const loading=document.getElementById('loading'), noData=document.getElementById('noData'), reportContent=document.getElementById('reportContent'), summaryInfo=document.getElementById('summaryInfo'), cronogramaTableBody=document.getElementById('cronogramaTableBody');
+    const detailsModal=document.getElementById('detailsModal'), modalTitle=document.getElementById('modalTitle'), closeModalBtn=document.querySelector('.close-btn');
+    const modalBodyContent = document.getElementById('modalBodyContent'); 
+    const checkboxContainer = document.getElementById('checkboxContainer'); 
+    
+    // NOVO: Referências para o controle de Linhas
+    const lineFilterContainer = document.getElementById('lineFilterContainer');
+    const lineCheckboxes = document.getElementById('lineCheckboxes');
+
+    // NOVO: Referências para o controle de Remessas
+    const selectRemessasButton = document.getElementById('selectRemessasButton');
+    const remessaCount = document.getElementById('remessaCount');
+    const remessaFilterModal = document.getElementById('remessaFilterModal');
+    const remessaCloseBtn = document.querySelector('.remessa-close-btn');
+    const remessaFilterTableBody = document.getElementById('remessaFilterTableBody');
+    const selectAllRemessas = document.getElementById('selectAllRemessas');
+    const saveRemessaSelectionButton = document.getElementById('saveRemessaSelectionButton');
+    
+    // Variável para a tabela de detalhes
+    let modalTableBody = null; 
+    
+    let allFetchedTaloes=[];
+    let currentStageFilter = null; 
+    
+    // NOVO: Variáveis de estado para o filtro de Linhas
+    let availableLines = new Set();
+    let selectedLines = new Set(); // Armazena as linhas atualmente selecionadas/filtradas
+
+    // NOVO: Variáveis de estado para o filtro de Remessas
+    // Map<remessaNumber, {linhas: Set, pares: number, tiposCliente: Set}>
+    let availableRemessas = new Map(); 
+    let selectedRemessas = new Set();  // Set<remessaNumber>
+
+
+    // Permissão desta página
+    const cronogramaAllowedLevels = ['01','02','06','07','08','09'];
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      try {
+        const userDocRef = doc(db, 'Usuario', user.email);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+          alert('Dados do usuário não encontrados. Faça login novamente.');
+          await signOut(auth);
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+        const nivelAcesso = String(userData.nivelAcesso || '');
+        const userName = userData.Nome || 'Usuário';
+
+        localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+        localStorage.setItem('calcadosroma-65ac6:userName', userName);
+
+        if (!cronogramaAllowedLevels.includes(nivelAcesso)) {
+          alert('Você não tem permissão para acessar esta página.');
+          window.location.href = 'index.html';
+          return;
+        }
+
+        if (window.SistemaNavegacao && typeof window.SistemaNavegacao.init === 'function') {
+          window.SistemaNavegacao.init({
+            userLevel: nivelAcesso,
+            userName,
+            title: 'Cronograma de Talões',
+            onLogout: async () => {
+              try {
+                await signOut(auth);
+                localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                localStorage.removeItem('calcadosroma-65ac6:userName');
+                window.location.href = 'login.html';
+              } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                alert('Erro ao fazer logout. Tente novamente.');
+              }
+            }
+          });
+        } else {
+          console.warn('navegacao.js não foi carregado. Verifique se o arquivo navegacao.js está na mesma pasta do cronograma.html.');
+        }
+
+        loadAtelies();
+        setupColumnControl();
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+        alert('Erro ao carregar dados do usuário. Faça login novamente.');
+        await signOut(auth);
+        window.location.href = 'login.html';
+      }
+    });
+
+    async function loadAtelies(){
+      const sector=filterSetorAtelie.value;
+      filterAtelie.innerHTML='<option value="">Todos</option>';
+      try{
+        const snap=await getDocs(query(collection(db,'atelies'),where('setor','==',sector)));
+        if(filterSetorAtelie.value!==sector) return;
+        const ateliers=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'));
+        ateliers.forEach(a=>{const opt=document.createElement('option');opt.value=a.id;opt.textContent=a.nome+(a.ativo===false?' (inativo)':'');filterAtelie.appendChild(opt);});
+      }catch(error){console.error('Erro ao carregar ateliês:',error);}
+    }
+    filterSetorAtelie.addEventListener('change',loadAtelies);
+
+
+    // MODIFICADO: Limpa também os filtros de linha e remessa
+    clearFiltersButton.addEventListener('click',()=>{ 
+        [filterLinha,filterModelo,filterRemessa,filterDataCorteInicio,filterDataCorteFim,filterDataEntregaInicio,filterDataEntregaFim].forEach(i=>i.value=''); updateRangeLabels(); 
+        filterTipoCliente.value=''; 
+        filterAtelie.value=''; 
+        if(naoExibirAmostras) naoExibirAmostras.checked = true; 
+        cronogramaTableBody.innerHTML='';
+      const remessaCardList = document.getElementById('remessaCardList');
+      if(remessaCardList) remessaCardList.innerHTML = ''; 
+        summaryInfo.innerHTML=''; 
+        reportContent.style.display='none'; 
+        noData.textContent='Selecione ao menos um filtro para iniciar a busca.'; 
+        noData.style.display='block'; 
+        currentStageFilter = null; 
+        
+        // NOVO: Limpeza dos filtros de linha
+        lineFilterContainer.style.display = 'none'; 
+        availableLines = new Set(); 
+        selectedLines = new Set();
+
+        // NOVO: Limpeza dos filtros de remessa
+        remessaFilterModal.style.display = 'none';
+        selectRemessasButton.disabled = true;
+        selectRemessasButton.textContent = '0 Selecionadas';
+        availableRemessas = new Map();
+        selectedRemessas = new Set();
+    });
+    
+    searchButton.addEventListener('click', runSearch);
+    naoExibirAmostras.addEventListener('change', () => {
+      // Recarrega a busca para incluir ou remover amostras conforme a opção marcada.
+      if(reportContent.style.display !== 'none' || allFetchedTaloes.length > 0) runSearch();
+    });
+
+    // Helpers
+    function hasDate(v){ return v!==undefined && v!==null && String(v).trim()!==''; }
+    function escapeHTML(v){ return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+    function cleanCardText(v){
+      const s = String(v ?? '').replace(/\s+/g,' ').trim();
+      if(!s || s === '-' || /^0+$/.test(s)) return '';
+      return s;
+    }
+    function firstFieldValue(obj, keys){
+      for(const key of keys){
+        const value = cleanCardText(obj && obj[key]);
+        if(value) return value;
+      }
+      return '';
+    }
+    function addUniqueText(set, value){
+      const clean = cleanCardText(value);
+      if(clean) set.add(clean);
+    }
+    function joinSetText(set){ return Array.from(set || []).filter(Boolean).join(' / '); }
+    function formatDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); if(!y||!m||!d) return ''; return `${d}/${m}/${y}`; }
+    function formatDateAbreviado(iso){ if(!iso) return ''; const dt=new Date(iso+'T00:00:00'); if(isNaN(dt)) return ''; const dd=String(dt.getDate()).padStart(2,'0'); const mm=String(dt.getMonth()+1).padStart(2,'0'); return `${dd}/${mm}`; }
+    function isoFromDate(date){ const y=date.getFullYear(); const m=String(date.getMonth()+1).padStart(2,'0'); const d=String(date.getDate()).padStart(2,'0'); return `${y}-${m}-${d}`; }
+    function parseISODate(iso){ if(!iso) return null; const [y,m,d]=iso.split('-').map(Number); if(!y||!m||!d) return null; return new Date(y,m-1,d); }
+    function sameISO(a,b){ return a && b && a===b; }
+    function updateRangeLabels(){
+      function labelFor(a,b,emptyText){
+        if(!a && !b) return emptyText;
+        if(a && b && sameISO(a,b)) return formatDate(a);
+        return `${a?formatDate(a):'Início'} até ${b?formatDate(b):'Fim'}`;
+      }
+      if(corteRangeLabel){ corteRangeLabel.textContent = labelFor(filterDataCorteInicio.value, filterDataCorteFim.value, 'Selecionar data/período'); }
+      if(entregaRangeLabel){ entregaRangeLabel.textContent = labelFor(filterDataEntregaInicio.value, filterDataEntregaFim.value, 'Selecionar data/período'); }
+    }
+    [filterDataCorteInicio,filterDataCorteFim,filterDataEntregaInicio,filterDataEntregaFim].forEach(i=>i.addEventListener('change', updateRangeLabels));
+
+    let datePickerTarget = null;
+    let datePickerMonth = new Date();
+    let datePickerStart = null;
+    let datePickerEnd = null;
+
+    function openDatePicker(target){
+      datePickerTarget = target;
+      const isCorte = target === 'corte';
+      const startInput = isCorte ? filterDataCorteInicio : filterDataEntregaInicio;
+      const endInput = isCorte ? filterDataCorteFim : filterDataEntregaFim;
+      datePickerTitle.textContent = isCorte ? 'Selecionar Data de Corte' : 'Selecionar Data de Entrega';
+      datePickerStart = startInput.value || null;
+      datePickerEnd = endInput.value || null;
+      const base = parseISODate(datePickerStart || datePickerEnd) || new Date();
+      datePickerMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+      renderDatePicker();
+      dateRangePickerModal.style.display='block';
+    }
+
+    function renderDatePicker(){
+      const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      datePickerMonthTitle.textContent = `${months[datePickerMonth.getMonth()]} ${datePickerMonth.getFullYear()}`;
+      datePickerGrid.innerHTML='';
+      const year = datePickerMonth.getFullYear();
+      const month = datePickerMonth.getMonth();
+      const first = new Date(year, month, 1);
+      const gridStart = new Date(year, month, 1 - first.getDay());
+
+      // Sempre mostra 6 semanas: dias do mês anterior, mês atual e próximo mês.
+      for(let i=0;i<42;i++){
+        const cellDate = new Date(gridStart);
+        cellDate.setDate(gridStart.getDate() + i);
+        const btn = document.createElement('button');
+        btn.type='button';
+        btn.className='date-picker-day';
+
+        const currentISO = isoFromDate(cellDate);
+        btn.textContent = String(cellDate.getDate());
+        btn.dataset.date = currentISO;
+
+        if(cellDate.getMonth() !== month) btn.classList.add('out-month');
+
+        const start = datePickerStart;
+        const end = datePickerEnd || datePickerStart;
+        if(start && end && currentISO >= start && currentISO <= end) btn.classList.add('in-range');
+        if(start && currentISO === start) btn.classList.add('range-start');
+        if(end && currentISO === end) btn.classList.add('range-end');
+        btn.addEventListener('click', () => selectDateInPicker(currentISO));
+        datePickerGrid.appendChild(btn);
+      }
+    }
+
+    function selectDateInPicker(iso){
+      if(!datePickerStart || (datePickerStart && datePickerEnd)){
+        datePickerStart = iso;
+        datePickerEnd = null;
+      } else {
+        if(iso < datePickerStart){
+          datePickerEnd = datePickerStart;
+          datePickerStart = iso;
+        } else {
+          datePickerEnd = iso;
+        }
+      }
+      renderDatePicker();
+    }
+
+    function applyDatePicker(){
+      if(!datePickerTarget) return;
+      const isCorte = datePickerTarget === 'corte';
+      const startInput = isCorte ? filterDataCorteInicio : filterDataEntregaInicio;
+      const endInput = isCorte ? filterDataCorteFim : filterDataEntregaFim;
+      if(datePickerStart && !datePickerEnd) datePickerEnd = datePickerStart;
+      startInput.value = datePickerStart || '';
+      endInput.value = datePickerEnd || '';
+      updateRangeLabels();
+      dateRangePickerModal.style.display='none';
+    }
+
+    function clearDatePicker(){
+      datePickerStart=null; datePickerEnd=null;
+      renderDatePicker();
+    }
+
+    openCorteDatePicker.addEventListener('click', () => openDatePicker('corte'));
+    openEntregaDatePicker.addEventListener('click', () => openDatePicker('entrega'));
+    datePickerClose.addEventListener('click', () => dateRangePickerModal.style.display='none');
+    dateRangePickerModal.addEventListener('click', (e) => { if(e.target === dateRangePickerModal) dateRangePickerModal.style.display='none'; });
+    datePickerApply.addEventListener('click', applyDatePicker);
+    datePickerClear.addEventListener('click', clearDatePicker);
+    datePickerPrev.addEventListener('click', () => { datePickerMonth = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()-1, 1); renderDatePicker(); });
+    datePickerNext.addEventListener('click', () => { datePickerMonth = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()+1, 1); renderDatePicker(); });
+
+    function setDateRange(target, startISO, endISO){
+      const startInput = target === 'corte' ? filterDataCorteInicio : filterDataEntregaInicio;
+      const endInput = target === 'corte' ? filterDataCorteFim : filterDataEntregaFim;
+      startInput.value = startISO || '';
+      endInput.value = endISO || startISO || '';
+      updateRangeLabels();
+    }
+
+    function startOfWeek(date){ const d=new Date(date.getFullYear(), date.getMonth(), date.getDate()); const day=d.getDay(); const diff=day===0 ? -6 : 1-day; d.setDate(d.getDate()+diff); return d; }
+    function endOfWeek(date){ const d=startOfWeek(date); d.setDate(d.getDate()+4); return d; }
+    function nextWeekday(baseDate, weekday){ const d=new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate()); let diff=(weekday-d.getDay()+7)%7; if(diff===0) diff=7; d.setDate(d.getDate()+diff); return d; }
+    function firstDayOfMonth(offset=0){ const now=new Date(); return new Date(now.getFullYear(), now.getMonth()+offset, 1); }
+    function lastDayOfMonth(offset=0){ const now=new Date(); return new Date(now.getFullYear(), now.getMonth()+offset+1, 0); }
+
+    function applyQuickFilter(type){
+      const today = new Date();
+      let start=null, end=null, tipo='';
+      // Filtros rápidos trabalham em Data de Entrega. Mantém Linha/Modelo/Remessa/Ateliê, se já estiverem preenchidos.
+      filterDataCorteInicio.value=''; filterDataCorteFim.value='';
+      switch(type){
+        case 'exportacao-hoje':
+          tipo='Exportacao'; start=end=today; break;
+        case 'exportacao-segunda':
+          tipo='Exportacao'; start=end=nextWeekday(today, 1); break;
+        case 'exportacao-quinta':
+          tipo='Exportacao'; start=end=nextWeekday(today, 4); break;
+        case 'exportacoes-atraso':
+          tipo='Exportacao'; end=new Date(today.getFullYear(), today.getMonth(), today.getDate()-1); start=null; break;
+        case 'semana-atual':
+          start=startOfWeek(today); end=endOfWeek(today); break;
+        case 'proxima-semana':
+          start=startOfWeek(today); start.setDate(start.getDate()+7); end=new Date(start); end.setDate(end.getDate()+4); break;
+        case 'semana-passada':
+          start=startOfWeek(today); start.setDate(start.getDate()-7); end=new Date(start); end.setDate(end.getDate()+4); break;
+        case 'mes-atual':
+          start=firstDayOfMonth(0); end=lastDayOfMonth(0); break;
+        case 'mes-passado':
+          start=firstDayOfMonth(-1); end=lastDayOfMonth(-1); break;
+        case 'proximo-mes':
+          start=firstDayOfMonth(1); end=lastDayOfMonth(1); break;
+      }
+      filterTipoCliente.value = tipo;
+      filterDataEntregaInicio.value = start ? isoFromDate(start) : '';
+      filterDataEntregaFim.value = end ? isoFromDate(end) : '';
+      updateRangeLabels();
+      quickFiltersModal.style.display='none';
+      runSearch();
+    }
+
+    quickFiltersButton.addEventListener('click', () => quickFiltersModal.style.display='block');
+    quickFiltersClose.addEventListener('click', () => quickFiltersModal.style.display='none');
+    quickFiltersModal.addEventListener('click', (e) => { if(e.target === quickFiltersModal) quickFiltersModal.style.display='none'; });
+    document.querySelectorAll('.quick-filter-option').forEach(btn => btn.addEventListener('click', () => applyQuickFilter(btn.dataset.quickFilter)));
+
+    function formatWhatsFilters(){
+      const filters = getAppliedFiltersText().replace(/^ Filtros: /, '').trim();
+      return filters || '(Sem filtros adicionais)';
+    }
+
+    function makeGroupedLines(grouped){
+      return Object.keys(grouped).sort((a,b)=>a.localeCompare(b)).map(key => `• ${key}: ${grouped[key].toLocaleString()} pares`);
+    }
+
+    function sortTaloesForWhats(a,b){
+      const dataA = a.dataCorte || a.dataEntrega || '';
+      const dataB = b.dataCorte || b.dataEntrega || '';
+      if(dataA !== dataB) return dataA.localeCompare(dataB);
+
+      const remA = parseInt(String(a.numeroRemessa || '').replace(/\D/g,''),10) || 0;
+      const remB = parseInt(String(b.numeroRemessa || '').replace(/\D/g,''),10) || 0;
+      if(remA !== remB) return remA - remB;
+
+      const talA = parseInt(String(getNumeroTalaoWhats(a)).replace(/\D/g,''),10) || 0;
+      const talB = parseInt(String(getNumeroTalaoWhats(b)).replace(/\D/g,''),10) || 0;
+      return talA - talB;
+    }
+
+    function getNumeroTalaoWhats(t){
+      const direto = t.numeroTalaoSequencial || t.numeroTalao || t.talao || t.talaoSequencial || '';
+      if(direto) return String(direto);
+      const codigo = String(t.codigoBarras || '');
+      if(codigo.includes('+')) return codigo.split('+').pop();
+      return codigo;
+    }
+
+    function uniqueSorted(values){
+      return Array.from(new Set(values.filter(v => v !== undefined && v !== null && String(v).trim() !== '').map(v => String(v).trim()))).sort((a,b)=>a.localeCompare(b, 'pt-BR', {numeric:true}));
+    }
+
+    function getModeloResumoKey(t){
+      const linha = String(t.linha || '').trim();
+      const modelo = String(t.modelo || '').trim();
+      if(linha && modelo) return `${linha}.${modelo}`;
+      if(modelo) return modelo;
+      if(linha) return linha;
+      return 'Sem modelo';
+    }
+
+    function buildWhatsDetailedByRemessa(taloes, config){
+      const total = taloes.reduce((sum,t)=>sum+(Number(t.pares)||0),0);
+      const lines = [`*${config.titulo}*`, `Filtros: ${formatWhatsFilters()}`, `${config.totalLabel}: ${total.toLocaleString()} pares`, ''];
+
+      if(taloes.length === 0){
+        lines.push(config.emptyMessage);
+        return lines.join('\n').trim();
+      }
+
+      const grouped = new Map();
+      const totalPorModelo = {};
+
+      taloes.slice().sort(sortTaloesForWhats).forEach(t => {
+        const remessa = t.numeroRemessa || 'Sem remessa';
+        if(!grouped.has(remessa)) grouped.set(remessa, []);
+        grouped.get(remessa).push(t);
+
+        const modeloKey = getModeloResumoKey(t);
+        totalPorModelo[modeloKey] = (totalPorModelo[modeloKey] || 0) + (Number(t.pares) || 0);
+      });
+
+      grouped.forEach((lista, remessa) => {
+        const linhas = uniqueSorted(lista.map(t => t.linha));
+        let header = `R. ${remessa}`;
+        if(linhas.length) header += ` - L. ${linhas.join(', ')}`;
+        lines.push(header);
+
+        lista.sort(sortTaloesForWhats).forEach(t => {
+          const numeroTalao = getNumeroTalaoWhats(t) || '-';
+          const modelo = t.modelo ? ` - ${t.modelo}` : '';
+          const owner=t[config.ownerField || 'idAtelieResponsavel'];
+          const atelie = owner ? ` - ${owner}` : '';
+          const pares = Number(t.pares) ? ` - ${(Number(t.pares)||0).toLocaleString()} pares` : '';
+          lines.push(`T.${numeroTalao}${modelo}${atelie}${pares}`);
+        });
+        lines.push('');
+      });
+
+      const modelosOrdenados = Object.keys(totalPorModelo).sort((a,b)=>a.localeCompare(b, 'pt-BR', {numeric:true}));
+      if(modelosOrdenados.length){
+        lines.push('Resumo por modelo');
+        modelosOrdenados.forEach(modelo => {
+          lines.push(`Modelo ${modelo} - ${totalPorModelo[modelo].toLocaleString()} pares`);
+        });
+      }
+
+      return lines.join('\n').trim();
+    }
+
+    function openWhatsModal(title, message){
+      whatsMessageTitle.textContent = title;
+      whatsMessageText.value = message;
+      whatsMessageModal.style.display = 'block';
+      whatsMessageText.focus();
+      whatsMessageText.select();
+    }
+
+    function buildCosturaWhatsMessage(){
+      const taloes = getCurrentFilteredTaloes().filter(t => window.RomaProducao.missing(t,'costura'));
+      return buildWhatsDetailedByRemessa(taloes, {
+        titulo: 'Falta costura',
+        totalLabel: 'Total faltando costura',
+        emptyMessage: 'Nenhum talão faltando costura nos filtros selecionados.'
+      });
+    }
+
+    function buildMontagemWhatsMessage(){
+      const taloes = getCurrentFilteredTaloes().filter(t => !hasDate(t.dataEntradaMontagem));
+      return buildWhatsDetailedByRemessa(taloes, {
+        titulo: 'Falta montagem',
+        totalLabel: 'Total faltando montar',
+        emptyMessage: 'Nenhum talão faltando montagem nos filtros selecionados.'
+      });
+    }
+
+    montagemWhatsButton.addEventListener('click', () => {
+      if(checkTaloesAndAlert()) openWhatsModal('Montagem Whats', buildMontagemWhatsMessage());
+    });
+    costuraWhatsButton.addEventListener('click', () => {
+      if(checkTaloesAndAlert()) openWhatsModal('Costura Whats', buildCosturaWhatsMessage());
+    });
+    whatsMessageClose.addEventListener('click', () => whatsMessageModal.style.display='none');
+    whatsMessageModal.addEventListener('click', (e) => { if(e.target === whatsMessageModal) whatsMessageModal.style.display='none'; });
+    copyWhatsMessageButton.addEventListener('click', async () => {
+      try{
+        await navigator.clipboard.writeText(whatsMessageText.value);
+        copyWhatsMessageButton.textContent = 'Copiado!';
+        setTimeout(()=>copyWhatsMessageButton.textContent='Copiar mensagem', 1200);
+      }catch(err){
+        whatsMessageText.focus(); whatsMessageText.select();
+        document.execCommand('copy');
+      }
+    });
+    openWhatsMessageButton.addEventListener('click', () => {
+      const url = `https://wa.me/?text=${encodeURIComponent(whatsMessageText.value)}`;
+      window.open(url, '_blank');
+    });
+
+    function maxISO(a,b){ if(!a) return b||null; if(!b) return a||null; return (new Date(a)>new Date(b))?a:b; }
+    function groupAndSum(taloes, keyFunc) {
+        const grouped = {};
+        taloes.forEach(t => {
+            const key = keyFunc(t);
+            const pares = Number(t.pares) || 0;
+            if (key) {
+                grouped[key] = (grouped[key] || 0) + pares;
+            }
+        });
+        return grouped;
+    }
+    
+    // NOVO: Função para atualizar o texto do botão do filtro de remessa
+    function updateRemessaCountDisplay() {
+        const totalAvailable = availableRemessas.size;
+        // remessaCount.textContent = selectedRemessas.size.toLocaleString(); // Não é mais necessário, usando o texto completo
+        selectRemessasButton.textContent = `Clique para selecionar as remessas`;
+    }
+
+    // NOVO: Função para coletar e inicializar os dados de remessa para o filtro
+    function setupRemessaFilter(taloes) {
+        const remessaData = new Map();
+
+        taloes.forEach(t => {
+            const remessa = t.numeroRemessa;
+            if (!remessa) return;
+            
+            const pares = Number(t.pares) || 0;
+            const linha = t.linha || 'N/A';
+            const tipoCliente = t.tipoCliente || 'N/A';
+
+            if (!remessaData.has(remessa)) {
+                remessaData.set(remessa, {
+                    linhas: new Set(),
+                    pares: 0,
+                    tiposCliente: new Set()
+                });
+            }
+            
+            const data = remessaData.get(remessa);
+            data.pares += pares;
+            if (linha) data.linhas.add(linha);
+            if (tipoCliente) data.tiposCliente.add(tipoCliente);
+        });
+
+        availableRemessas = remessaData;
+
+        // Inicializa `selectedRemessas` se estiver vazio (primeiro load)
+        if (selectedRemessas.size === 0) {
+            remessaData.forEach((_, remessa) => selectedRemessas.add(remessa));
+        }
+        
+        // Habilita o botão e atualiza a contagem
+        selectRemessasButton.disabled = false;
+        updateRemessaCountDisplay();
+    }
+    
+    // NOVO: Função para obter os talões atualmente filtrados pelas linhas E remessas selecionadas
+    function getCurrentFilteredTaloes() {
+        if (allFetchedTaloes.length === 0) return [];
+        
+        // 1. Aplica o filtro de Linhas
+        let filteredTaloes = allFetchedTaloes;
+        const availableRemessaKeys = Array.from(availableRemessas.keys());
+
+        // O filtro de Linha só é aplicado se houver linhas disponíveis e nem todas estiverem selecionadas
+        if (availableLines.size > 0 && selectedLines.size > 0 && selectedLines.size < availableLines.size) {
+            filteredTaloes = filteredTaloes.filter(t => selectedLines.has(t.linha));
+        }
+        
+        // 2. Aplica o filtro de Remessas
+        // O filtro de Remessa só é aplicado se houver remessas disponíveis e nem todas estiverem selecionadas
+        if (availableRemessaKeys.length > 0 && selectedRemessas.size > 0 && selectedRemessas.size < availableRemessaKeys.length) {
+            filteredTaloes = filteredTaloes.filter(t => selectedRemessas.has(t.numeroRemessa));
+        }
+        
+        // Se a busca inicial for por um número de remessa (input de texto), o filtro de modal não se aplica, 
+        // mas a lista de talões já vem pré-filtrada pelo Firebase (e o filtro de Linhas/Remessas no modal deve refletir isso).
+        
+        return filteredTaloes;
+    }
+    
+    // NOVO: Função para renderizar e gerenciar o filtro de linhas (a mesma função original)
+    function renderLineCheckboxes(taloes) {
+        // 1. Coleta todas as linhas únicas dos talões
+        const uniqueLines = new Set(taloes.map(t => t.linha).filter(Boolean));
+        
+        // 2. Atualiza a lista global de linhas disponíveis
+        availableLines = uniqueLines;
+
+        // 3. Se `selectedLines` estiver vazio (primeiro load após a busca), seleciona todas
+        if (selectedLines.size === 0 && uniqueLines.size > 0) {
+            selectedLines = new Set([...uniqueLines]);
+        }
+        
+        // 4. Ordena as linhas
+        const sortedLines = Array.from(uniqueLines).sort((a, b) => parseInt(a) - parseInt(b));
+
+        // 5. Gera os Checkboxes
+        lineCheckboxes.innerHTML = '';
+        sortedLines.forEach(line => {
+            const id = `line-filter-${line}`;
+            
+            const label = document.createElement('label');
+            label.htmlFor = id;
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = id;
+            checkbox.value = line;
+            
+            // Marca o checkbox se a linha estiver na lista de selecionadas
+            checkbox.checked = selectedLines.has(line);
+
+            checkbox.addEventListener('change', handleLineFilterChange);
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(line));
+            lineCheckboxes.appendChild(label);
+        });
+
+        // 6. Exibe o container de controle
+        lineFilterContainer.style.display = uniqueLines.size > 0 ? 'flex' : 'none';
+        
+        // 7. Chama a função de filtragem e geração do relatório
+        filterAndGenerateReport();
+    }
+    
+    // NOVO: Função para lidar com a mudança do checkbox de linha
+    function handleLineFilterChange(event) {
+        const line = event.target.value;
+        if (event.target.checked) {
+            selectedLines.add(line);
+        } else {
+            selectedLines.delete(line);
+        }
+        // Força a re-geração do relatório com o novo filtro
+        filterAndGenerateReport();
+    }
+    
+    // NOVO: Função para filtrar os dados e gerar o relatório (usada após o search e após a mudança do checkbox)
+    function filterAndGenerateReport() {
+        const filteredTaloes = getCurrentFilteredTaloes();
+        
+        // Re-gera o relatório (sumário e tabela) com os dados filtrados
+        generateGroupedReport(filteredTaloes);
+    }
+    
+    // NOVO: Função para coletar e formatar os filtros aplicados
+    function getAppliedFiltersText() {
+        const filters = [];
+        
+        // Filtro de linha no campo de texto (se houver, ele é o que prevalece na busca do Firebase)
+        const linha = filterLinha.value.trim();
+        if (linha) filters.push(`Linha (Busca): ${linha}`);
+        
+        // Filtro de linha nos checkboxes (se houver, após a busca)
+        if (!linha && selectedLines.size > 0 && selectedLines.size < availableLines.size) {
+            filters.push(`Linhas (Selecionadas): ${Array.from(selectedLines).sort().join(', ')}`);
+        }
+
+        const modelo = filterModelo.value.trim();
+        if (modelo) filters.push(`Modelo: ${modelo}`);
+
+        const remessaText = filterRemessa.value.trim();
+        if (remessaText) filters.push(`Remessa (Busca): ${remessaText}`);
+        
+        // Filtro de remessa nos checkboxes (se houver, após a busca)
+        const availableRemessaKeys = Array.from(availableRemessas.keys());
+        if (!remessaText && availableRemessaKeys.length > 0 && selectedRemessas.size > 0 && selectedRemessas.size < availableRemessaKeys.length) {
+            filters.push(`Remessas (Selecionadas): ${selectedRemessas.size} de ${availableRemessaKeys.length}`);
+        }
+
+        const tipoCliente = filterTipoCliente.value;
+        if (tipoCliente) filters.push(`Tipo Cliente: ${tipoCliente}`);
+        
+        const atelie = filterAtelie.value;
+        if (atelie) filters.push(`Ateliê de ${window.Roma.SECTORS[filterSetorAtelie.value].name}: ${filterAtelie.selectedOptions[0]?.textContent || ''}`);
+
+        // Datas de Corte
+        const dcI = filterDataCorteInicio.value;
+        const dcF = filterDataCorteFim.value;
+        if (dcI && dcF) {
+            filters.push(`Corte: ${formatDateAbreviado(dcI)} - ${formatDateAbreviado(dcF)}`);
+        } else if (dcI) {
+             filters.push(`Corte (Início): ${formatDateAbreviado(dcI)}`);
+        } else if (dcF) {
+             filters.push(`Corte (Fim): ${formatDateAbreviado(dcF)}`);
+        }
+        
+        // Datas de Entrega
+        const deI = filterDataEntregaInicio.value;
+        const deF = filterDataEntregaFim.value;
+        if (deI && deF) {
+            filters.push(`Entrega: ${formatDateAbreviado(deI)} - ${formatDateAbreviado(deF)}`);
+        } else if (deI) {
+             filters.push(`Entrega (Início): ${formatDateAbreviado(deI)}`);
+        } else if (deF) {
+             filters.push(`Entrega (Fim): ${formatDateAbreviado(deF)}`);
+        }
+        
+        if (filters.length === 0) {
+            return ""; 
+        }
+
+        return ` Filtros: (${filters.join(' | ')})`;
+    }
+
+
+    // MODIFICADO: Adiciona a lógica de renderização e filtro de linhas após a busca
+    async function runSearch(){
+      loading.style.display='block'; noData.style.display='none'; reportContent.style.display='none'; cronogramaTableBody.innerHTML=''; allFetchedTaloes=[];
+      lineFilterContainer.style.display='none'; // Esconde antes de uma nova busca
+      selectRemessasButton.disabled = true;
+      selectRemessasButton.textContent = '0 Selecionadas'; // Reset para o texto padrão
+
+
+      const linha=filterLinha.value.trim(); const modelo=filterModelo.value.trim(); const remessa=filterRemessa.value.trim(); const dataCorteInicio=filterDataCorteInicio.value; const dataCorteFim=filterDataCorteFim.value; const tipoCliente=filterTipoCliente.value; const atelieResponsavel=filterAtelie.value; const dataEntregaInicio=filterDataEntregaInicio.value; const dataEntregaFim=filterDataEntregaFim.value;
+      try{
+        let qRef=collection(db,'taloes'); let hasFilters=false;
+        if(linha){ qRef=query(qRef, where('linha','==',linha)); hasFilters=true; }
+        if(modelo){ qRef=query(qRef, where('modelo','==',modelo)); hasFilters=true; }
+        if(remessa){ qRef=query(qRef, where('numeroRemessa','==',remessa)); hasFilters=true; }
+        if(tipoCliente){ qRef=query(qRef, where('tipoCliente','==',tipoCliente)); hasFilters=true; }
+        if(atelieResponsavel){ qRef=query(qRef, where(window.Roma.SECTORS[filterSetorAtelie.value].owner,'==',atelieResponsavel)); hasFilters=true; }
+        const temFiltroDataCorte = Boolean(dataCorteInicio || dataCorteFim);
+        const temFiltroDataEntrega = Boolean(dataEntregaInicio || dataEntregaFim);
+
+        if(dataCorteInicio && dataCorteFim){ qRef=query(qRef, where('dataCorte','>=',dataCorteInicio), where('dataCorte','<=',dataCorteFim)); hasFilters=true; }
+        else if(dataCorteInicio){ qRef=query(qRef, where('dataCorte','>=',dataCorteInicio)); hasFilters=true; }
+        else if(dataCorteFim){ qRef=query(qRef, where('dataCorte','<=',dataCorteFim)); hasFilters=true; }
+
+        // IMPORTANTE:
+        // Quando o filtro rápido usa somente Data de Entrega, a versão anterior marcava
+        // hasFilters=true, mas buscava a coleção inteira e filtrava depois no navegador.
+        // Em alguns computadores isso parecia que a busca travava. Agora, se não houver
+        // filtro de Data de Corte junto, a Data de Entrega entra direto na consulta do Firestore.
+        if(temFiltroDataEntrega){
+          hasFilters=true;
+          if(!temFiltroDataCorte){
+            if(dataEntregaInicio && dataEntregaFim){ qRef=query(qRef, where('dataEntrega','>=',dataEntregaInicio), where('dataEntrega','<=',dataEntregaFim)); }
+            else if(dataEntregaInicio){ qRef=query(qRef, where('dataEntrega','>=',dataEntregaInicio)); }
+            else if(dataEntregaFim){ qRef=query(qRef, where('dataEntrega','<=',dataEntregaFim)); }
+          }
+        }
+        
+        currentStageFilter = null;
+        if(!hasFilters){ loading.style.display='none'; noData.textContent='Por favor, selecione ao menos um filtro para iniciar a busca.'; noData.style.display='block'; return; }
+        
+        if(atelieResponsavel){
+          qRef=query(collection(db,'taloes'),where(window.Roma.SECTORS[filterSetorAtelie.value].owner,'==',atelieResponsavel));
+          const dateField=(dataCorteInicio||dataCorteFim)?'dataCorte':'dataEntrega';
+          const from=dateField==='dataCorte'?dataCorteInicio:dataEntregaInicio;
+          const to=dateField==='dataCorte'?dataCorteFim:dataEntregaFim;
+          if(from) qRef=query(qRef,where(dateField,'>=',from));
+          if(to) qRef=query(qRef,where(dateField,'<=',to));
+        }
+        const snap=await getDocs(qRef);
+        allFetchedTaloes=snap.docs.map(d=>d.data());
+        if(atelieResponsavel){
+          allFetchedTaloes=allFetchedTaloes.filter(t=>(!linha||String(t.linha||'')===linha)&&(!modelo||String(t.modelo||'')===modelo)&&(!remessa||String(t.numeroRemessa||'')===remessa)&&(!tipoCliente||t.tipoCliente===tipoCliente));
+        }
+
+        // Mantém o comportamento de não abrir amostras junto com os demais tipos.
+        // Se o usuário escolher Tipo de Cliente = Amostra, o filtro permite buscar amostras normalmente.
+        if(naoExibirAmostras && naoExibirAmostras.checked && tipoCliente !== 'Amostra'){
+            allFetchedTaloes = allFetchedTaloes.filter(t => t.tipoCliente !== 'Amostra');
+        }
+        
+        // Aplica o filtro de data de entrega localmente
+        if(dataEntregaInicio || dataEntregaFim){ 
+            allFetchedTaloes=allFetchedTaloes.filter(t=> {
+                if(!t.dataEntrega) return false;
+                if(dataEntregaInicio && t.dataEntrega < dataEntregaInicio) return false;
+                if(dataEntregaFim && t.dataEntrega > dataEntregaFim) return false;
+                return true;
+            }); 
+        }
+        
+        loading.style.display='none'; 
+        
+        if(allFetchedTaloes.length>0){ 
+            // NOVO: 1. Configura e prepara o filtro de remessas
+            setupRemessaFilter(allFetchedTaloes);
+
+            // NOVO: 2. Se a busca foi por uma Linha específica, o filtro de checkbox já deve começar apenas com ela.
+            if(linha) selectedLines = new Set([linha]); 
+            else selectedLines = new Set(); // Reset para que renderLineCheckboxes selecione todos disponíveis
+            
+            // NOVO: 3. Renderiza os checkboxes e dispara a geração do relatório
+            renderLineCheckboxes(allFetchedTaloes);
+        } else { 
+            noData.textContent='Nenhum dado encontrado para os filtros selecionados.'; 
+            noData.style.display='block'; 
+            selectRemessasButton.disabled = true; // Garante que o botão fica desabilitado
+        }
+        
+      }catch(err){ 
+        console.error('Erro ao gerar relatório:',err); 
+        loading.style.display='none'; 
+        noData.textContent='Erro ao carregar os dados. Verifique o console.'; 
+        noData.style.display='block'; 
+      }
+    }
+
+    // MODIFICADO: Recebe talões já filtrados e lida com a exibição final
+    function generateGroupedReport(taloes){
+      const grouped={};
+      if(!taloes||!taloes.length){
+        noData.textContent='Nenhum dado encontrado para os filtros selecionados.';
+        noData.style.display='block';reportContent.style.display='none';return;
+      }
+      reportContent.style.display='block';noData.style.display='none';
+      let totalPares=0;
+      taloes.forEach(t=>{
+        const linha=t.linha||'N/A',remessa=t.numeroRemessa||'N/A',tipo=t.tipoCliente||'',dataCorte=t.dataCorte||'N/A',dataEntrega=t.dataEntrega||'N/A',pares=Number(t.pares)||0;
+        totalPares+=pares;
+        const key=JSON.stringify([remessa,linha,dataCorte,dataEntrega]);
+        if(!grouped[key]) grouped[key]={remessa,linha,tipoCliente:tipo,paresTotal:0,taloesTotal:0,dataCorte,dataEntrega,clientes:new Set(),normativas:new Set(), ...Object.fromEntries(window.RomaProducao.STAGES.map(stage=>[stage,window.RomaProducao.emptyStage()]))};
+        const g=grouped[key];g.paresTotal+=pares;g.taloesTotal++;
+        addUniqueText(g.clientes, firstFieldValue(t, ['cliente','Cliente','nomeCliente','NomeCliente','clienteNome','ClienteNome']));
+        addUniqueText(g.normativas, firstFieldValue(t, ['normativa','Normativa','normativas','Normativas','observacao','observação','Observacao','Observação']));
+        window.RomaProducao.STAGES.forEach(stage=>window.RomaProducao.addToStage(g[stage],t,stage));
+      });
+      updateSummaryExcel(totalPares,taloes.length,window.RomaProducao.pendingTotals(taloes));
+      renderTable(grouped);
+    }
+
+    function updateSummaryExcel(totalPares,totalTaloes,totals){
+      summaryInfo.innerHTML=`
+        <div class="summary-item" style="background-color:var(--pri);color:white">Total pares<br><strong>${totalPares.toLocaleString()}</strong></div>
+        <div class="summary-item" style="background-color:var(--pri);color:white">Talões Filtrados<br><strong>${totalTaloes.toLocaleString()}</strong></div>
+        ${window.RomaProducao.STAGES.map(stage=>`<a href="#" class="summary-item filter-link ${currentStageFilter===stage?'active-filter':''}" data-stage="${stage}">${window.RomaProducao.LABELS[stage]} (Faltando)<br><strong>${totals[stage].toLocaleString()}</strong></a>`).join('')}`;
+    }
+
+
+    function getTipoClienteClass(tipo){ switch(tipo){ case 'Exportacao': return 'exportacao-row'; case 'Cliente especial': return 'cliente-especial-row'; case 'Mercado Interno': return 'mercado-interno-row'; case 'Estoque': return 'estoque-row'; case 'Amostra': return 'amostra-row'; default: return ''; } }
+    
+    function etapaCell(etapa,addSep,stageName){
+      const classes=`${addSep?'separator-border':''} col-${stageName}`;
+      if(etapa.aplicaveis===0) return `<td colspan="2" class="${classes} stage-na" title="Componente ausente dos modelos deste grupo">Não se aplica</td>`;
+      if(etapa.allDone) return `<td colspan="2" class="${classes}"><span class="status-check">✔ ${etapa.maxDate?formatDateAbreviado(etapa.maxDate):'Concluído'}</span></td>`;
+      return `<td class="col-${stageName}">${etapa.paresFaltando}</td><td class="${classes}">${etapa.taloesFaltando}</td>`;
+    }
+
+    function etapaChipList(label,etapa,stageName,grp){
+      const attrs=`data-stage="${stageName}" data-remessa="${grp.remessa}" data-linha="${grp.linha}" data-corte="${grp.dataCorte}" data-entrega="${grp.dataEntrega}"`;
+      if(etapa.aplicaveis===0)return `<span class="stage-chip stage-na"><b>${label}</b><span>—</span><small>Não se aplica</small></span>`;
+      if(etapa.allDone)return `<span class="stage-chip stage-done"><b>${label}</b><span>✓</span><small>${etapa.maxDate?formatDateAbreviado(etapa.maxDate):'Concluído'}</small></span>`;
+      return `<button type="button" class="stage-chip stage-open js-open-stage" ${attrs} title="Ver talões faltando"><b>${label}</b><span>${etapa.paresFaltando.toLocaleString()}p</span><small>${etapa.taloesFaltando.toLocaleString()} tal.</small></button>`;
+    }
+
+    function buildStageTotalsFromGroups(keys, data){
+      // Totais exibidos ao lado da linha: somente o que falta cortar, costurar e montar.
+      const labelsShort = { corte:'Corte', costura:'Costura', palmilha:'Palmilha', sola:'Sola', montagem:'Mont.' };
+      const stages = ['corte','costura','palmilha','sola','montagem'];
+      return stages.map(stage => {
+        let pares = 0;
+        let taloes = 0;
+        (keys || []).forEach(k => {
+          const etapa = data[k] && data[k][stage] ? data[k][stage] : {};
+          pares += Number(etapa.paresFaltando) || 0;
+          taloes += Number(etapa.taloesFaltando) || 0;
+        });
+        const statusClass = pares === 0 ? 'is-ok' : 'is-open';
+        return `<span class="stage-total-chip ${statusClass}"><b>${labelsShort[stage]}</b> ${pares.toLocaleString()}p <small>${taloes.toLocaleString()} tal.</small></span>`;
+      }).join('');
+    }
+
+    function buildStageTotalsFromTaloes(taloesList){
+      const labelsShort = { corte:'Corte', costura:'Costura', palmilha:'Palmilha', sola:'Sola', distribuicao:'Dist.', talonagem:'Talon.', montagem:'Mont.' };
+      const stages = ['corte','costura','palmilha','sola','distribuicao','talonagem','montagem'];
+      return stages.map(stage => {
+        const faltando = (taloesList || []).filter(t => stageMissingForTalao(t, stage));
+        const pares = faltando.reduce((sum,t)=>sum+(Number(t.pares)||0),0);
+        const statusClass = pares === 0 ? 'is-ok' : 'is-open';
+        return `<span class="stage-total-chip ${statusClass}"><b>${labelsShort[stage]}</b> ${pares.toLocaleString()}p <small>${faltando.length.toLocaleString()} tal.</small></span>`;
+      }).join('');
+    }
+
+    function renderRemessaCards(data, filteredKeys){
+      const cardList = document.getElementById('remessaCardList');
+      if(!cardList) return;
+      cardList.innerHTML = '';
+      if(!filteredKeys || filteredKeys.length===0) return;
+
+      const labels = { corte:'Corte', costura:'Costura', palmilha:'Palmilha', sola:'Sola', distribuicao:'Distribuição', talonagem:'Talonagem', montagem:'Montagem' };
+      const stages = ['corte','costura','palmilha','sola','distribuicao','talonagem','montagem'];
+      const lineNumber = (value) => parseInt(String(value || '').replace(/\D/g,''), 10) || 0;
+      const remessaNumber = (value) => parseInt(String(value || '').replace(/\D/g,''), 10) || 0;
+
+      const groupedByLinha = new Map();
+      filteredKeys.forEach(k => {
+        const grp = data[k];
+        const linhaKey = grp.linha || 'N/A';
+        if(!groupedByLinha.has(linhaKey)) groupedByLinha.set(linhaKey, []);
+        groupedByLinha.get(linhaKey).push(k);
+      });
+
+      const sortedLinhas = Array.from(groupedByLinha.keys()).sort((a,b) => {
+        const na = lineNumber(a), nb = lineNumber(b);
+        if(na !== nb) return na - nb;
+        return String(a).localeCompare(String(b));
+      });
+
+      let html = `<div class="remessa-list-head"><strong>Remessas no filtro atual</strong><span>${filteredKeys.length.toLocaleString()} registros agrupados por linha e ordenados por corte</span></div>`;
+
+      sortedLinhas.forEach(linha => {
+        const lineKeys = groupedByLinha.get(linha).sort((ka,kb)=>{
+          const a = data[ka], b = data[kb];
+          const da = a.dataCorte || '9999-12-31';
+          const db = b.dataCorte || '9999-12-31';
+          if(da !== db) return da.localeCompare(db);
+          const ea = a.dataEntrega || '9999-12-31';
+          const eb = b.dataEntrega || '9999-12-31';
+          if(ea !== eb) return ea.localeCompare(eb);
+          return remessaNumber(a.remessa) - remessaNumber(b.remessa);
+        });
+
+        const lineTotalsHtml = buildStageTotalsFromGroups(lineKeys, data);
+        html += `<section class="remessa-line-section"><div class="remessa-line-title"><div class="line-title-left">Linha ${linha}</div><div class="line-title-totals">${lineTotalsHtml}</div></div><div class="remessa-line-grid">`;
+
+        lineKeys.forEach(k => {
+          const grp = data[k];
+          const firstOpen = stages.find(stage => grp[stage] && grp[stage].taloesFaltando > 0);
+          const localizacao = firstOpen ? `Falta ${labels[firstOpen]}` : 'Concluída';
+          const etapaClass = firstOpen ? 'js-open-stage' : 'done';
+          const currentStageAttrs = firstOpen
+            ? `data-stage="${firstOpen}" data-remessa="${grp.remessa}" data-linha="${grp.linha}" data-corte="${grp.dataCorte}" data-entrega="${grp.dataEntrega}" title="Ver talões faltando"`
+            : 'title="Todas as etapas concluídas"';
+
+          const clienteInfo = joinSetText(grp.clientes);
+          const normativaInfo = joinSetText(grp.normativas);
+          const extraInfoHtml = (clienteInfo || normativaInfo)
+            ? `<div class="remessa-extra-info">${clienteInfo ? `<span class="js-extra-full" data-extra-title="Cliente" data-extra-text="${escapeHTML(clienteInfo)}" title="Clique para ver o cliente completo"><b>Cliente:</b>${escapeHTML(clienteInfo)}</span>` : ''}${normativaInfo ? `<span class="js-extra-full" data-extra-title="Normativa" data-extra-text="${escapeHTML(normativaInfo)}" title="Clique para ver a normativa completa"><b>Normativa:</b>${escapeHTML(normativaInfo)}</span>` : ''}</div>`
+            : '';
+
+          html += `
+            <div class="remessa-card ${getTipoClienteClass(grp.tipoCliente)} ${firstOpen ? 'is-incomplete' : 'is-complete'}" ${currentStageAttrs}>
+              <div class="remessa-card-main">
+                <div class="remessa-card-ident">
+                  <div class="remessa-id-row">
+                    <a href="#" class="remessa-link remessa-number-pill" data-remessa="${grp.remessa}">R. ${grp.remessa}</a>
+                    <div class="remessa-card-meta">
+                      <strong>${grp.paresTotal.toLocaleString()} pares</strong>
+                      <span>${grp.taloesTotal.toLocaleString()} talões</span>
+                    </div>
+                  </div>
+                  <div class="remessa-subline">Linha ${grp.linha} • Corte ${formatDateAbreviado(grp.dataCorte)} • Entrega ${formatDateAbreviado(grp.dataEntrega)}</div>
+                  ${extraInfoHtml}
+                </div>
+                <button type="button" class="remessa-current-stage ${etapaClass}" ${currentStageAttrs}>${localizacao}</button>
+                <div class="stage-chip-row">
+                  ${etapaChipList('Corte', grp.corte, 'corte', grp)}
+                  ${etapaChipList('Costura', grp.costura, 'costura', grp)}
+                  ${etapaChipList('Palmilha',grp.palmilha,'palmilha',grp)}
+                  ${etapaChipList('Sola',grp.sola,'sola',grp)}
+                  ${etapaChipList('Dist.', grp.distribuicao, 'distribuicao', grp)}
+                  ${etapaChipList('Talon.', grp.talonagem, 'talonagem', grp)}
+                  ${etapaChipList('Mont.', grp.montagem, 'montagem', grp)}
+                </div>
+              </div>
+            </div>`;
+        });
+
+        html += `</div></section>`;
+      });
+
+      cardList.innerHTML = html;
+    }
+
+    function stageMissingForTalao(t,stage){return window.RomaProducao.missing(t,stage);}
+
+    function formatModeloCompleto(t){
+      const linha = String(t.linha || '').trim();
+      const modelo = String(t.modelo || '').trim();
+      if(!modelo) return linha || '';
+      if(linha && modelo.startsWith(linha + '.')) return modelo;
+      return linha ? `${linha}.${modelo}` : modelo;
+    }
+
+    function etapaConcluidaData(t,stage){return stage==='entradaAtelie'?(t.costuraDataInicio||''):window.RomaProducao.completedDate(t,stage);}
+
+    function statusDataCell(dateValue){
+      return hasDate(dateValue) ? `✔ ${formatDateAbreviado(dateValue)}` : '';
+    }
+
+    function showOpenStageModal(stage, remessa, linha, dataCorte, dataEntrega){
+      const stageLabels = { corte:'Corte', costura:'Costura', palmilha:'Palmilha', sola:'Sola', distribuicao:'Distribuição', talonagem:'Talonagem', montagem:'Montagem' };
+      const baseTaloes = getCurrentFilteredTaloes()
+        .filter(t => String(t.numeroRemessa || '') === String(remessa || ''))
+        .filter(t => String(t.linha || '') === String(linha || ''))
+        .filter(t => String(t.dataCorte || '') === String(dataCorte || ''))
+        .filter(t => String(t.dataEntrega || '') === String(dataEntrega || ''));
+
+      const taloes = baseTaloes
+        .filter(t => stageMissingForTalao(t, stage))
+        .sort((a,b)=> (parseInt(a.numeroTalaoSequencial,10)||0) - (parseInt(b.numeroTalaoSequencial,10)||0));
+
+      modalTitle.textContent = `Talões em aberto - ${stageLabels[stage] || 'Etapa'}`;
+
+      if(taloes.length === 0){
+        modalBodyContent.innerHTML = `<p style="text-align:center;padding:18px;">Nenhum talão em aberto encontrado para essa etapa.</p>`;
+        detailsModal.style.display = 'block';
+        return;
+      }
+
+      const totalPares = taloes.reduce((sum,t)=>sum+(Number(t.pares)||0),0);
+      const totaisSetoresHtml = buildStageTotalsFromTaloes(baseTaloes);
+
+      const modalClientes = new Set();
+      const modalNormativas = new Set();
+      baseTaloes.forEach(t => {
+        addUniqueText(modalClientes, firstFieldValue(t, ['cliente','Cliente','nomeCliente','NomeCliente','clienteNome','ClienteNome']));
+        addUniqueText(modalNormativas, firstFieldValue(t, ['normativa','Normativa','normativas','Normativas','observacao','observação','Observacao','Observação']));
+      });
+      const modalClienteInfo = joinSetText(modalClientes);
+      const modalNormativaInfo = joinSetText(modalNormativas);
+      const modalInfoHtml = (modalClienteInfo || modalNormativaInfo)
+        ? `<div class="open-stage-full-info">${modalClienteInfo ? `<div><b>Cliente:</b>${escapeHTML(modalClienteInfo)}</div>` : ''}${modalNormativaInfo ? `<div><b>Normativa:</b>${escapeHTML(modalNormativaInfo)}</div>` : ''}</div>`
+        : '';
+
+      let html = `
+        <div class="open-stage-modal">
+          <div class="open-stage-card-head">
+            <span class="open-stage-remessa-pill">R. ${remessa}</span>
+            <div class="open-stage-head-info-wrap">
+              <span class="open-stage-head-info">Linha ${linha} • Corte ${formatDateAbreviado(dataCorte)} • Entrega ${formatDateAbreviado(dataEntrega)}</span>
+              ${modalInfoHtml}
+            </div>
+            <div class="open-stage-head-totals">${totaisSetoresHtml}</div>
+          </div>
+          <div class="open-stage-summary-line">
+            <span>Etapa: ${stageLabels[stage] || 'Etapa'} em aberto</span>
+            <strong>${taloes.length.toLocaleString()} talões • ${totalPares.toLocaleString()} pares</strong>
+          </div>
+          <div class="open-stage-table-wrap">
+            <table class="open-stage-table">
+              <thead>
+                <tr>
+                  <th>T</th>
+                  <th>L.M</th>
+                  <th>P.</th>
+                  <th>Cor</th>
+                  <th>Ateliê</th>
+                  <th>Corte</th>
+                  <th>Costura</th>
+                  <th>Ateliê Palmilha</th><th>Palmilha</th><th>Ateliê Sola</th><th>Sola</th>
+                  <th>Distribuição</th>
+                  <th>Talonagem</th>
+                  <th>Montagem</th>
+                  <th>Trilho</th>
+                </tr>
+              </thead>
+              <tbody>`;
+
+      taloes.forEach(t => {
+        const talao = t.numeroTalaoSequencial || '';
+        const pares = Number(t.pares) || 0;
+        const atelie = t.idAtelieResponsavel || '';
+        html += `
+                <tr>
+                  <td>${talao}</td>
+                  <td>${formatModeloCompleto(t)}</td>
+                  <td>${pares.toLocaleString()}</td>
+                  <td>${t.corSapato || ''}</td>
+                  <td>${atelie}</td>
+                  <td>${window.RomaProducao.detail(t,'corte',formatDateAbreviado)}</td>
+                  <td>${window.RomaProducao.detail(t,'costura',formatDateAbreviado)}</td>
+                  <td>${window.RomaProducao.escape(t.idAteliePalmilhaResponsavel||'')}</td><td>${window.RomaProducao.detail(t,'palmilha',formatDateAbreviado)}</td>
+                  <td>${window.RomaProducao.escape(t.idAtelieSolaResponsavel||'')}</td><td>${window.RomaProducao.detail(t,'sola',formatDateAbreviado)}</td>
+                  <td>${statusDataCell(etapaConcluidaData(t,'distribuicao'))}</td>
+                  <td>${statusDataCell(etapaConcluidaData(t,'talonagem'))}</td>
+                  <td>${statusDataCell(etapaConcluidaData(t,'montagem'))}</td>
+                  <td>${t.trilhoProduzido || t.trilho || ''}</td>
+                </tr>`;
+      });
+
+      html += `
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+      modalBodyContent.innerHTML = html;
+      detailsModal.style.display = 'block';
+    }
+    
+
+    function renderTable(data){
+      cronogramaTableBody.innerHTML='';
+      const remessaCardList = document.getElementById('remessaCardList');
+      if(remessaCardList) remessaCardList.innerHTML = '';
+
+      const keys=Object.keys(data).sort((a,b)=>{
+        const da=data[a].dataCorte||'9999-12-31', db=data[b].dataCorte||'9999-12-31';
+        if(da!==db) return da.localeCompare(db);
+        const la=parseInt(String(data[a].linha).replace(/\D/g,''))||0;
+        const lb=parseInt(String(data[b].linha).replace(/\D/g,''))||0;
+        if(la!==lb) return la-lb;
+        const ra=parseInt(String(data[a].remessa).replace(/\D/g,''))||0;
+        const rb=parseInt(String(data[b].remessa).replace(/\D/g,''))||0;
+        return ra-rb;
+      });
+
+      if(keys.length===0){
+        noData.style.display='block';
+        return;
+      }
+
+      const filteredKeys = [];
+      keys.forEach(k => {
+        const grp = data[k];
+        let showRow = true;
+
+        if (currentStageFilter) {
+          if (!grp[currentStageFilter] || grp[currentStageFilter].taloesFaltando === 0) {
+            showRow = false;
+          }
+        }
+
+        if (showRow) filteredKeys.push(k);
+      });
+
+      if (filteredKeys.length === 0 && currentStageFilter) {
+        cronogramaTableBody.innerHTML = `<tr><td colspan="20" style="text-align:center;">Nenhuma remessa encontrada com a etapa de <strong>${currentStageFilter.toUpperCase()}</strong> em aberto.</td></tr>`;
+        return;
+      }
+
+      renderRemessaCards(data, filteredKeys);
+
+      filteredKeys.forEach(k=>{
+        const grp=data[k];
+        const tr=document.createElement('tr');
+        tr.className=getTipoClienteClass(grp.tipoCliente);
+
+        const remessaCell=`<td class="col-remessa"><a href="#" class="remessa-link" data-remessa="${grp.remessa}">${grp.remessa}</a></td>`;
+        let html=`
+          <td class="col-linha">${grp.linha}</td>
+          ${remessaCell}
+          <td class="col-pares-ident">${grp.paresTotal.toLocaleString()}</td>
+          <td class="col-taloes-ident">${grp.taloesTotal.toLocaleString()}</td>
+          <td class="col-data-corte">${formatDateAbreviado(grp.dataCorte)}</td>
+          <td class="col-data-entrega">${formatDateAbreviado(grp.dataEntrega)}</td>
+        `;
+
+        html += etapaCell(grp.corte,true, 'corte');
+        html += etapaCell(grp.costura,true, 'costura');
+        html += etapaCell(grp.palmilha,true,'palmilha');
+        html += etapaCell(grp.sola,true,'sola');
+        html += etapaCell(grp.distribuicao,true, 'distribuicao');
+        html += etapaCell(grp.talonagem,true, 'talonagem');
+
+        if(grp.montagem.paresFaltando===0 && grp.montagem.allDone && grp.montagem.maxDate){
+          html += `<td colspan="2" class="col-montagem"><span class="status-check">✔ ${formatDateAbreviado(grp.montagem.maxDate)}</span></td>`;
+        } else {
+          html += `<td class="col-montagem">${grp.montagem.paresFaltando}</td><td class="col-montagem">${grp.montagem.taloesFaltando}</td>`;
+        }
+        tr.innerHTML=html;
+        cronogramaTableBody.appendChild(tr);
+      });
+    }
+
+    // === FUNÇÕES DO MODAL DE DETALHES DA REMESSA (TABELA) ===
+    
+    // Define a estrutura HTML padrão para a tabela de detalhes
+    function setupModalForDetails() {
+        modalBodyContent.innerHTML = `
+            <div id="detailsTableContainer">
+                <table class="modal-body-table">
+                    <thead>
+                        <tr>
+                        <th>Talão</th><th>Linha</th><th>Modelo</th><th>Pares</th><th>Cor</th><th>Data Corte</th><th>Ateliê</th>
+                        <th>Corte</th><th>Entrada Costura</th><th>Saída Costura</th><th>Ateliê Palmilha</th><th>Entrada Palmilha</th><th>Saída Palmilha</th><th>Ateliê Sola</th><th>Entrada Sola</th><th>Saída Sola</th><th>Distribuição</th><th>Talonagem</th><th>Montagem</th><th>Trilho</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody"></tbody>
+                </table>
+            </div>
+        `;
+        // Atualiza a referência global para o novo tbody
+        modalTableBody = document.getElementById('modalTableBody'); 
+    }
+
+    // Preenche e exibe o modal de detalhes (tabela)
+    function showDetailsModal(remessa){ 
+      setupModalForDetails(); // Garante que a estrutura da tabela está no modal
+      modalTitle.textContent=`Detalhes da Remessa: ${remessa}`; 
+      modalTableBody.innerHTML=''; 
+      // É importante usar allFetchedTaloes aqui para mostrar todos os detalhes da remessa, ignorando o filtro de linha
+      const list=allFetchedTaloes.filter(t=>t.numeroRemessa===remessa); 
+      if(list.length===0){ 
+        modalTableBody.innerHTML = `<tr><td colspan="20" style="text-align:center;">Nenhum detalhe encontrado para esta remessa.</td></tr>`; 
+        detailsModal.style.display='block'; 
+        return; 
+      } 
+      list.sort((a,b)=> (parseInt(a.numeroTalaoSequencial,10)||0) - (parseInt(b.numeroTalaoSequencial,10)||0)); 
+      list.forEach(t=>{
+        const tr=document.createElement('tr'); 
+        tr.innerHTML = `
+          <td>${t.numeroTalaoSequencial||''}</td>
+          <td>${t.linha||''}</td>
+          <td>${t.modelo||''}</td>
+          <td>${t.pares||''}</td>
+          <td>${t.corSapato||''}</td>
+          <td>${t.dataCorte? ` ${formatDateAbreviado(t.dataCorte)}` : ''}</td>
+          <td>${t.idAtelieResponsavel||''}</td>
+          <td>${window.RomaProducao.detail(t,'corte',formatDateAbreviado)}</td>
+          <td>${t.costuraDataInicio? `✔ ${formatDateAbreviado(t.costuraDataInicio)}` : ''}</td>
+          <td>${window.RomaProducao.detail(t,'costura',formatDateAbreviado)}</td>
+          <td>${window.RomaProducao.escape(t.idAteliePalmilhaResponsavel||'')}</td>
+          <td>${window.RomaProducao.entryDetail(t,'palmilha',formatDateAbreviado)}</td>
+          <td>${window.RomaProducao.detail(t,'palmilha',formatDateAbreviado)}</td>
+          <td>${window.RomaProducao.escape(t.idAtelieSolaResponsavel||'')}</td>
+          <td>${window.RomaProducao.entryDetail(t,'sola',formatDateAbreviado)}</td>
+          <td>${window.RomaProducao.detail(t,'sola',formatDateAbreviado)}</td>
+          <td>${t.dataEntradaDistribuicao? `✔ ${formatDateAbreviado(t.dataEntradaDistribuicao)}` : ''}</td>
+          <td>${t.dataEntradaTalonagem? `✔ ${formatDateAbreviado(t.dataEntradaTalonagem)}` : ''}</td>
+          <td>${t.dataEntradaMontagem? `✔ ${formatDateAbreviado(t.dataEntradaMontagem)}` : ''}</td>
+          <td>${t.trilhoProduzido||''}</td>
+        `;
+        modalTableBody.appendChild(tr); 
+      }); 
+      detailsModal.style.display='block'; 
+    }
+          
+    // === Lógica dos Botões de Resumo (Cards) ===
+
+    function checkTaloesAndAlert(){
+        if (getCurrentFilteredTaloes().length === 0){
+            alert('Nenhum talão carregado ou selecionado nos filtros. Por favor, use o botão "Gerar Relatório" e selecione as linhas/remessas desejadas.');
+            return false;
+        }
+        return true;
+    }
+    
+    // Função genérica para exibir o resumo em formato de cards
+    function displayResumoCards(title, cardData, grandTotalOverride = null) {
+        modalTitle.textContent = title;
+        
+        let totalGeral = 0; 
+        
+        // Altera o conteúdo do modalBodyContent para a estrutura de cards
+        let htmlContent = '<div class="resumo-cards-wrapper">'; 
+        
+        // Verifica se há dados a serem exibidos (pelo menos um item em qualquer um dos cards)
+        const hasCardItems = cardData.some(card => Object.keys(card.items).length > 0);
+
+        if (cardData.length === 0 || !hasCardItems) {
+            htmlContent = `<p style="text-align:center; font-size:1.1em; padding:15px;">Nenhum item encontrado para o resumo com as linhas selecionadas.</p>`;
+        } else {
+            cardData.forEach(card => {
+                const models = card.items;
+                const sortedModels = Object.keys(models).sort((a, b) => a.localeCompare(b));
+                let modelListHtml = '<div class="model-list">';
+                let totalParesCard = 0;
+
+                sortedModels.forEach(model => {
+                    modelListHtml += `<p><span>${window.RomaProducao.escape(model)}</span><span>${models[model].toLocaleString()} pares</span></p>`;
+                    totalParesCard += models[model];
+                });
+                
+                modelListHtml += `<p class="card-total"><span>Total de pares:</span><span>${totalParesCard.toLocaleString()} pares</span></p>`;
+                modelListHtml += '</div>';
+
+                htmlContent += `
+                    <div class="atelie-card" style="background-color: ${card.cardColor || '#f0f0f0'};">
+                        <h4>${window.RomaProducao.escape(card.title)}</h4>
+                        ${modelListHtml}
+                    </div>
+                `;
+            });
+            
+            // Cálculo do total geral
+            totalGeral = grandTotalOverride !== null 
+                ? grandTotalOverride 
+                : (cardData[0] ? Object.values(cardData[0].items).reduce((sum, pares) => sum + pares, 0) : 0);
+            
+            // Card de Total Geral (sempre no final)
+            htmlContent += `
+                <div class="atelie-card" style="grid-column: 1 / -1; background-color: #bdbdbd; text-align: right;">
+                    <h4 style="border-bottom: 0; padding-bottom: 0; font-size: 1.2em; color: var(--ink);">Total de pares: <strong style="color: var(--ink);">${totalGeral.toLocaleString()} pares</strong></h4>
+                </div>
+            `;
+
+            htmlContent += '</div>';
+        }
+        
+        modalBodyContent.innerHTML = htmlContent;
+        detailsModal.style.display = 'block';
+    }
+
+    // MODIFICADO: Passa a lista filtrada
+    resumoCorteButton.addEventListener('click', () => {
+        if (checkTaloesAndAlert()) {
+            showResumoCorteModal(getCurrentFilteredTaloes());
+        }
+    });
+
+    // MODIFICADO: Passa a lista filtrada
+    resumoCosturaButton.addEventListener('click', () => {
+        if (checkTaloesAndAlert()) {
+            showResumoCosturaModal(getCurrentFilteredTaloes());
+        }
+    });
+
+    // MODIFICADO: Passa a lista filtrada
+    resumoGiroFabricaButton.addEventListener('click', () => {
+        if (checkTaloesAndAlert()) {
+            showResumoGiroFabricaModal(getCurrentFilteredTaloes());
+        }
+    });
+
+    resumoProntoCosturaButton.addEventListener('click', () => {
+        if (checkTaloesAndAlert()) {
+            showResumoProntoCosturaModal(getCurrentFilteredTaloes());
+        }
+    });
+
+    resumoFaltaMontarButton.addEventListener('click', () => {
+        if (checkTaloesAndAlert()) {
+            showResumoFaltaMontarModal(getCurrentFilteredTaloes());
+        }
+    });
+
+    function showResumoCorteModal(taloes) {
+        // Pares faltando: pelo menos 1 etapa de corte não foi concluída
+        const faltamCorte = taloes.filter(t => 
+            window.RomaProducao.missing(t,'corte')
+        );
+        
+        // Cálculo do total de pares no corte
+        const totalFaltando = faltamCorte.reduce((sum, t) => sum + (Number(t.pares) || 0), 0);
+        
+        // Card 1: Modelo.Linha
+        const faltamML = groupAndSum(faltamCorte, t => `${t.linha}.${t.modelo}`);
+
+        // Card 2: Linha
+        const faltamL = groupAndSum(faltamCorte, t => t.linha);
+
+        const cardData = [
+            {
+                title: 'Falta Cortar por modelo',
+                items: faltamML,
+                cardColor: '#bdbdbd' // Vermelho/Rosa Claro
+            },
+            {
+                title: 'Flata Cortar por Linha',
+                items: faltamL,
+                cardColor: '#bdbdbd' // Amarelo Suave
+            }
+        ];
+
+        // NOVO: Coleta e anexa os filtros ao título
+        const appliedFilters = getAppliedFiltersText();
+        const modalTitleText = `Pares no Corte ${appliedFilters}`;
+
+        displayResumoCards(modalTitleText, cardData, totalFaltando); 
+    }
+
+    function showResumoCosturaModal(taloes) {
+        // Pares faltando: não saiu da costura
+        const faltamCosturar = taloes.filter(t => window.RomaProducao.missing(t,'costura'));
+        
+        // Cálculo do total de pares na costura
+        const totalFaltando = faltamCosturar.reduce((sum, t) => sum + (Number(t.pares) || 0), 0);
+
+        // Agrupar por Ateliê > Linha.Modelo
+        const groupedByAtelie = {};
+        faltamCosturar.forEach(t => {
+            const atelie = t.idAtelieResponsavel || 'Sem Atelier';
+            const key = `${t.linha}.${t.modelo}`;
+            const pares = Number(t.pares) || 0;
+
+            if (!groupedByAtelie[atelie]) {
+                groupedByAtelie[atelie] = {};
+            }
+            groupedByAtelie[atelie][key] = (groupedByAtelie[atelie][key] || 0) + pares;
+        });
+
+        // Mapear para o formato displayResumoCards
+        const cardData = Object.keys(groupedByAtelie).sort((a, b) => a.localeCompare(b)).map(atelie => {
+            return {
+                title: `${atelie}`, 
+                items: groupedByAtelie[atelie],
+                cardColor: '#bdbdbd' // Amarelo Padrão para Costura/Alerta
+            };
+        });
+        
+        // NOVO: Coleta e anexa os filtros ao título
+        const appliedFilters = getAppliedFiltersText();
+        const modalTitleText = `Resumo: Pares Faltando na Costura (por Ateliê) ${appliedFilters}`;
+
+        displayResumoCards(modalTitleText, cardData, totalFaltando);
+    }
+
+    function showResumoProntoCosturaModal(taloes) {
+        const prontoCostura = taloes.filter(t =>
+            hasDate(t.dataSaidaCostura) &&
+            !hasDate(t.dataEntradaDistribuicao)
+        );
+
+        const totalPronto = prontoCostura.reduce((sum, t) => sum + (Number(t.pares) || 0), 0);
+        const groupedByAtelie = {};
+
+        prontoCostura.forEach(t => {
+            const atelie = t.idAtelieResponsavel || 'Sem Atelier';
+            const key = `${t.linha}.${t.modelo}`;
+            const pares = Number(t.pares) || 0;
+            if (!groupedByAtelie[atelie]) groupedByAtelie[atelie] = {};
+            groupedByAtelie[atelie][key] = (groupedByAtelie[atelie][key] || 0) + pares;
+        });
+
+        const cardData = Object.keys(groupedByAtelie).sort((a,b)=>a.localeCompare(b)).map(atelie => ({
+            title: atelie,
+            items: groupedByAtelie[atelie],
+            cardColor: '#bdbdbd'
+        }));
+
+        displayResumoCards(`Pronto Costura: saiu do ateliê e não entrou na distribuição ${getAppliedFiltersText()}`, cardData, totalPronto);
+    }
+
+    function showResumoFaltaMontarModal(taloes) {
+        const faltaMontar = taloes.filter(t => !hasDate(t.dataEntradaMontagem));
+        const totalFaltaMontar = faltaMontar.reduce((sum, t) => sum + (Number(t.pares) || 0), 0);
+
+        const porModelo = groupAndSum(faltaMontar, t => `${t.linha}.${t.modelo}`);
+        const porLinha = groupAndSum(faltaMontar, t => t.linha);
+
+        const cardData = [
+            { title: 'Falta montar por modelo', items: porModelo, cardColor: '#bdbdbd' },
+            { title: 'Falta montar por linha', items: porLinha, cardColor: '#bdbdbd' }
+        ];
+
+        displayResumoCards(`Falta Montar: tudo que ainda não entrou na montagem ${getAppliedFiltersText()}`, cardData, totalFaltaMontar);
+    }
+
+    function showResumoGiroFabricaModal(taloes) {
+        
+        // 1. Disponível para Montar (Entrou em Dist. ou Tal. E Não entrou em Mont.)
+        const disponivelTaloes = taloes.filter(t => 
+            (hasDate(t.dataEntradaDistribuicao) || hasDate(t.dataEntradaTalonagem)) && 
+            !hasDate(t.dataEntradaMontagem)
+        );
+        
+        // Cálculo do total de pares disponíveis (Conjunto principal)
+        const totalDisponivel = disponivelTaloes.reduce((sum, t) => sum + (Number(t.pares) || 0), 0);
+        
+        // 2. Talonado (Entrou em Tal. E Não entrou em Mont.)
+        const talonadoTaloes = taloes.filter(t => 
+            hasDate(t.dataEntradaTalonagem) && 
+            !hasDate(t.dataEntradaMontagem)
+        );
+
+        // Card 1: Disponível Modelo.Linha
+        const disponivelML = groupAndSum(disponivelTaloes, t => `${t.linha}.${t.modelo}`);
+
+        // Card 2: Talonado Modelo.Linha
+        const talonadoML = groupAndSum(talonadoTaloes, t => `${t.linha}.${t.modelo}`);
+        
+        // Card 3: Disponível Linha
+        const disponivelL = groupAndSum(disponivelTaloes, t => t.linha);
+
+        // NOVO Card 4: Talonado Linha (Exatamente igual ao Talonado, mas agrupado por linha)
+        const talonadoL = groupAndSum(talonadoTaloes, t => t.linha);
+
+
+        const cardData = [
+            {
+                title: 'Na Fabrica por modelo',
+                items: disponivelML,
+                cardColor: '#bdbdbd' // Verde Claro (Pronto/Estoque)
+            },
+            {
+                title: 'Talonado por Modelo',
+                items: talonadoML,
+                cardColor: '#bdbdbd' // Laranja Claro (Em Etapa Chave)
+            },
+            {
+                title: 'Na Fabrica por Linha',
+                items: disponivelL,
+                cardColor: '#bdbdbd' // Azul Claro (Resumo Linha)
+            },
+            {
+                title: 'Talonado por Linha', 
+                items: talonadoL,         
+                cardColor: '#bdbdbd'      // Rosa Claro (Destaque para o subconjunto)
+            }
+        ];
+        
+        // Coleta e anexa os filtros ao título
+        const appliedFilters = getAppliedFiltersText();
+        const modalTitleText = `Giro fabrica: ${appliedFilters}`;
+
+        displayResumoCards(modalTitleText, cardData, totalDisponivel); 
+    }
+    
+    function showExtraFullModal(title, text){
+      const cleanTitle = String(title || 'Informação');
+      const cleanText = String(text || '').trim();
+      modalTitle.textContent = cleanTitle;
+      modalBodyContent.innerHTML = `
+        <div class="extra-full-modal">
+          <div class="extra-full-card">
+            <div class="extra-full-label">${escapeHTML(cleanTitle)} completo</div>
+            <div class="extra-full-text">${escapeHTML(cleanText || 'Sem informação.')}</div>
+          </div>
+        </div>`;
+      detailsModal.style.display = 'block';
+    }
+
+    // Clique no cliente/normativa do card: abre o texto completo
+    document.addEventListener('click',(e)=>{
+        const extra = e.target.closest('.js-extra-full');
+        if(!extra) return;
+        e.preventDefault();
+        e.stopPropagation();
+        showExtraFullModal(extra.dataset.extraTitle || 'Informação', extra.dataset.extraText || extra.textContent || '');
+    });
+
+    // Event listener para clique no link da remessa (chama o modal de detalhes)
+    document.addEventListener('click',(e)=>{ 
+        const a=e.target.closest('.remessa-link'); 
+        if(a){ 
+            e.preventDefault();
+            e.stopPropagation();
+            showDetailsModal(a.dataset.remessa); 
+        }
+    });
+    
+    // Clique nos cards/chips incompletos: abre lista dos talões que faltam fechar naquela etapa
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.remessa-link')) return;
+        const chip = e.target.closest('.stage-chip');
+        if (chip && !chip.classList.contains('js-open-stage')) return;
+        const el = e.target.closest('.js-open-stage, .remessa-card.is-incomplete');
+        if(!el) return;
+        const stage = el.dataset.stage;
+        if(!stage) return;
+        e.preventDefault();
+        e.stopPropagation();
+        showOpenStageModal(stage, el.dataset.remessa, el.dataset.linha, el.dataset.corte, el.dataset.entrega);
+    });
+
+    // Listeners do Modal de Detalhes
+    closeModalBtn.addEventListener('click',()=> detailsModal.style.display='none');
+    window.addEventListener('click',(e)=>{ if(e.target===detailsModal) detailsModal.style.display='none'; });
+
+    // NOVO: Listeners do Modal de Filtro de Remessa
+    remessaCloseBtn.addEventListener('click',()=> remessaFilterModal.style.display='none');
+    window.addEventListener('click',(e)=>{ if(e.target===remessaFilterModal) remessaFilterModal.style.display='none'; });
+    
+    selectRemessasButton.addEventListener('click', openRemessaFilterModal);
+
+    // Event Listener para "Salvar Seleção" do filtro de remessa
+    saveRemessaSelectionButton.addEventListener('click', handleRemessaFilterSave);
+
+    // Event Listener para "Selecionar Todos" do filtro de remessa
+    selectAllRemessas.addEventListener('change', (e) => {
+        const isChecked = e.target.checked;
+        document.querySelectorAll('#remessaFilterTableBody .remessa-checkbox').forEach(cb => {
+            cb.checked = isChecked;
+        });
+    });
+
+    function openRemessaFilterModal() {
+        if (availableRemessas.size === 0) {
+            alert("Nenhuma remessa disponível para filtrar. Gere o relatório primeiro.");
+            return;
+        }
+
+        remessaFilterTableBody.innerHTML = '';
+        const sortedRemessas = Array.from(availableRemessas.keys()).sort((a, b) => a.localeCompare(b));
+        let allChecked = true;
+
+        sortedRemessas.forEach(remessa => {
+            const data = availableRemessas.get(remessa);
+            const isChecked = selectedRemessas.has(remessa);
+            
+            if (!isChecked) allChecked = false;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="checkbox" class="remessa-checkbox" value="${remessa}" ${isChecked ? 'checked' : ''}></td>
+                <td style="text-align: left;">${remessa}</td>
+                <td style="text-align: left;">${Array.from(data.linhas).sort().join(', ')}</td>
+                <td>${data.pares.toLocaleString()}</td>
+                <td>${Array.from(data.tiposCliente).join(', ')}</td>
+            `;
+            remessaFilterTableBody.appendChild(tr);
+        });
+        
+        // Atualiza o checkbox "Selecionar Todos"
+        selectAllRemessas.checked = allChecked;
+
+        remessaFilterModal.style.display = 'block';
+    }
+
+    function handleRemessaFilterSave() {
+        // 1. Coleta a nova seleção
+        const newSelectedRemessas = new Set();
+        document.querySelectorAll('#remessaFilterTableBody .remessa-checkbox:checked').forEach(cb => {
+            newSelectedRemessas.add(cb.value);
+        });
+        
+        // 2. Atualiza o estado
+        selectedRemessas = newSelectedRemessas;
+        
+        // 3. Fecha o modal e atualiza a contagem
+        remessaFilterModal.style.display = 'none';
+        updateRemessaCountDisplay();
+        
+        // 4. Re-gera o relatório
+        filterAndGenerateReport();
+    }
+    
+    
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('.filter-link');
+        if (link) {
+            e.preventDefault();
+            const stage = link.dataset.stage; 
+            currentStageFilter = (currentStageFilter === stage) ? null : stage;
+            if (allFetchedTaloes.length > 0) {
+                filterAndGenerateReport();
+            } else {
+                runSearch(); 
+            }
+        }
+    });
+          
+
+    document.querySelectorAll('[data-roma-whats]').forEach(button=>button.addEventListener('click',()=>{
+      if(!checkTaloesAndAlert())return;
+      const sector=button.dataset.romaWhats,s=window.Roma.SECTORS[sector];
+      const pending=getCurrentFilteredTaloes().filter(t=>window.RomaProducao.missing(t,sector));
+      const text=buildWhatsDetailedByRemessa(pending,{titulo:`Falta ${s.name}`,totalLabel:`Total faltando ${s.name}`,emptyMessage:`Nenhum talão faltando ${s.name} nos filtros selecionados.`,ownerField:s.nameField});
+      openWhatsModal(`${s.name} Whats`,text);
+    }));
+    document.querySelectorAll('[data-roma-summary]').forEach(button=>button.addEventListener('click',()=>{
+      if(!checkTaloesAndAlert())return;
+      const sector=button.dataset.romaSummary,s=window.Roma.SECTORS[sector];
+      const pending=getCurrentFilteredTaloes().filter(t=>window.RomaProducao.missing(t,sector));
+      const groups=new Map();
+      pending.forEach(t=>{
+        const owner=String(t[s.owner]||'sem-atelie');
+        if(!groups.has(owner))groups.set(owner,{title:String(t[s.nameField]||'A definir pelo Corte'),items:{},cardColor:sector==='sola'?'#ffedd5':'#ede9fe'});
+        const group=groups.get(owner),model=getModeloResumoKey(t);group.items[model]=(group.items[model]||0)+(Number(t.pares)||0);
+      });
+      displayResumoCards(`Pares faltando em ${s.name} (por ateliê) ${getAppliedFiltersText()}`,Array.from(groups.values()),pending.reduce((sum,t)=>sum+(Number(t.pares)||0),0));
+    }));
+
+    // === Lógica de Ocultar/Expandir Colunas com Checkbox ===
+
+    const COLUMN_DEFS = [
+        { label: 'Linha', selectors: ['.col-linha'], defaultChecked: true },
+        { label: 'Remessa', selectors: ['.col-remessa'], defaultChecked: true },
+        { label: 'Pares', selectors: ['.col-pares-ident'], defaultChecked: true },
+        { label: 'Talões', selectors: ['.col-taloes-ident'], defaultChecked: true },
+        { label: 'Data de Corte', selectors: ['.col-data-corte'], defaultChecked: true },
+        { label: 'Data de Entrega', selectors: ['.col-data-entrega'], defaultChecked: true },
+        { label: 'Corte', selectors: ['.col-corte-group', '.col-corte'], defaultChecked: true },
+        { label: 'Costura', selectors: ['.col-costura-group', '.col-costura'], defaultChecked: true },
+        { label: 'Palmilha', selectors: ['.col-palmilha-group','.col-palmilha'], defaultChecked: true },
+        { label: 'Sola', selectors: ['.col-sola-group','.col-sola'], defaultChecked: true },
+        { label: 'Distribuição', selectors: ['.col-distribuicao-group', '.col-distribuicao'], defaultChecked: true },
+        { label: 'Talonagem', selectors: ['.col-talonagem-group', '.col-talonagem'], defaultChecked: true },
+        { label: 'Montagem', selectors: ['.col-montagem-group', '.col-montagem'], defaultChecked: true },
+    ];
+
+    function setupColumnControl() {
+        if (!checkboxContainer) return;
+        checkboxContainer.innerHTML = ''; 
+
+        COLUMN_DEFS.forEach(col => {
+            const id = `toggle-${col.selectors[0].substring(1).replace('-group','')}`;
+            
+            const label = document.createElement('label');
+            label.htmlFor = id;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = id;
+            checkbox.checked = col.defaultChecked;
+            checkbox.dataset.selectors = col.selectors.join(','); 
+
+            checkbox.addEventListener('change', (e) => {
+                const selectors = e.target.dataset.selectors.split(',');
+                const isChecked = e.target.checked;
+                
+                selectors.forEach(selector => {
+                    const elements = document.querySelectorAll(`th${selector}, td${selector}`);
+                    elements.forEach(el => {
+                        el.classList.toggle('hidden-column', !isChecked);
+                    });
+                });
+            });
+
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(col.label));
+            checkboxContainer.appendChild(label);
+
+            if (!col.defaultChecked) {
+                col.selectors.forEach(selector => {
+                    document.querySelectorAll(`th${selector}, td${selector}`).forEach(el => {
+                        el.classList.add('hidden-column');
+                    });
+                });
+            }
+        });
+    }
+
+  </script>
+</body>
+</html>

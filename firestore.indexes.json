@@ -1,0 +1,431 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idAtelieResponsavel",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataSaidaCostura",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idAtelieResponsavel",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idAtelieResponsavel",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataEntrega",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "linha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "modelo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "numeroRemessa",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tipoCliente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "statusCorte",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "linha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataEntrega",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "modelo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataEntrega",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "numeroRemessa",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataEntrega",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tipoCliente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataEntrega",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieCosturaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieCosturaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataEntrega",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieCosturaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "codigoBarrasIdentificador",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieCosturaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataSaidaCostura",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieSolaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieSolaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataEntrega",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieSolaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "codigoBarrasIdentificador",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieSolaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataSaidaSola",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ateliePalmilhaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ateliePalmilhaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataEntrega",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ateliePalmilhaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "codigoBarrasIdentificador",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ateliePalmilhaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataSaidaPalmilha",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "DistribuicaoAtelier",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "setor",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "atualizadoEm",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tipoCliente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "atelieCosturaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tipoCliente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "statusCorte",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "atelieCosturaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "statusCorte",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "taloes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tipoCliente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "atelieCosturaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "statusCorte",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dataCorte",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+  <script src="backup-status.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migração de Talões - Calçados Roma v3</title>
+  <style>
+    :root{
+      --bg:#f4f6f8;
+      --card:#fff;
+      --ink:#222;
+      --muted:#666;
+      --bd:#d9dde3;
+      --pri:#0d6efd;
+      --pri-700:#084298;
+      --ok:#198754;
+      --warn:#ffc107;
+      --danger:#dc3545;
+      --danger-700:#b02a37;
+      --soft:#eef3ff;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      min-height:100vh;
+    }
+
+    .page{
+      width:100%;
+      max-width:1200px;
+      margin:0 auto;
+      padding:18px;
+    }
+
+    .top-card{
+      background:#333;
+      color:#fff;
+      padding:14px 16px;
+      border-radius:12px;
+      margin-bottom:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      box-shadow:0 3px 12px rgba(0,0,0,.12);
+    }
+
+    .top-card h1{
+      font-size:22px;
+      margin:0;
+    }
+
+    .user-box{
+      font-size:13px;
+      text-align:right;
+      color:#f1f1f1;
+    }
+
+    .user-box strong{display:block;color:#fff}
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--bd);
+      border-radius:12px;
+      padding:16px;
+      box-shadow:0 3px 12px rgba(0,0,0,.06);
+    }
+
+    .card h2{
+      margin:0 0 10px 0;
+      font-size:18px;
+    }
+
+    .card h3{
+      margin:14px 0 8px 0;
+      font-size:15px;
+      color:#333;
+    }
+
+    .hint{
+      margin:6px 0 12px 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:flex-end;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:180px;
+      flex:1;
+    }
+
+    label{
+      font-size:12px;
+      font-weight:700;
+      color:#444;
+    }
+
+    input, select{
+      width:100%;
+      border:1px solid #cfd4da;
+      border-radius:8px;
+      padding:9px 10px;
+      font-size:14px;
+      background:#fff;
+    }
+
+    .btn{
+      border:none;
+      border-radius:8px;
+      padding:10px 14px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:14px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      min-height:38px;
+    }
+
+    .btn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+
+    .btn-primary{background:var(--pri); color:#fff}
+    .btn-primary:hover:not(:disabled){background:var(--pri-700)}
+    .btn-secondary{background:#e9ecef; color:#111}
+    .btn-secondary:hover:not(:disabled){background:#dde2e6}
+    .btn-success{background:var(--ok); color:#fff}
+    .btn-danger{background:var(--danger); color:#fff}
+    .btn-danger:hover:not(:disabled){background:var(--danger-700)}
+
+    .status{
+      border-radius:10px;
+      padding:12px;
+      background:#f8f9fa;
+      border:1px solid var(--bd);
+      font-size:13px;
+      line-height:1.45;
+      white-space:pre-wrap;
+      max-height:250px;
+      overflow:auto;
+    }
+
+    .status.ok{background:#eefaf2;border-color:#b7e4c7}
+    .status.warn{background:#fff9e6;border-color:#ffe08a}
+    .status.err{background:#fff0f0;border-color:#ffb3b3}
+
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(140px,1fr));
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .summary-item{
+      border:1px solid var(--bd);
+      background:var(--soft);
+      border-radius:10px;
+      padding:10px;
+      text-align:center;
+    }
+
+    .summary-item span{
+      display:block;
+      font-size:12px;
+      color:#555;
+      margin-bottom:4px;
+    }
+
+    .summary-item strong{
+      font-size:18px;
+      color:#111;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+      margin-top:10px;
+    }
+
+    th, td{
+      border:1px solid var(--bd);
+      padding:7px;
+      text-align:left;
+      white-space:nowrap;
+    }
+
+    th{
+      background:#f1f3f5;
+      font-weight:700;
+    }
+
+    .table-wrap{
+      width:100%;
+      overflow:auto;
+      margin-top:10px;
+    }
+
+    .danger-zone{
+      border:1px dashed var(--danger);
+      background:#fff6f6;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      border-radius:999px;
+      padding:3px 8px;
+      background:#eee;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .badge.ok{background:#d1e7dd;color:#0f5132}
+    .badge.warn{background:#fff3cd;color:#664d03}
+
+    .hidden{display:none !important}
+
+    .progress{
+      width:100%;
+      height:12px;
+      background:#e9ecef;
+      border-radius:999px;
+      overflow:hidden;
+      margin:10px 0;
+    }
+
+    .progress-bar{
+      height:100%;
+      width:0%;
+      background:var(--pri);
+      transition:width .2s ease;
+    }
+
+    .small{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    @media(max-width:760px){
+      .page{padding:10px}
+      .top-card{align-items:flex-start;flex-direction:column}
+      .user-box{text-align:left}
+      .summary{grid-template-columns:repeat(2, minmax(120px,1fr))}
+      .field{min-width:100%;flex-basis:100%}
+      .btn{width:100%}
+    }
+  </style>
+
+  <script src="navegacao.js"></script>
+</head>
+<body>
+  <div class="page">
+    <div class="top-card" id="fallbackHeader">
+      <h1>Migração de Talões</h1>
+      <div class="user-box">
+        <strong id="userNameLabel">Carregando...</strong>
+        <span id="userLevelLabel">Verificando acesso...</span>
+        <button class="btn btn-secondary hidden" id="goLoginBtn" type="button" style="margin-top:8px;min-height:30px;padding:6px 10px;">Ir para login</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>1. Configuração da migração</h2>
+        <p class="hint">
+          Esta página copia dados do projeto atual <strong>calcadosroma-65ac6</strong> para o banco de backup selecionado.
+          Ela não apaga nada do banco atual.
+        </p>
+
+        <div class="row">
+          <div class="field">
+            <label for="destinoSelect">Banco destino</label>
+            <select id="destinoSelect"></select>
+          </div>
+
+          <div class="field">
+            <label for="dataCorteInicio">Data de corte início</label>
+            <input type="date" id="dataCorteInicio" />
+          </div>
+
+          <div class="field">
+            <label for="dataCorteFim">Data de corte fim</label>
+            <input type="date" id="dataCorteFim" />
+          </div>
+        </div>
+
+        <div class="summary">
+          <div class="summary-item">
+            <span>Origem</span>
+            <strong>calcadosroma-65ac6</strong>
+          </div>
+          <div class="summary-item">
+            <span>Destino</span>
+            <strong id="destinoResumo">-</strong>
+          </div>
+          <div class="summary-item">
+            <span>Acesso exigido</span>
+            <strong>07</strong>
+          </div>
+          <div class="summary-item">
+            <span>Exclusão</span>
+            <strong>Não faz</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>2. Copiar coleções auxiliares</h2>
+        <p class="hint">
+          Copia sempre as coleções inteiras: <strong>Usuario</strong>, <strong>metas</strong> e <strong>quinzenas</strong>.
+          Mantém o mesmo ID dos documentos no banco destino.
+        </p>
+
+        <button class="btn btn-primary" id="copiarAuxiliaresBtn" disabled>Copiar Usuario, metas e quinzenas</button>
+
+        <div class="progress hidden" id="auxProgressBox">
+          <div class="progress-bar" id="auxProgressBar"></div>
+        </div>
+
+        <div class="status" id="auxStatus">Aguardando autenticação...</div>
+      </section>
+
+      <section class="card">
+        <h2>3. Buscar talões pelo período</h2>
+        <p class="hint">
+          Busca no banco atual somente os talões onde <strong>dataCorte</strong> está entre a data inicial e final.
+        </p>
+
+        <div class="row">
+          <button class="btn btn-secondary" id="buscarTaloesBtn" disabled>Buscar talões</button>
+          <button class="btn btn-success" id="copiarTaloesBtn" disabled>Copiar talões para o banco novo</button>
+        </div>
+
+        <div class="progress hidden" id="taloesProgressBox">
+          <div class="progress-bar" id="taloesProgressBar"></div>
+        </div>
+
+        <div class="status" id="taloesStatus">Selecione o período e clique em “Buscar talões”.</div>
+
+        <div id="previewBox" class="hidden">
+          <div class="summary">
+            <div class="summary-item">
+              <span>Talões encontrados</span>
+              <strong id="previewQtd">0</strong>
+            </div>
+            <div class="summary-item">
+              <span>Total de pares</span>
+              <strong id="previewPares">0</strong>
+            </div>
+            <div class="summary-item">
+              <span>Remessas únicas</span>
+              <strong id="previewRemessas">0</strong>
+            </div>
+            <div class="summary-item">
+              <span>Data de corte</span>
+              <strong id="previewPeriodo">-</strong>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <h3>Resumo por tipo de cliente</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo de cliente</th>
+                  <th>Talões</th>
+                  <th>Pares</th>
+                </tr>
+              </thead>
+              <tbody id="tipoResumoBody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap">
+            <h3>Resumo por linha</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Linha</th>
+                  <th>Talões</th>
+                  <th>Pares</th>
+                </tr>
+              </thead>
+              <tbody id="linhaResumoBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>4. Registro de backup</h2>
+        <p class="hint">
+          Ao copiar os talões, a página cria a coleção <strong>registroBackup</strong> nos dois bancos.
+          A futura página de exclusão deverá apagar do banco atual somente os IDs salvos nesses lotes.
+        </p>
+
+        <div class="status" id="backupStatus">Nenhum backup criado nesta sessão.</div>
+      </section>
+
+      <section class="card danger-zone">
+        <h2>Zona de segurança</h2>
+        <p class="hint">
+          Esta página não exclui documentos. A exclusão será feita em outra página, usando a lista exata de IDs salva em
+          <strong>registroBackup/lotesTaloes</strong>.
+        </p>
+        <span class="badge warn">Sem exclusão automática</span>
+      </section>
+    </div>
+  </div>
+
+  <script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+import {
+      getFirestore,
+      collection,
+      doc,
+      getDoc,
+      getDocs,
+      query,
+      where,
+      writeBatch,
+      setDoc,
+      serverTimestamp,
+      documentId
+    } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+function iniciarMigracaoDeArquivo() {
+
+
+
+
+    // =========================
+    // PROJETO ORIGEM - SISTEMA ATUAL
+    // =========================
+    const firebaseConfigOrigem = window.FIREBASE_CONFIG;
+
+    // =========================
+    // PROJETOS DESTINO
+    // Para adicionar outros bancos no futuro, basta duplicar este item.
+    // =========================
+    const DESTINOS = Object.freeze({});
+    // A transferência entre projetos será configurada após definir o arquivo da Roma.
+    if (Object.keys(DESTINOS).length === 0) {
+      window.mostrarBackupNaoConfigurado('Backup de talões — Calçados Roma');
+      return;
+    }
+
+    // =========================
+    // CAMPOS PERMITIDOS NA CÓPIA DOS TALÕES
+    // =========================
+    const CAMPOS_TALOES = [
+      "aviamentoConcluido",
+      "aviamentoData",
+      "aviamentoUsuario",
+      "cabedalConcluido",
+      "cabedalData",
+      "cabedalUsuario",
+      "codigoBarrasIdentificador",
+      "corSapato",
+      "corTalao",
+      "costuraDataInicio",
+      "costuraUsuario",
+      "dataCorte",
+      "dataEntradaDistribuicao",
+      "dataEntradaMontagem",
+      "dataEntradaTalonagem",
+      "dataEntrega",
+      "dataProducao",
+      "dataRegistro",
+      "dataSaidaCostura",
+      "forroConcluido",
+      "forroData",
+      "forroUsuario",
+      "id",
+      "idAtelieResponsavel",
+      "linha",
+      "modelo",
+      "numeroRemessa",
+      "numeroTalaoSequencial",
+      "pares",
+      "statusCorte",
+      "statusCostura",
+      "statusGeral",
+      "statusMontagem",
+      "tipoCliente",
+      "tirasConcluido",
+      "tirasData",
+      "tirasUsuario",
+      "trilhoProduzido",
+      "usuarioDistribuicao",
+      "usuarioMontagem",
+      "usuarioTalonagem"
+    ];
+
+    const COLECOES_AUXILIARES = ["Usuario", "metas", "quinzenas"];
+    const NIVEL_PERMITIDO = "07";
+    const BATCH_LIMIT = 400;
+
+    const appOrigem = initializeApp(firebaseConfigOrigem);
+    const authOrigem = getAuth(appOrigem);
+    const dbOrigem = getFirestore(appOrigem);
+
+    const destinoSelect = document.getElementById("destinoSelect");
+    const destinoResumo = document.getElementById("destinoResumo");
+    const dataCorteInicio = document.getElementById("dataCorteInicio");
+    const dataCorteFim = document.getElementById("dataCorteFim");
+
+    const userNameLabel = document.getElementById("userNameLabel");
+    const userLevelLabel = document.getElementById("userLevelLabel");
+
+    const goLoginBtn = document.getElementById("goLoginBtn");
+    const copiarAuxiliaresBtn = document.getElementById("copiarAuxiliaresBtn");
+    const buscarTaloesBtn = document.getElementById("buscarTaloesBtn");
+    const copiarTaloesBtn = document.getElementById("copiarTaloesBtn");
+
+    const auxStatus = document.getElementById("auxStatus");
+    const taloesStatus = document.getElementById("taloesStatus");
+    const backupStatus = document.getElementById("backupStatus");
+
+    const auxProgressBox = document.getElementById("auxProgressBox");
+    const auxProgressBar = document.getElementById("auxProgressBar");
+    const taloesProgressBox = document.getElementById("taloesProgressBox");
+    const taloesProgressBar = document.getElementById("taloesProgressBar");
+
+    const previewBox = document.getElementById("previewBox");
+    const previewQtd = document.getElementById("previewQtd");
+    const previewPares = document.getElementById("previewPares");
+    const previewRemessas = document.getElementById("previewRemessas");
+    const previewPeriodo = document.getElementById("previewPeriodo");
+    const tipoResumoBody = document.getElementById("tipoResumoBody");
+    const linhaResumoBody = document.getElementById("linhaResumoBody");
+
+    let usuarioAtual = null;
+    let dadosUsuarioAtual = null;
+    let dbDestino = null;
+    let destinoAtual = null;
+    let taloesEncontrados = [];
+    let ultimoResumoAuxiliares = {};
+    let ultimoBackupId = null;
+
+    function setStatus(el, text, type = "") {
+      el.className = "status" + (type ? " " + type : "");
+      el.textContent = text;
+    }
+
+    function setProgress(box, bar, current, total) {
+      box.classList.remove("hidden");
+      const pct = total ? Math.round((current / total) * 100) : 0;
+      bar.style.width = Math.min(100, pct) + "%";
+    }
+
+    function hideProgress(box, bar) {
+      bar.style.width = "0%";
+      box.classList.add("hidden");
+    }
+
+    function formatNumber(n) {
+      return Number(n || 0).toLocaleString("pt-BR");
+    }
+
+    function nowId() {
+      const d = new Date();
+      const p = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+    }
+
+    function safeId(value) {
+      return String(value || "").replace(/[^\w-]/g, "_");
+    }
+
+    function chunkArray(arr, size) {
+      const chunks = [];
+      for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+      return chunks;
+    }
+
+    function pickFields(data, fields) {
+      const out = {};
+      fields.forEach((field) => {
+        if (Object.prototype.hasOwnProperty.call(data, field) && data[field] !== undefined) {
+          out[field] = data[field];
+        }
+      });
+      return out;
+    }
+
+    function getDestinoSelecionado() {
+      const key = destinoSelect.value;
+      const destino = DESTINOS[key];
+      if (!destino) throw new Error("Banco destino não encontrado.");
+      return destino;
+    }
+
+    function initDestino() {
+      const key = destinoSelect.value;
+      const destino = getDestinoSelecionado();
+      destinoAtual = destino;
+
+      const appName = "destino_" + key;
+      const appExistente = getApps().find((app) => app.name === appName);
+      const appDestino = appExistente || initializeApp(destino.config, appName);
+
+      dbDestino = getFirestore(appDestino);
+      destinoResumo.textContent = destino.config.projectId;
+    }
+
+    function preencherDestinos() {
+      destinoSelect.innerHTML = "";
+      Object.entries(DESTINOS).forEach(([key, value]) => {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = `${value.label} (${value.config.projectId})`;
+        destinoSelect.appendChild(opt);
+      });
+      initDestino();
+    }
+
+    destinoSelect.addEventListener("change", () => {
+      initDestino();
+      taloesEncontrados = [];
+      copiarTaloesBtn.disabled = true;
+      previewBox.classList.add("hidden");
+      setStatus(taloesStatus, "Destino alterado. Busque os talões novamente antes de copiar.");
+    });
+
+    preencherDestinos();
+
+    goLoginBtn.addEventListener("click", () => {
+      window.location.href = "login.html";
+    });
+
+    onAuthStateChanged(authOrigem, async (user) => {
+      try {
+        if (!user) {
+          userNameLabel.textContent = "Sessão não encontrada";
+          userLevelLabel.textContent = "Faça login e volte para migracaotaloes.html";
+          goLoginBtn.classList.remove("hidden");
+          copiarAuxiliaresBtn.disabled = true;
+          buscarTaloesBtn.disabled = true;
+          copiarTaloesBtn.disabled = true;
+          setStatus(auxStatus, "A página não reconheceu uma sessão logada. Clique em “Ir para login”, entre no sistema e depois abra novamente migracaotaloes.html. Se continuar, confira se este arquivo está na mesma pasta/domínio do login.html.", "warn");
+          return;
+        }
+
+        usuarioAtual = user;
+        goLoginBtn.classList.add("hidden");
+        const userSnap = await getDoc(doc(dbOrigem, "Usuario", user.email));
+
+        if (!userSnap.exists()) {
+          alert("Dados do usuário não encontrados.");
+          await signOut(authOrigem);
+          window.location.href = "login.html";
+          return;
+        }
+
+        dadosUsuarioAtual = userSnap.data();
+        const nivel = String(dadosUsuarioAtual.nivelAcesso || "");
+        const nome = dadosUsuarioAtual.Nome || dadosUsuarioAtual.nome || user.email;
+
+        localStorage.setItem("calcadosroma-65ac6:userNivelAcesso", nivel);
+        localStorage.setItem("calcadosroma-65ac6:userName", nome);
+
+        userNameLabel.textContent = nome;
+        userLevelLabel.textContent = "Nível: " + nivel;
+
+        if (window.SistemaNavegacao && typeof window.SistemaNavegacao.init === "function") {
+          window.SistemaNavegacao.init({
+            userLevel: nivel,
+            userName: nome,
+            title: "Controle de produção Calçados Roma",
+            onLogout: async () => {
+              await signOut(authOrigem);
+              localStorage.removeItem("calcadosroma-65ac6:userNivelAcesso");
+              localStorage.removeItem("calcadosroma-65ac6:userName");
+              window.location.href = "login.html";
+            }
+          });
+        }
+
+        if (nivel !== NIVEL_PERMITIDO) {
+          alert("Você não tem permissão para acessar esta página.");
+          window.location.href = "index.html";
+          return;
+        }
+
+        copiarAuxiliaresBtn.disabled = false;
+        buscarTaloesBtn.disabled = false;
+
+        setStatus(auxStatus, "Acesso liberado. Pronto para copiar Usuario, metas e quinzenas.", "ok");
+      } catch (err) {
+        console.error(err);
+        setStatus(auxStatus, "Erro na autenticação: " + err.message, "err");
+      }
+    });
+
+    async function copiarColecaoInteira(nomeColecao) {
+      const snap = await getDocs(collection(dbOrigem, nomeColecao));
+      const docs = snap.docs;
+
+      let copiados = 0;
+      const chunks = chunkArray(docs, BATCH_LIMIT);
+
+      for (let i = 0; i < chunks.length; i++) {
+        const batch = writeBatch(dbDestino);
+
+        chunks[i].forEach((docSnap) => {
+          batch.set(doc(dbDestino, nomeColecao, docSnap.id), docSnap.data(), { merge: false });
+        });
+
+        await batch.commit();
+        copiados += chunks[i].length;
+        setProgress(auxProgressBox, auxProgressBar, copiados, docs.length);
+        setStatus(auxStatus, `Copiando ${nomeColecao}...\n${copiados}/${docs.length} documentos copiados.`);
+      }
+
+      return { totalDocumentos: docs.length };
+    }
+
+    copiarAuxiliaresBtn.addEventListener("click", async () => {
+      try {
+        initDestino();
+
+        if (!confirm("Copiar Usuario, metas e quinzenas inteiras para o banco destino?")) return;
+
+        copiarAuxiliaresBtn.disabled = true;
+        buscarTaloesBtn.disabled = true;
+        copiarTaloesBtn.disabled = true;
+        ultimoResumoAuxiliares = {};
+
+        setStatus(auxStatus, "Iniciando cópia das coleções auxiliares...");
+        setProgress(auxProgressBox, auxProgressBar, 0, 1);
+
+        for (const nomeColecao of COLECOES_AUXILIARES) {
+          const resumo = await copiarColecaoInteira(nomeColecao);
+          ultimoResumoAuxiliares[nomeColecao] = resumo;
+        }
+
+        hideProgress(auxProgressBox, auxProgressBar);
+
+        const textoResumo = COLECOES_AUXILIARES
+          .map((c) => `${c}: ${formatNumber(ultimoResumoAuxiliares[c]?.totalDocumentos || 0)} documentos`)
+          .join("\n");
+
+        setStatus(auxStatus, "Coleções auxiliares copiadas com sucesso:\n" + textoResumo, "ok");
+      } catch (err) {
+        console.error(err);
+        setStatus(auxStatus, "Erro ao copiar coleções auxiliares:\n" + err.message, "err");
+      } finally {
+        copiarAuxiliaresBtn.disabled = false;
+        buscarTaloesBtn.disabled = false;
+      }
+    });
+
+    function validarPeriodo() {
+      const inicio = dataCorteInicio.value;
+      const fim = dataCorteFim.value;
+
+      if (!inicio || !fim) {
+        alert("Selecione a data de corte inicial e final.");
+        return null;
+      }
+
+      if (fim < inicio) {
+        alert("A data final não pode ser menor que a data inicial.");
+        return null;
+      }
+
+      return { inicio, fim };
+    }
+
+    function montarResumo(taloes) {
+      const resumo = {
+        totalTaloes: taloes.length,
+        totalPares: 0,
+        remessas: new Set(),
+        porTipo: {},
+        porLinha: {}
+      };
+
+      taloes.forEach(({ data }) => {
+        const pares = Number(data.pares || 0);
+        const tipo = data.tipoCliente || "Sem tipo";
+        const linha = data.linha || "Sem linha";
+        const remessa = data.numeroRemessa;
+
+        resumo.totalPares += pares;
+        if (remessa) resumo.remessas.add(String(remessa));
+
+        if (!resumo.porTipo[tipo]) resumo.porTipo[tipo] = { taloes: 0, pares: 0 };
+        resumo.porTipo[tipo].taloes++;
+        resumo.porTipo[tipo].pares += pares;
+
+        if (!resumo.porLinha[linha]) resumo.porLinha[linha] = { taloes: 0, pares: 0 };
+        resumo.porLinha[linha].taloes++;
+        resumo.porLinha[linha].pares += pares;
+      });
+
+      return resumo;
+    }
+
+    function renderResumoTabela(body, obj, keyLabel) {
+      body.innerHTML = "";
+      const entries = Object.entries(obj).sort((a, b) => {
+        if (keyLabel === "Linha") return String(a[0]).localeCompare(String(b[0]), "pt-BR", { numeric: true });
+        return String(a[0]).localeCompare(String(b[0]), "pt-BR");
+      });
+
+      entries.forEach(([key, value]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${key}</td>
+          <td>${formatNumber(value.taloes)}</td>
+          <td>${formatNumber(value.pares)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    buscarTaloesBtn.addEventListener("click", async () => {
+      try {
+        const periodo = validarPeriodo();
+        if (!periodo) return;
+
+        initDestino();
+
+        buscarTaloesBtn.disabled = true;
+        copiarTaloesBtn.disabled = true;
+        taloesEncontrados = [];
+        previewBox.classList.add("hidden");
+
+        setStatus(taloesStatus, "Buscando talões no banco atual...");
+        setProgress(taloesProgressBox, taloesProgressBar, 0, 1);
+
+        const q = query(
+          collection(dbOrigem, "taloes"),
+          where("dataCorte", ">=", periodo.inicio),
+          where("dataCorte", "<=", periodo.fim)
+        );
+
+        const snap = await getDocs(q);
+
+        taloesEncontrados = snap.docs.map((docSnap) => ({
+          id: docSnap.id,
+          data: docSnap.data()
+        }));
+
+        const resumo = montarResumo(taloesEncontrados);
+
+        previewQtd.textContent = formatNumber(resumo.totalTaloes);
+        previewPares.textContent = formatNumber(resumo.totalPares);
+        previewRemessas.textContent = formatNumber(resumo.remessas.size);
+        previewPeriodo.textContent = `${periodo.inicio} até ${periodo.fim}`;
+
+        renderResumoTabela(tipoResumoBody, resumo.porTipo, "Tipo");
+        renderResumoTabela(linhaResumoBody, resumo.porLinha, "Linha");
+
+        previewBox.classList.remove("hidden");
+        hideProgress(taloesProgressBox, taloesProgressBar);
+
+        if (taloesEncontrados.length === 0) {
+          setStatus(taloesStatus, "Nenhum talão encontrado no período selecionado.", "warn");
+          copiarTaloesBtn.disabled = true;
+        } else {
+          setStatus(
+            taloesStatus,
+            `Busca concluída.\nTalões encontrados: ${formatNumber(resumo.totalTaloes)}\nTotal de pares: ${formatNumber(resumo.totalPares)}\nRemessas únicas: ${formatNumber(resumo.remessas.size)}`,
+            "ok"
+          );
+          copiarTaloesBtn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        hideProgress(taloesProgressBox, taloesProgressBar);
+        setStatus(
+          taloesStatus,
+          "Erro ao buscar talões:\n" + err.message + "\n\nSe o Firebase pedir índice, crie o índice indicado no console e tente novamente.",
+          "err"
+        );
+      } finally {
+        buscarTaloesBtn.disabled = false;
+      }
+    });
+
+    async function validarDestinoPorIds(taloes) {
+      const ids = taloes.map((t) => t.id);
+      const idChunks = chunkArray(ids, 30);
+
+      let encontrados = 0;
+      let totalPares = 0;
+
+      for (const idsChunk of idChunks) {
+        const q = query(
+          collection(dbDestino, "taloes"),
+          where(documentId(), "in", idsChunk)
+        );
+
+        const snap = await getDocs(q);
+        snap.forEach((docSnap) => {
+          encontrados++;
+          totalPares += Number(docSnap.data().pares || 0);
+        });
+      }
+
+      return { encontrados, totalPares };
+    }
+
+    async function criarOuAtualizarRegistroBackup(backupId, data, status = "EM_ANDAMENTO") {
+      const payload = {
+        ...data,
+        status,
+        atualizadoEm: serverTimestamp()
+      };
+
+      await Promise.all([
+        setDoc(doc(dbOrigem, "registroBackup", backupId), payload, { merge: true }),
+        setDoc(doc(dbDestino, "registroBackup", backupId), payload, { merge: true })
+      ]);
+    }
+
+    async function salvarLoteBackup(backupId, loteNumero, lote, periodo) {
+      const totalPares = lote.reduce((s, item) => s + Number(item.data.pares || 0), 0);
+      const remessas = Array.from(new Set(lote.map((item) => item.data.numeroRemessa).filter(Boolean).map(String))).sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
+
+      const payload = {
+        loteNumero,
+        dataCorteInicio: periodo.inicio,
+        dataCorteFim: periodo.fim,
+        taloesIds: lote.map((item) => item.id),
+        remessas,
+        totalTaloes: lote.length,
+        totalPares,
+        criadoEm: serverTimestamp()
+      };
+
+      await Promise.all([
+        setDoc(doc(dbOrigem, "registroBackup", backupId, "lotesTaloes", `lote_${String(loteNumero).padStart(3, "0")}`), payload),
+        setDoc(doc(dbDestino, "registroBackup", backupId, "lotesTaloes", `lote_${String(loteNumero).padStart(3, "0")}`), payload)
+      ]);
+    }
+
+    copiarTaloesBtn.addEventListener("click", async () => {
+      const periodo = validarPeriodo();
+      if (!periodo) return;
+
+      if (!taloesEncontrados.length) {
+        alert("Busque os talões antes de copiar.");
+        return;
+      }
+
+      initDestino();
+
+      const destino = getDestinoSelecionado();
+      const resumo = montarResumo(taloesEncontrados);
+
+      const confirma = confirm(
+        `Confirmar cópia dos talões?\n\n` +
+        `Destino: ${destino.label}\n` +
+        `Período: ${periodo.inicio} até ${periodo.fim}\n` +
+        `Talões: ${formatNumber(resumo.totalTaloes)}\n` +
+        `Pares: ${formatNumber(resumo.totalPares)}\n\n` +
+        `Nada será apagado do banco atual.`
+      );
+
+      if (!confirma) return;
+
+      copiarTaloesBtn.disabled = true;
+      buscarTaloesBtn.disabled = true;
+      copiarAuxiliaresBtn.disabled = true;
+
+      const backupId = `backup_${safeId(periodo.inicio)}_${safeId(periodo.fim)}_${nowId()}`;
+      ultimoBackupId = backupId;
+
+      const registroBase = {
+        tipoRegistro: "MIGRACAO_TALOES",
+        backupId,
+        origemProjeto: firebaseConfigOrigem.projectId,
+        destinoProjeto: destino.config.projectId,
+        destinoLabel: destino.label,
+        dataCorteInicio: periodo.inicio,
+        dataCorteFim: periodo.fim,
+        colecoesAuxiliares: {
+          Usuario: ultimoResumoAuxiliares.Usuario || null,
+          metas: ultimoResumoAuxiliares.metas || null,
+          quinzenas: ultimoResumoAuxiliares.quinzenas || null
+        },
+        taloes: {
+          totalDocumentos: resumo.totalTaloes,
+          totalPares: resumo.totalPares,
+          totalRemessas: resumo.remessas.size,
+          camposCopiados: CAMPOS_TALOES
+        },
+        validacao: {
+          validado: false,
+          destinoDocumentos: 0,
+          destinoPares: 0
+        },
+        apagadoOrigem: false,
+        criadoEm: serverTimestamp(),
+        criadoPorEmail: usuarioAtual?.email || "",
+        criadoPorNome: dadosUsuarioAtual?.Nome || dadosUsuarioAtual?.nome || "",
+        nivelUsuario: String(dadosUsuarioAtual?.nivelAcesso || "")
+      };
+
+      try {
+        setStatus(backupStatus, `Criando registroBackup ${backupId} nos dois bancos...`);
+        await criarOuAtualizarRegistroBackup(backupId, registroBase, "EM_ANDAMENTO");
+
+        const chunks = chunkArray(taloesEncontrados, BATCH_LIMIT);
+        let copiados = 0;
+
+        setProgress(taloesProgressBox, taloesProgressBar, 0, taloesEncontrados.length);
+        setStatus(taloesStatus, "Iniciando cópia dos talões...");
+
+        for (let i = 0; i < chunks.length; i++) {
+          const lote = chunks[i];
+          const batch = writeBatch(dbDestino);
+
+          lote.forEach(({ id, data }) => {
+            const dadosFiltrados = pickFields(data, CAMPOS_TALOES);
+            batch.set(doc(dbDestino, "taloes", id), dadosFiltrados, { merge: false });
+          });
+
+          await batch.commit();
+
+          await salvarLoteBackup(backupId, i + 1, lote, periodo);
+
+          copiados += lote.length;
+          setProgress(taloesProgressBox, taloesProgressBar, copiados, taloesEncontrados.length);
+          setStatus(
+            taloesStatus,
+            `Copiando talões...\nLote ${i + 1}/${chunks.length}\n${formatNumber(copiados)}/${formatNumber(taloesEncontrados.length)} documentos copiados.`
+          );
+        }
+
+        setStatus(taloesStatus, "Cópia concluída. Validando dados no banco destino...");
+        const validacao = await validarDestinoPorIds(taloesEncontrados);
+
+        const validado =
+          validacao.encontrados === resumo.totalTaloes &&
+          Number(validacao.totalPares) === Number(resumo.totalPares);
+
+        const statusFinal = validado ? "COPIADO_VALIDADO" : "ERRO_VALIDACAO";
+
+        await criarOuAtualizarRegistroBackup(backupId, {
+          ...registroBase,
+          validacao: {
+            validado,
+            destinoDocumentos: validacao.encontrados,
+            destinoPares: validacao.totalPares
+          }
+        }, statusFinal);
+
+        hideProgress(taloesProgressBox, taloesProgressBar);
+
+        const textoValidacao =
+          `Backup criado: ${backupId}\n\n` +
+          `Origem documentos: ${formatNumber(resumo.totalTaloes)}\n` +
+          `Destino documentos: ${formatNumber(validacao.encontrados)}\n` +
+          `Origem pares: ${formatNumber(resumo.totalPares)}\n` +
+          `Destino pares: ${formatNumber(validacao.totalPares)}\n` +
+          `Status: ${statusFinal}`;
+
+        setStatus(backupStatus, textoValidacao, validado ? "ok" : "err");
+        setStatus(
+          taloesStatus,
+          validado
+            ? "Talões copiados e validados com sucesso. Agora teste a página de busca do banco de backup antes de qualquer exclusão."
+            : "A cópia terminou, mas a validação não bateu. Não faça exclusão antes de verificar.",
+          validado ? "ok" : "err"
+        );
+      } catch (err) {
+        console.error(err);
+
+        try {
+          await criarOuAtualizarRegistroBackup(backupId, {
+            ...registroBase,
+            erro: {
+              mensagem: err.message,
+              registradoEm: serverTimestamp()
+            }
+          }, "ERRO");
+        } catch (e) {
+          console.error("Erro ao registrar falha no backup:", e);
+        }
+
+        hideProgress(taloesProgressBox, taloesProgressBar);
+        setStatus(taloesStatus, "Erro ao copiar talões:\n" + err.message, "err");
+        setStatus(backupStatus, `Backup ${backupId} ficou com status ERRO.\nVerifique antes de tentar novamente.`, "err");
+      } finally {
+        copiarTaloesBtn.disabled = taloesEncontrados.length === 0;
+        buscarTaloesBtn.disabled = false;
+        copiarAuxiliaresBtn.disabled = false;
+      }
+    });
+  
+}
+iniciarMigracaoDeArquivo();
+</script>
+</body>
+</html>

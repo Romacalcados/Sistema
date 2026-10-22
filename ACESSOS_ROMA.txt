@@ -1,0 +1,127 @@
+ACESSOS DA ROMA — PERMISSÕES V2
+Projeto: calcadosroma-65ac6
+
+01 — Cadastro
+02 — Corte
+03 — Costura
+04 — Sola
+05 — Palmilha
+06 — Montagem
+07 — Programação
+08 — Financeiro
+09 — Admin
+
+RELAÇÃO COMPLETA DAS PÁGINAS DO MENU
+A lista abaixo indica quem pode ABRIR cada página. Permissões de operação
+e limites de leitura dos dados estão descritos após a relação.
+
+Início (index.html)
+  Perfis: 01 Cadastro; 02 Corte; 03 Costura; 04 Sola; 05 Palmilha; 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Cadastro de Usuários (cadastroUsuarios.html)
+  Perfis: 09 Admin.
+Cadastro de Talões (cadastroTaloes.html)
+  Perfis: 01 Cadastro; 07 Programação; 08 Financeiro; 09 Admin.
+Cadastro Manual (cadastromanual.html)
+  Perfis: 01 Cadastro; 07 Programação; 08 Financeiro; 09 Admin.
+Edição de Talões (relatoriogeral.html)
+  Perfis: 01 Cadastro; 09 Admin.
+Modelos (modelos.html)
+  Perfis: 08 Financeiro; 09 Admin.
+Criar Distribuição (distribuicao_montagem.html)
+  Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Distribuição de Ateliês (distribuicaoatt.html)
+  Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Criar Programação (programacao_montagem.html)
+  Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Romaneio (romaneio.html)
+  Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Movimentações (movimentacao.html)
+  Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Fechamento de Remessas (encerramento.html)
+  Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Corte (corte.html)
+  Perfis: 02 Corte; 07 Programação; 08 Financeiro; 09 Admin.
+Talões Perdidos (taloesperdidos.html)
+  Perfis: 02 Corte; 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Programação de Corte (programacaocrt.html)
+  Perfis: 02 Corte; 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Cronograma (cronograma.html)
+  Perfis: 01 Cadastro; 02 Corte; 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Cronograma Celular (cronograma_mobile.html)
+  Perfis: 01 Cadastro; 02 Corte; 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Giro de Produção (giro_geral.html)
+  Perfis: 01 Cadastro; 02 Corte; 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Controle de Produção (controle.html)
+  Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Controle Celular (controle_mobile.html)
+  Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Faturamento (faturamento_fina.html)
+  Perfis: 08 Financeiro; 09 Admin.
+Faturamento de Ateliês (faturamentoatt.html)
+  Perfis: 08 Financeiro; 09 Admin.
+Relatório Ateliê (relatorioAtelier.html)
+  Perfis: 03 Costura; 07 Programação; 08 Financeiro; 09 Admin.
+Controle (programacaoatt.html)
+  Perfis: 03 Costura; 07 Programação; 08 Financeiro; 09 Admin.
+Programação (programacao_atelier.html)
+  Perfis: 03 Costura; 07 Programação; 08 Financeiro; 09 Admin.
+Entrada Ateliê (costura_entrada.html)
+  Perfis: 03 Costura; 09 Admin.
+Saída Ateliê (costura_saida.html)
+  Perfis: 03 Costura; 09 Admin.
+Relatório Ateliê (palmilha_relatorio.html)
+  Perfis: 05 Palmilha; 07 Programação; 08 Financeiro; 09 Admin.
+Controle (palmilha_controle.html)
+  Perfis: 05 Palmilha; 07 Programação; 08 Financeiro; 09 Admin.
+Programação (palmilha_programacao.html)
+  Perfis: 05 Palmilha; 07 Programação; 08 Financeiro; 09 Admin.
+Entrada Ateliê (palmilha_entrada.html)
+  Perfis: 05 Palmilha; 09 Admin.
+Saída Ateliê (palmilha_saida.html)
+  Perfis: 05 Palmilha; 09 Admin.
+Relatório Ateliê (sola_relatorio.html)
+  Perfis: 04 Sola; 07 Programação; 08 Financeiro; 09 Admin.
+Controle (sola_controle.html)
+  Perfis: 04 Sola; 07 Programação; 08 Financeiro; 09 Admin.
+Programação (sola_programacao.html)
+  Perfis: 04 Sola; 07 Programação; 08 Financeiro; 09 Admin.
+Entrada Ateliê (sola_entrada.html)
+  Perfis: 04 Sola; 09 Admin.
+Saída Ateliê (sola_saida.html)
+  Perfis: 04 Sola; 09 Admin.
+Distribuição (distribuicao.html)
+  Perfis: 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Talonagem (talonagem.html)
+  Perfis: 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Montagem (montagem.html)
+  Perfis: 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Preparação da Roma (configuracao_roma.html)
+  Perfis: 09 Admin.
+Backup (migracaotaloes.html)
+  Perfis: 09 Admin.
+Cronograma Antigo (cronogramaBackup.html)
+  Perfis: 09 Admin.
+
+LIMITES DAS OPERAÇÕES
+- Usuários e Preparação da Roma: somente09.
+- Edição de Talões: somente01/09; Cadastro01 edita os dados cadastrais e exclui.
+  Correções de datas de produção nessa página são reservadas ao Admin09.
+- Cadastro inicial de talões:01/07/08/09; não permite sobrescrever existentes.
+- Modelos e valores financeiros completos:08/09.
+- Ao salvar Criar Distribuição,07 também pode criar somente o cadastro
+  inicial dos modelos ausentes, com valores zerados e componentes padrão.
+  Essa criação automática não libera leitura ou edição financeira por07.
+- Programação07 vê apenas preços dos serviços Costura, Palmilha e Sola, com
+  os subtotais desses serviços na Distribuição de Ateliês.
+- Corte e escolha dos três responsáveis:02/09;07/08 consultam.
+- Distribuição de fábrica, Talonagem e Montagem:06/09;07/08 consultam.
+- Entrada/saída de Costura:03/09; Sola:04/09; Palmilha:05/09.
+- Perfis03/04/05 consultam apenas talões atribuídos ao próprio UID no setor.
+- Lançar Distribuição de Ateliês:07/08/09; modelos com um destino definido
+  recebem responsável. Modelos divididos ficam para a seleção do Corte.
+- Planejamento, distribuições e metas:07/08/09.
+- Ocorrências de Talões Perdidos:02/06/09 resolvem;07/08 consultam.
+- Fechamento de Remessas:09 altera;07/08 consultam.
+- As duas páginas de backup estão no menu09, mas permanecem desabilitadas
+  até existir uma configuração de arquivamento própria da Roma.
+- Login é a página pública. As demais exigem perfil ativo e validado v2.

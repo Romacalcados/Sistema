@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calçados Roma - Controle de produção </title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            padding: 26px;
+            text-align: center;
+        }
+
+        .welcome-card {
+            max-width: 760px;
+            margin: 30px auto 0;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.08);
+        }
+
+        .welcome-message {
+            font-size: 1.25rem;
+            color: #222;
+            margin: 0 0 12px;
+            font-weight: 700;
+        }
+
+        .welcome-card p {
+            color: #555;
+            margin: 0;
+            line-height: 1.5;
+        }
+    </style>
+
+    <script src="navegacao.js"></script>
+</head>
+<body>
+    <main class="main-content">
+        <section class="welcome-card">
+            <p class="welcome-message" id="welcomeMessage">Carregando painel...</p>
+            <p>Use o menu no canto esquerdo para navegar pelas opções disponíveis para seu nível de acesso.</p>
+        </section>
+    </main>
+
+    <script type="module">
+        const firebaseConfig = window.FIREBASE_CONFIG;
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const welcomeMessage = document.getElementById('welcomeMessage');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const userDocRef = doc(db, 'Usuario', user.email);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (!userDocSnap.exists()) {
+                    alert('Dados do usuário não encontrados. Faça login novamente.');
+                    await signOut(auth);
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+                const nivelAcesso = String(userData.nivelAcesso || '');
+                if (userData.uid !== user.uid || userData.ativo !== true ||
+                    !['01', '02', '03', '04', '05', '06', '07', '08', '09'].includes(nivelAcesso)) {
+                    localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                    localStorage.removeItem('calcadosroma-65ac6:userName');
+                    localStorage.removeItem('calcadosroma-65ac6:userEmail');
+                    await signOut(auth);
+                    alert('Seu perfil precisa estar ativo e vinculado ao usuário do Authentication. Confira o cadastro com o administrador.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                const userName = userData.Nome || 'Usuário';
+
+                localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+                localStorage.setItem('calcadosroma-65ac6:userName', userName);
+
+                window.SistemaNavegacao.init({
+                    userLevel: nivelAcesso,
+                    userName,
+                    title: 'Controle de produção Calçados Roma',
+                    onLogout: async () => {
+                        try {
+                            await signOut(auth);
+                            localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                            localStorage.removeItem('calcadosroma-65ac6:userName');
+                            window.location.href = 'login.html';
+                        } catch (error) {
+                            console.error('Erro ao fazer logout:', error);
+                            alert('Erro ao fazer logout. Tente novamente.');
+                        }
+                    }
+                });
+
+                welcomeMessage.textContent = `Bem-vindo, ${userName}!`;
+            } catch (error) {
+                console.error('Erro ao carregar usuário:', error);
+                alert('Erro ao carregar dados do usuário. Faça login novamente.');
+                await signOut(auth);
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<!-- faturamento.html - relatório financeiro por distribuições e modelos/preços - acesso 07/08 -->
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Faturamento - Calçados Roma</title>
+<style>
+:root{
+  --bg:#f4f4f4;--card:#fff;--ink:#111827;--muted:#60656f;--bd:#ddd;
+  --pri:#007bff;--ok:#198754;--danger:#dc3545;--warn:#ffc107;--info:#0dcaf0;
+  --chip:#f8f8f8;--shadow:0 4px 14px rgba(0,0,0,.08)
+}
+*{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;color:var(--ink)}
+body.auth-loading main,body.auth-loading .modal-backdrop{display:none!important}
+button{font-family:inherit}
+main{width:100%;padding:14px 0 24px;display:flex;flex-direction:column;align-items:center;gap:12px;overflow-x:hidden}
+.card{width:min(92%,1640px);min-width:760px;background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:16px 18px}
+.page-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.page-title{margin:0 0 4px;font-size:1.45rem}
+.page-subtitle{margin:0;color:var(--muted);font-size:.92rem;line-height:1.35}
+.section-title{margin:0;font-size:1.1rem}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-weight:700;color:#374151;font-size:.82rem}
+.form-group input,.form-group select{padding:8px 10px;border:1px solid #cfcfcf;border-radius:7px;font-size:.92rem;background:#fff;width:100%}
+.filter-bar{display:grid;grid-template-columns:170px 170px auto auto;gap:8px;align-items:end;margin-top:12px}
+.actions,.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{padding:9px 14px;border:0;border-radius:8px;cursor:pointer;font-size:.92rem;white-space:nowrap}
+.btn-primary{background:var(--pri);color:#fff}.btn-secondary{background:#e9ecef;color:#222}.btn-success{background:var(--ok);color:#fff}.btn-warning{background:var(--warn);color:#111}.btn-danger{background:var(--danger);color:#fff}.btn:disabled{opacity:.55;cursor:not-allowed}
+.message{margin-top:10px;padding:10px;border-radius:8px;font-size:.9rem;display:none}.message.show{display:block}.message.info{background:#d1ecf1;color:#0c5460}.message.success{background:#d4edda;color:#155724}.message.error{background:#f8d7da;color:#721c24}.message.warning{background:#fff3cd;color:#664d03}.hidden{display:none!important}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}.summary-item{background:var(--chip);border:1px solid var(--bd);border-radius:10px;padding:11px 12px;text-align:center;min-height:74px;display:flex;flex-direction:column;justify-content:center}.summary-item strong{font-size:1.08rem;margin-bottom:4px;color:#000;word-break:break-word}.summary-item small{font-weight:800;color:#111;font-size:.72rem;text-transform:uppercase}.summary-item.primary{background:#eaf4ff;border-color:#b6d4fe}.summary-item.ok{background:#edf8f1;border-color:#cfead8}.summary-item.warn{background:#fff6d8;border-color:#ffe69c}.summary-item.danger{background:#ffe3e8;border-color:#f3a8b5;color:#7f1d1d}
+.table-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.table-wrap{width:100%;overflow:auto;border:1px solid var(--bd);border-radius:10px;background:#fff;max-height:66vh}table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:0}th,td{border:1px solid var(--bd);padding:7px 8px;text-align:center;white-space:nowrap}thead th{background:#f2f2f2;position:sticky;top:0;z-index:2}tbody tr:nth-child(even){background:#fafafa}.cell-left{text-align:left}.money{text-align:right}.mini-help{font-size:.82rem;color:var(--muted);line-height:1.35}.tag{display:inline-block;border:1px solid #d8d8d8;border-radius:999px;padding:3px 7px;background:#fff;margin:2px;font-size:.72rem;line-height:1.15}.tag.bad{background:#ffe3e8;border-color:#f3a8b5;color:#842029;font-weight:800}.tag.good{background:#edf8f1;border-color:#cfead8;color:#14532d;font-weight:800}.tag.info{background:#eaf4ff;border-color:#b6d4fe;color:#084298;font-weight:800}.empty-state{padding:24px;text-align:center;color:#666}
+.sector-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.sector-card{border:1px solid var(--bd);border-radius:10px;background:#fff;padding:10px 12px;display:flex;flex-direction:column;gap:4px}.sector-card strong{font-size:1.05rem}.sector-card small{color:var(--muted);font-weight:800;text-transform:uppercase;font-size:.68rem}.date-grid{display:grid;grid-template-columns:1fr;gap:12px}.date-card{border:1px solid #d8dde5;border-radius:12px;background:#fff;padding:14px}.date-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}.date-head h3{margin:0;font-size:1.1rem}.date-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-bottom:10px}.date-total-box{border:1px solid #d8dde5;border-radius:9px;padding:8px 10px;text-align:center;background:#f8fafc}.date-total-box strong{display:block;margin-bottom:3px}.date-total-box small{font-size:.68rem;font-weight:800;text-transform:uppercase;color:#374151}.date-sectors{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.missing-row{background:#ffe3e8!important;color:#7f1d1d}.missing-row td{border-color:#f3a8b5}.sistema-menu-lista{background:transparent!important;box-shadow:none!important;font-size:inherit!important}.sistema-menu-lista a{font-weight:500!important}
+@media print{@page{size:A4 landscape;margin:8mm}body{background:#fff!important}body *{visibility:hidden!important}.print-area,.print-area *{visibility:visible!important}.print-area{position:absolute!important;left:0!important;top:0!important;width:100%!important}.card{box-shadow:none!important;width:100%!important;min-width:0!important}.filter-card{display:none!important}.table-wrap{max-height:none!important;overflow:visible!important}thead th{position:static!important}}
+@media(max-width:1100px){.card{width:96%;min-width:0}.filter-bar{grid-template-columns:1fr 1fr auto auto}.table-wrap{max-height:72vh}}
+@media(max-width:760px){.filter-bar{grid-template-columns:1fr}.card{padding:14px}.summary-grid,.sector-grid,.date-totals{grid-template-columns:1fr}.page-head{flex-direction:column}.table-wrap{max-height:70vh}}
+</style>
+<script src="navegacao.js"></script>
+</head>
+<body class="auth-loading">
+<main>
+<section class="card filter-card">
+  <div class="page-head">
+    <div>
+      <h2 class="page-title">Relatório de Faturamento</h2>
+      <p class="page-subtitle">Selecione o intervalo de datas de corte. O relatório busca as distribuições salvas em <strong>Distribuicao</strong> e cruza os modelos com a coleção <strong>modelos</strong>.</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-secondary" id="refreshButton" type="button">Atualizar</button>
+      <button class="btn btn-secondary" id="printButton" type="button">Imprimir / Salvar PDF</button>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <div class="form-group">
+      <label for="startDateInput">Data inicial</label>
+      <input type="date" id="startDateInput" />
+    </div>
+    <div class="form-group">
+      <label for="endDateInput">Data final</label>
+      <input type="date" id="endDateInput" />
+    </div>
+    <button class="btn btn-primary" id="generateButton" type="button">Gerar relatório</button>
+    <button class="btn btn-secondary" id="clearButton" type="button">Limpar</button>
+  </div>
+  <div id="messageBox" class="message"></div>
+</section>
+
+<div class="print-area" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:12px">
+<section class="card hidden" id="summaryCard">
+  <div class="table-actions">
+    <h3 class="section-title">Resumo geral</h3>
+    <span class="mini-help" id="periodInfo"></span>
+  </div>
+  <div class="summary-grid" id="summaryGrid"></div>
+</section>
+
+<section class="card hidden" id="sectorSummaryCard">
+  <div class="table-actions">
+    <h3 class="section-title">Faturamento por setor</h3>
+    <span class="mini-help">Soma de cada setor existente nos modelos das distribuições selecionadas.</span>
+  </div>
+  <div class="sector-grid" id="sectorGrid"></div>
+</section>
+
+<section class="card hidden" id="dateCardsSection">
+  <div class="table-actions">
+    <h3 class="section-title">Resumo por data de corte</h3>
+    <span class="mini-help" id="dateCardsInfo"></span>
+  </div>
+  <div class="date-grid" id="dateGrid"></div>
+</section>
+
+<section class="card hidden" id="detailsCard">
+  <div class="table-actions">
+    <h3 class="section-title">Detalhamento por modelo</h3>
+    <span class="mini-help" id="detailsInfo"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Data corte</th>
+          <th>Linha</th>
+          <th>Modelo</th>
+          <th>Pares</th>
+          <th>Preço unit.</th>
+          <th>Valor programado</th>
+          <th>Setores</th>
+          <th>Total setores</th>
+          <th>Saldo</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="detailsTableBody"></tbody>
+    </table>
+  </div>
+</section>
+</div>
+</main>
+
+<script type="module">
+const firebaseConfig = window.FIREBASE_CONFIG;
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,collection,getDocs}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const FULL_ACCESS_LEVELS=new Set(["08","09"]);
+let currentUser=null,currentUserLevel="",modelsMap=new Map(),lastReport=null;
+const $=id=>document.getElementById(id);
+const els={startDateInput:$("startDateInput"),endDateInput:$("endDateInput"),generateButton:$("generateButton"),refreshButton:$("refreshButton"),clearButton:$("clearButton"),printButton:$("printButton"),messageBox:$("messageBox"),summaryCard:$("summaryCard"),summaryGrid:$("summaryGrid"),periodInfo:$("periodInfo"),sectorSummaryCard:$("sectorSummaryCard"),sectorGrid:$("sectorGrid"),dateCardsSection:$("dateCardsSection"),dateGrid:$("dateGrid"),dateCardsInfo:$("dateCardsInfo"),detailsCard:$("detailsCard"),detailsInfo:$("detailsInfo"),detailsTableBody:$("detailsTableBody")};
+
+function redirectUnauthorized(){alert("Seu nível de acesso não permite abrir esta página. Você será redirecionado para o início.");window.location.replace("index.html");}
+function showMessage(type,text){els.messageBox.className=text?`message show ${type}`:"message";els.messageBox.textContent=text||"";}
+function onlyDigits(v){return String(v||"").replace(/\D/g,"");}
+function normalizeText(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();}
+function pad2(v){return String(v).padStart(2,"0");}
+function isoToDocId(iso){if(!iso)return"";const [y,m,d]=String(iso).split("-");return `${d}-${m}-${y}`;}
+function docIdToISO(docId){if(!docId)return"";const parts=String(docId).split("-");if(parts.length!==3)return"";const [d,m,y]=parts;return `${y}-${m}-${d}`;}
+function docIdToBR(docId){return docId?String(docId).replaceAll("-","/"):"";}
+function isoToBR(iso){if(!iso)return"";const [y,m,d]=iso.split("-");return `${d}/${m}/${y}`;}
+function formatMoney(v){return (Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL",minimumFractionDigits:2,maximumFractionDigits:2});}
+function formatNumber(v){return (Number(v)||0).toLocaleString("pt-BR",{maximumFractionDigits:0});}
+function formatPercent(v){return `${(Number(v)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}%`;}
+function round2(n){return Math.round((Number(n)||0)*100)/100;}
+function round3(n){return Math.round((Number(n)||0)*1000)/1000;}
+function escapeHtml(str){return String(str??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]));}
+function sumSectors(setores){return Object.values(setores||{}).reduce((s,v)=>s+(Number(v)||0),0);}
+function sectorOrder(name){const n=normalizeText(name);const priority={corte:0,costura:1,palmilha:2,pre:3};if(n==="montagem")return{group:999,name:n};if(Object.prototype.hasOwnProperty.call(priority,n))return{group:priority[n],name:n};return{group:50,name:n};}
+function orderedSectorEntries(setores={}){return Object.entries(setores||{}).filter(([,v])=>Number(v)!==0).sort(([a],[b])=>{const oa=sectorOrder(a),ob=sectorOrder(b);if(oa.group!==ob.group)return oa.group-ob.group;return oa.name.localeCompare(ob.name,"pt-BR",{numeric:true});});}
+function modelKey(linha,modelo){return `${onlyDigits(linha)}.${onlyDigits(modelo)}`;}
+function fallbackModelKeys(linha,modelo){const l=onlyDigits(linha),m=onlyDigits(modelo);return [`${l}.${m}`,`${l}-${m}`,`${l}_${m}`];}
+function isDocIdDate(id){return /^\d{2}-\d{2}-\d{4}$/.test(String(id||""));}
+function getModel(linha,modelo){for(const key of fallbackModelKeys(linha,modelo)){if(modelsMap.has(key))return modelsMap.get(key);}return null;}
+function ensureDateOrder(){const start=els.startDateInput.value,end=els.endDateInput.value;if(start&&end&&start>end){els.endDateInput.value=start;}}
+function clearResults(){lastReport=null;[els.summaryCard,els.sectorSummaryCard,els.dateCardsSection,els.detailsCard].forEach(el=>el.classList.add("hidden"));els.summaryGrid.innerHTML="";els.sectorGrid.innerHTML="";els.dateGrid.innerHTML="";els.detailsTableBody.innerHTML="";els.periodInfo.textContent="";els.dateCardsInfo.textContent="";els.detailsInfo.textContent="";}
+
+async function loadModels(){const snap=await getDocs(collection(db,"modelos"));modelsMap=new Map();snap.docs.forEach(d=>{const data={id:d.id,...d.data()};modelsMap.set(d.id,data);if(data.linha&&data.modelo)modelsMap.set(modelKey(data.linha,data.modelo),data);});}
+async function loadDistributionsInRange(startISO,endISO){const snap=await getDocs(collection(db,"Distribuicao"));return snap.docs.map(d=>({id:d.id,...d.data()})).filter(d=>isDocIdDate(d.id)).filter(d=>{const iso=d.dataCorteISO||docIdToISO(d.dataCorte||d.id);return iso>=startISO&&iso<=endISO;}).sort((a,b)=>(a.dataCorteISO||docIdToISO(a.id)).localeCompare(b.dataCorteISO||docIdToISO(b.id)));}
+function extractItemsFromDistribution(distribution){if(Array.isArray(distribution.itens)&&distribution.itens.length){return distribution.itens.map(i=>({linha:String(i.linha||""),modelo:String(i.modelo||""),pares:Number(i.pares||0),remessas:i.remessas||[]})).filter(i=>i.linha&&i.modelo&&i.pares>0);}const itens=[];Object.entries(distribution.linhas||{}).forEach(([linha,lineData])=>{Object.entries(lineData?.modelos||{}).forEach(([modelo,pares])=>{if(Number(pares)>0)itens.push({linha,modelo,pares:Number(pares||0),remessas:lineData?.remessas?.[modelo]||[]});});});return itens;}
+function calculateReport(distributions){const report={period:{start:els.startDateInput.value,end:els.endDateInput.value},dates:[],sectors:{},total:{datas:0,pares:0,modelos:0,valorProgramado:0,totalSetores:0,saldo:0,valorMedioParTotal:0,valorMedioSaldoPar:0,percentualSetores:0,semModelo:0,semPreco:0}};
+  distributions.forEach(dist=>{
+    const dateId=dist.dataCorte||dist.id;
+    const dateReport={id:dateId,iso:dist.dataCorteISO||docIdToISO(dateId),arquivoOrigem:dist.arquivoOrigem||"",itens:[],sectors:{},total:{pares:0,modelos:0,valorProgramado:0,totalSetores:0,saldo:0,semModelo:0,semPreco:0}};
+    const items=extractItemsFromDistribution(dist);
+    items.forEach(item=>{
+      const pares=Number(item.pares||0);
+      const model=getModel(item.linha,item.modelo);
+      const missingModel=!model;
+      const precoUnit=Number(model?.preco?.valor||0);
+      const semPreco=!missingModel&&(!Number.isFinite(precoUnit)||precoUnit<=0);
+      const setores=model?.preco?.setores||{};
+      const setorValores={};
+      orderedSectorEntries(setores).forEach(([name,value])=>{
+        const valor=round2(Number(value||0)*pares);
+        setorValores[name]=valor;
+        dateReport.sectors[name]=(dateReport.sectors[name]||0)+valor;
+        report.sectors[name]=(report.sectors[name]||0)+valor;
+      });
+      const valorProgramado=round2(precoUnit*pares);
+      const totalSetores=round2(sumSectors(setores)*pares);
+      const saldo=round2(valorProgramado-totalSetores);
+      const row={...item,modelId:model?.id||modelKey(item.linha,item.modelo),missingModel,semPreco,precoUnit,valorProgramado,totalSetores,saldo,setorValores,categoria:model?.categoria||"",subcategoria:model?.subcategoria||""};
+      dateReport.itens.push(row);
+      dateReport.total.pares+=pares;dateReport.total.modelos+=1;dateReport.total.valorProgramado+=valorProgramado;dateReport.total.totalSetores+=totalSetores;dateReport.total.saldo+=saldo;if(missingModel)dateReport.total.semModelo+=1;if(semPreco)dateReport.total.semPreco+=1;
+    });
+    Object.keys(dateReport.total).forEach(k=>{if(typeof dateReport.total[k]==="number")dateReport.total[k]=round2(dateReport.total[k]);});
+    report.dates.push(dateReport);
+    report.total.datas+=1;report.total.pares+=dateReport.total.pares;report.total.modelos+=dateReport.total.modelos;report.total.valorProgramado+=dateReport.total.valorProgramado;report.total.totalSetores+=dateReport.total.totalSetores;report.total.saldo+=dateReport.total.saldo;report.total.semModelo+=dateReport.total.semModelo;report.total.semPreco+=dateReport.total.semPreco;
+  });
+  report.total.valorMedioParTotal=report.total.pares?round2(report.total.valorProgramado/report.total.pares):0;
+  report.total.valorMedioSaldoPar=report.total.pares?round2(report.total.saldo/report.total.pares):0;
+  report.total.percentualSetores=report.total.valorProgramado?round2((report.total.totalSetores/report.total.valorProgramado)*100):0;
+  Object.keys(report.total).forEach(k=>{if(typeof report.total[k]==="number")report.total[k]=round2(report.total[k]);});
+  return report;
+}
+function renderSummary(report){els.periodInfo.textContent=`Período ${isoToBR(report.period.start)} até ${isoToBR(report.period.end)}`;els.summaryGrid.innerHTML=`
+  <div class="summary-item"><strong>${formatNumber(report.total.pares)}</strong><small>Total de pares</small></div>
+  <div class="summary-item ok"><strong>${formatMoney(report.total.valorProgramado)}</strong><small>Valor programado</small></div>
+  <div class="summary-item"><strong>${formatMoney(report.total.totalSetores)}</strong><small>Total setores</small></div>
+  <div class="summary-item warn"><strong>${formatMoney(report.total.saldo)}</strong><small>Saldo</small></div>
+  <div class="summary-item primary"><strong>${formatMoney(report.total.valorMedioParTotal)}</strong><small>Valor médio total / par</small></div>
+  <div class="summary-item warn"><strong>${formatMoney(report.total.valorMedioSaldoPar)}</strong><small>Valor médio saldo / par</small></div>
+  <div class="summary-item"><strong>${formatPercent(report.total.percentualSetores)}</strong><small>Setores sobre valor total</small></div>
+  <div class="summary-item danger"><strong>${formatNumber(report.total.semModelo+report.total.semPreco)}</strong><small>Pendências</small></div>`;
+  els.summaryCard.classList.remove("hidden");
+}
+function renderSectors(report){const entries=orderedSectorEntries(report.sectors);if(!entries.length){els.sectorGrid.innerHTML=`<div class="empty-state">Nenhum setor encontrado nos modelos deste período.</div>`;}else{els.sectorGrid.innerHTML=entries.map(([name,value])=>`<div class="sector-card"><small>${escapeHtml(name)}</small><strong>${formatMoney(value)}</strong></div>`).join("");}els.sectorSummaryCard.classList.remove("hidden");}
+function renderDateCards(report){els.dateCardsInfo.textContent=`${report.dates.length} data(s) encontrada(s).`;els.dateGrid.innerHTML=report.dates.map(date=>{
+  const sectorTags=orderedSectorEntries(date.sectors).length?orderedSectorEntries(date.sectors).map(([k,v])=>`<span class="tag info">${escapeHtml(k)}: ${formatMoney(v)}</span>`).join(""):`<span class="tag">Sem setores</span>`;
+  const pendencias=(date.total.semModelo||date.total.semPreco)?`<span class="tag bad">${date.total.semModelo} sem cadastro • ${date.total.semPreco} sem preço</span>`:`<span class="tag good">Sem pendências</span>`;
+  return `<div class="date-card">
+    <div class="date-head"><div><h3>Corte ${docIdToBR(date.id)}</h3><span class="mini-help">${escapeHtml(date.arquivoOrigem||"Distribuição salva")}</span></div>${pendencias}</div>
+    <div class="date-totals">
+      <div class="date-total-box"><strong>${formatNumber(date.total.pares)}</strong><small>Pares</small></div>
+      <div class="date-total-box"><strong>${formatNumber(date.total.modelos)}</strong><small>Modelos</small></div>
+      <div class="date-total-box"><strong>${formatMoney(date.total.valorProgramado)}</strong><small>Valor programado</small></div>
+      <div class="date-total-box"><strong>${formatMoney(date.total.totalSetores)}</strong><small>Total setores</small></div>
+      <div class="date-total-box"><strong>${formatMoney(date.total.saldo)}</strong><small>Saldo</small></div>
+    </div>
+    <div class="date-sectors">${sectorTags}</div>
+  </div>`;
+}).join("");els.dateCardsSection.classList.remove("hidden");}
+function renderDetails(report){const rows=report.dates.flatMap(d=>d.itens.map(item=>({...item,dataCorte:d.id})));els.detailsInfo.textContent=`${rows.length} item(ns) no relatório.`;if(!rows.length){els.detailsTableBody.innerHTML=`<tr><td colspan="10" class="empty-state">Nenhum item encontrado.</td></tr>`;}else{els.detailsTableBody.innerHTML=rows.map(item=>{
+  const sectorTags=orderedSectorEntries(item.setorValores).length?orderedSectorEntries(item.setorValores).map(([k,v])=>`<span class="tag">${escapeHtml(k)}: ${formatMoney(v)}</span>`).join(""):`<span class="tag">Sem setores</span>`;
+  const status=item.missingModel?`<span class="tag bad">Sem cadastro</span>`:(item.semPreco?`<span class="tag bad">Sem preço</span>`:`<span class="tag good">OK</span>`);
+  return `<tr class="${item.missingModel||item.semPreco?"missing-row":""}">
+    <td>${docIdToBR(item.dataCorte)}</td>
+    <td>${escapeHtml(item.linha)}</td>
+    <td><strong>${escapeHtml(item.modelo)}</strong></td>
+    <td>${formatNumber(item.pares)}</td>
+    <td class="money">${formatMoney(item.precoUnit)}</td>
+    <td class="money"><strong>${formatMoney(item.valorProgramado)}</strong></td>
+    <td class="cell-left">${sectorTags}</td>
+    <td class="money">${formatMoney(item.totalSetores)}</td>
+    <td class="money"><strong>${formatMoney(item.saldo)}</strong></td>
+    <td>${status}</td>
+  </tr>`;
+}).join("");}els.detailsCard.classList.remove("hidden");}
+function renderReport(report){renderSummary(report);renderSectors(report);renderDateCards(report);renderDetails(report);}
+
+async function generateReport(){ensureDateOrder();const start=els.startDateInput.value,end=els.endDateInput.value;if(!start||!end){showMessage("warning","Informe a data inicial e a data final.");return;}clearResults();try{els.generateButton.disabled=true;showMessage("info","Carregando modelos e distribuições...");await loadModels();const distributions=await loadDistributionsInRange(start,end);if(!distributions.length){showMessage("warning",`Nenhuma distribuição encontrada entre ${isoToBR(start)} e ${isoToBR(end)}.`);return;}const report=calculateReport(distributions);lastReport=report;renderReport(report);const pend=report.total.semModelo+report.total.semPreco;showMessage(pend?"warning":"success",pend?`Relatório gerado com ${pend} pendência(s). Confira os modelos sem cadastro ou sem preço.`:"Relatório gerado com sucesso.");}catch(err){console.error(err);showMessage("error","Erro ao gerar relatório: "+err.message);}finally{els.generateButton.disabled=false;}}
+function clearPage(){els.startDateInput.value="";els.endDateInput.value="";showMessage("","");clearResults();}
+function printReport(){if(!lastReport){showMessage("warning","Gere um relatório antes de imprimir.");return;}window.print();}
+
+els.generateButton.addEventListener("click",generateReport);
+els.refreshButton.addEventListener("click",generateReport);
+els.clearButton.addEventListener("click",clearPage);
+els.printButton.addEventListener("click",printReport);
+els.startDateInput.addEventListener("change",()=>{if(!els.endDateInput.value)els.endDateInput.value=els.startDateInput.value;ensureDateOrder();});
+els.endDateInput.addEventListener("change",ensureDateOrder);
+
+onAuthStateChanged(auth,async user=>{
+  if(!user){window.location.href="login.html";return;}
+  currentUser=user;
+  try{
+    const userSnap=await getDoc(doc(db,"Usuario",user.email));
+    if(!userSnap.exists()){alert("Dados do usuário não encontrados. Faça login novamente.");await signOut(auth);window.location.href="login.html";return;}
+    const userData=userSnap.data(); window.Roma.validateProfile(user,userData);currentUserLevel=String(userData.nivelAcesso||"");const userName=userData.Nome||user.email||"Usuário";
+    localStorage.setItem("calcadosroma-65ac6:userNivelAcesso",currentUserLevel);localStorage.setItem("calcadosroma-65ac6:userName",userName);
+    if(window.SistemaNavegacao){
+      
+      if(Array.isArray(window.SistemaNavegacao.pages)&&!window.SistemaNavegacao.pages.some(p=>String(p.href||"").toLowerCase()==="faturamento_fina.html")){
+        window.SistemaNavegacao.pages.push({group:"Ferramentas",name:"Faturamento",href:"faturamento_fina.html",levels:["08","09"]});
+      }
+    }
+    if(!FULL_ACCESS_LEVELS.has(currentUserLevel)){redirectUnauthorized();return;}
+    document.body.classList.remove("auth-loading");
+    if(window.SistemaNavegacao){window.SistemaNavegacao.init({userLevel:currentUserLevel,userName,title:"Faturamento",onLogout:async()=>{await signOut(auth);localStorage.removeItem("calcadosroma-65ac6:userNivelAcesso");localStorage.removeItem("calcadosroma-65ac6:userName");window.location.href="login.html";}});}
+  }catch(err){console.error(err);alert("Erro ao validar usuário. Confira se a coleção Usuario permite leitura. Detalhe: "+err.message);window.location.replace("index.html");}
+});
+</script>
+</body>
+</html>

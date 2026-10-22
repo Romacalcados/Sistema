@@ -1,0 +1,45 @@
+ÍNDICES FIRESTORE — CALÇADOS ROMA — PERMISSÕES V2
+Projeto: calcadosroma-65ac6
+Base: firestore.indexes.json
+Total: 29 índices compostos.
+
+Publicar pela CLI, dentro da pasta do sistema:
+  firebase deploy --only firestore --project calcadosroma-65ac6
+
+O comando publica regras e índices definidos em firebase.json.
+No console, reproduza os campos NA ORDEM e na DIREÇÃO listadas abaixo.
+Escopo COLLECTION = coleção. Aguarde a construção antes do uso.
+
+01. Coleção taloes — COLLECTION: idAtelieResponsavel (crescente) → dataSaidaCostura (crescente)
+02. Coleção taloes — COLLECTION: idAtelieResponsavel (crescente) → dataCorte (crescente)
+03. Coleção taloes — COLLECTION: idAtelieResponsavel (crescente) → dataEntrega (crescente)
+04. Coleção taloes — COLLECTION: linha (crescente) → dataCorte (crescente)
+05. Coleção taloes — COLLECTION: modelo (crescente) → dataCorte (crescente)
+06. Coleção taloes — COLLECTION: numeroRemessa (crescente) → dataCorte (crescente)
+07. Coleção taloes — COLLECTION: tipoCliente (crescente) → dataCorte (crescente)
+08. Coleção taloes — COLLECTION: statusCorte (crescente) → dataCorte (crescente)
+09. Coleção taloes — COLLECTION: linha (crescente) → dataEntrega (crescente)
+10. Coleção taloes — COLLECTION: modelo (crescente) → dataEntrega (crescente)
+11. Coleção taloes — COLLECTION: numeroRemessa (crescente) → dataEntrega (crescente)
+12. Coleção taloes — COLLECTION: tipoCliente (crescente) → dataEntrega (crescente)
+13. Coleção taloes — COLLECTION: atelieCosturaId (crescente) → dataCorte (crescente)
+14. Coleção taloes — COLLECTION: atelieCosturaId (crescente) → dataEntrega (crescente)
+15. Coleção taloes — COLLECTION: atelieCosturaId (crescente) → codigoBarrasIdentificador (crescente)
+16. Coleção taloes — COLLECTION: atelieCosturaId (crescente) → dataSaidaCostura (crescente)
+17. Coleção taloes — COLLECTION: atelieSolaId (crescente) → dataCorte (crescente)
+18. Coleção taloes — COLLECTION: atelieSolaId (crescente) → dataEntrega (crescente)
+19. Coleção taloes — COLLECTION: atelieSolaId (crescente) → codigoBarrasIdentificador (crescente)
+20. Coleção taloes — COLLECTION: atelieSolaId (crescente) → dataSaidaSola (crescente)
+21. Coleção taloes — COLLECTION: ateliePalmilhaId (crescente) → dataCorte (crescente)
+22. Coleção taloes — COLLECTION: ateliePalmilhaId (crescente) → dataEntrega (crescente)
+23. Coleção taloes — COLLECTION: ateliePalmilhaId (crescente) → codigoBarrasIdentificador (crescente)
+24. Coleção taloes — COLLECTION: ateliePalmilhaId (crescente) → dataSaidaPalmilha (crescente)
+25. Coleção DistribuicaoAtelier — COLLECTION: setor (crescente) → atualizadoEm (decrescente)
+26. Coleção taloes — COLLECTION: tipoCliente (crescente) → atelieCosturaId (crescente) → dataCorte (crescente)
+27. Coleção taloes — COLLECTION: tipoCliente (crescente) → statusCorte (crescente) → dataCorte (crescente)
+28. Coleção taloes — COLLECTION: atelieCosturaId (crescente) → statusCorte (crescente) → dataCorte (crescente)
+29. Coleção taloes — COLLECTION: tipoCliente (crescente) → atelieCosturaId (crescente) → statusCorte (crescente) → dataCorte (crescente)
+
+A fonte exata é o JSON fornecido. O emulador testa as regras, mas não valida
+a construção de índices no projeto real. Outras combinações de filtros podem
+exigir índices adicionais; nesse caso, use o link da mensagem do Firestore.

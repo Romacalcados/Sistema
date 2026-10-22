@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Calçados Roma</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box; /* Garante que o padding não aumente a largura */
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: red;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login - Calçados Roma</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">E-mail:</label>
+                <input type="email" id="email" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Senha:</label>
+                <input type="password" id="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" id="loginButton">Entrar</button>
+            <p id="errorMessage" class="error-message" role="status" aria-live="polite"></p>
+        </form>
+    </div>
+
+    <script type="module">
+        const firebaseConfig = window.FIREBASE_CONFIG;
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginButton = document.getElementById('loginButton');
+        const errorMessage = document.getElementById('errorMessage');
+        const niveisValidos = ['01', '02', '03', '04', '05', '06', '07', '08', '09'];
+
+        function limparUsuarioLocal() {
+            ['userNivelAcesso', 'userEmail', 'userName'].forEach(chave => {
+                localStorage.removeItem(`calcadosroma-65ac6:${chave}`);
+            });
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (loginButton.disabled) return;
+            const email = emailInput.value.trim().toLowerCase();
+            const password = passwordInput.value;
+            errorMessage.textContent = '';
+            loginButton.disabled = true;
+            limparUsuarioLocal();
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                // As demais páginas usam o e-mail canônico do Firebase Auth como ID.
+                const userDocSnap = await getDoc(doc(db, 'Usuario', user.email));
+                const userData = userDocSnap.exists() ? userDocSnap.data() : null;
+
+                if (!userData) {
+                    errorMessage.textContent = 'Seu acesso ainda não foi cadastrado no sistema da Calçados Roma. Contate o administrador.';
+                } else if (userData.uid !== user.uid) {
+                    errorMessage.textContent = 'O cadastro do seu acesso precisa ser atualizado pelo administrador.';
+                } else if (userData.permissoesVersao !== 2) {
+                    errorMessage.textContent = 'O administrador precisa revisar este perfil para os nove níveis de acesso da Roma.';
+                } else if (userData.ativo !== true) {
+                    errorMessage.textContent = 'Seu acesso está desativado. Contate o administrador.';
+                } else if (!niveisValidos.includes(userData.nivelAcesso)) {
+                    errorMessage.textContent = 'Nível de acesso não reconhecido. Contate o administrador.';
+                } else {
+                    localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', userData.nivelAcesso);
+                    localStorage.setItem('calcadosroma-65ac6:userEmail', user.email);
+                    localStorage.setItem('calcadosroma-65ac6:userName', userData.Nome || user.email);
+                    window.location.href = 'index.html';
+                    return;
+                }
+                await signOut(auth);
+            } catch (error) {
+                limparUsuarioLocal();
+                try { await signOut(auth); } catch (logoutError) { console.error('Erro ao encerrar sessão:', logoutError.code); }
+                const mensagens = {
+                    'auth/user-not-found': 'E-mail ou senha inválidos.',
+                    'auth/wrong-password': 'E-mail ou senha inválidos.',
+                    'auth/invalid-credential': 'E-mail ou senha inválidos.',
+                    'auth/invalid-login-credentials': 'E-mail ou senha inválidos.',
+                    'auth/invalid-email': 'Formato de e-mail inválido.',
+                    'auth/user-disabled': 'Seu acesso está desativado. Contate o administrador.',
+                    'auth/too-many-requests': 'Muitas tentativas de login. Aguarde um pouco e tente novamente.',
+                    'auth/network-request-failed': 'Erro de conexão. Verifique sua internet.',
+                    'auth/operation-not-allowed': 'O login por e-mail e senha precisa ser habilitado no Firebase da Calçados Roma.',
+                    'permission-denied': 'Não foi possível consultar seu acesso. Verifique as regras do Firebase com o administrador.'
+                };
+                errorMessage.textContent = mensagens[error.code] || 'Não foi possível entrar. Tente novamente ou contate o administrador.';
+                console.error('Erro de login:', error.code || error.message);
+            } finally {
+                loginButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

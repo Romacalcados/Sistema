@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Romaneio de Movimentações - Sistema Calçados Roma</title>
+    <script src="navegacao.js"></script>
+    <style>
+        :root {
+            --bg: #f4f6f8;
+            --card: #ffffff;
+            --text: #18212b;
+            --muted: #64748b;
+            --line: #e5e7eb;
+            --primary: #1463ff;
+            --primary-dark: #0d48bd;
+            --green: #14804a;
+            --green-bg: #e9f8ef;
+            --blue-bg: #eef5ff;
+            --orange: #a65a00;
+            --orange-bg: #fff4e5;
+            --shadow: 0 8px 24px rgba(15, 23, 42, .07);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .main-content {
+            width: min(1480px, calc(100% - 28px));
+            margin: 0 auto;
+            padding: 22px 0 38px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .page-header h1 {
+            margin: 0 0 5px;
+            font-size: 24px;
+        }
+
+        .page-header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .filters-panel {
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        .quick-periods {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .quick-btn,
+        .btn {
+            border: 0;
+            border-radius: 9px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: .15s ease;
+        }
+
+        .quick-btn {
+            padding: 8px 12px;
+            background: #eef2f7;
+            color: #334155;
+        }
+
+        .quick-btn:hover { background: #e2e8f0; }
+        .quick-btn.active { background: #dbe8ff; color: #0b4ccc; }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 12px;
+            align-items: end;
+        }
+
+        .field { min-width: 0; }
+        .field.span-2 { grid-column: span 2; }
+        .field.span-3 { grid-column: span 3; }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+
+        input, select {
+            width: 100%;
+            height: 40px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            color: #1e293b;
+            padding: 0 10px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #6aa0ff;
+            box-shadow: 0 0 0 3px rgba(20, 99, 255, .10);
+        }
+
+        .actions {
+            grid-column: span 2;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            height: 40px;
+            padding: 0 15px;
+            white-space: nowrap;
+        }
+
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #eef2f7; color: #334155; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn:disabled { opacity: .6; cursor: wait; }
+
+        .message {
+            display: none;
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .message.show { display: block; }
+        .message.info { color: #174c8c; background: #eaf3ff; }
+        .message.error { color: #8b1e1e; background: #feecec; }
+        .message.success { color: #17623b; background: #eaf8ef; }
+
+        .results { display: none; }
+        .results.show { display: block; }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .metric-card {
+            padding: 16px;
+            min-height: 105px;
+        }
+
+        .metric-card .label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .metric-card .value {
+            margin-top: 8px;
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+
+        .metric-card .detail {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: 1.25fr .75fr;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .section-card { overflow: hidden; }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .section-head h2 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .section-head small { color: var(--muted); }
+
+        .table-wrap {
+            width: 100%;
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+
+        tbody tr:hover { background: #f8fbff; }
+        tbody tr:last-child td { border-bottom: 0; }
+
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .strong { font-weight: 800; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .badge.entrada { color: var(--green); background: var(--green-bg); }
+        .badge.saida { color: var(--orange); background: var(--orange-bg); }
+        .badge.setor { color: #1550a8; background: var(--blue-bg); }
+
+        .empty {
+            padding: 28px 18px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .report-title {
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+
+        .report-title strong { display: block; font-size: 16px; }
+        .report-title span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
+
+        .warning-note {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border: 1px solid #f1d7a7;
+            border-radius: 10px;
+            background: #fff9ed;
+            color: #79521f;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        @media (max-width: 1100px) {
+            .field.span-2, .field.span-3, .actions { grid-column: span 4; }
+            .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .report-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 700px) {
+            .main-content { width: min(100% - 16px, 1480px); padding-top: 12px; }
+            .page-header { flex-direction: column; }
+            .filters-grid { grid-template-columns: 1fr; }
+            .field.span-2, .field.span-3, .actions { grid-column: auto; }
+            .actions { display: grid; grid-template-columns: 1fr 1fr; }
+            .cards { grid-template-columns: 1fr 1fr; }
+            .metric-card .value { font-size: 23px; }
+        }
+
+        @media print {
+            body { background: #fff; }
+            .filters-panel, .page-header .screen-only, .warning-note { display: none !important; }
+            .main-content { width: 100%; padding: 0; }
+            .panel { box-shadow: none; border-color: #d7dce2; }
+            .cards { grid-template-columns: repeat(4, 1fr); }
+            .report-grid { grid-template-columns: 1fr; }
+            .table-wrap { overflow: visible; }
+            th { position: static; }
+            table { font-size: 10px; }
+            th, td { padding: 6px 7px; }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.SistemaNavegacao && !document.querySelector('.sistema-topbar')) {
+                window.SistemaNavegacao.init({
+                    userLevel: localStorage.getItem('calcadosroma-65ac6:userNivelAcesso') || '05',
+                    userName: localStorage.getItem('calcadosroma-65ac6:userName') || 'Usuário',
+                    title: 'Romaneio de movimentações',
+                    onLogout: function () {
+                        localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                        localStorage.removeItem('calcadosroma-65ac6:userName');
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>Romaneio de movimentações</h1>
+                <p>Consulte quantos talões e pares foram bipados por setor, entrada/saída, linha, modelo e ateliê.</p>
+            </div>
+            <button class="btn btn-secondary screen-only" id="printButton" type="button" style="display:none;">Imprimir relatório</button>
+        </div>
+
+        <section class="panel filters-panel">
+            <div class="quick-periods" id="quickPeriods">
+                <button class="quick-btn" type="button" data-period="today">Hoje</button>
+                <button class="quick-btn active" type="button" data-period="week">Esta semana</button>
+                <button class="quick-btn" type="button" data-period="lastWeek">Semana passada</button>
+                <button class="quick-btn" type="button" data-period="month">Este mês</button>
+            </div>
+
+            <div class="filters-grid">
+                <div class="field span-2">
+                    <label for="filterDataInicio">Data início</label>
+                    <input type="date" id="filterDataInicio">
+                </div>
+                <div class="field span-2">
+                    <label for="filterDataFim">Data fim</label>
+                    <input type="date" id="filterDataFim">
+                </div>
+                <div class="field span-3">
+                    <label for="filterMovimento">Setor / movimento</label>
+                    <select id="filterMovimento">
+                        <option value="all">Todos os movimentos</option>
+                        <option value="atelier_entrada">Ateliê / Costura - Entrada</option>
+                        <option value="atelier_saida">Ateliê / Costura - Saída</option>
+                        <option value="distribuicao_entrada">Distribuição - Entrada</option>
+                        <option value="talonagem_entrada">Talonagem - Entrada</option>
+                        <option value="montagem_entrada">Montagem - Entrada</option>
+                    </select>
+                </div>
+                <div class="field span-3">
+                    <label for="filterAtelie">Ateliê</label>
+                    <select id="filterAtelie">
+                        <option value="">Todos os ateliês</option>
+                    </select>
+                </div>
+                <div class="field span-2">
+                    <label for="filterLinha">Linha</label>
+                    <input type="text" id="filterLinha" inputmode="numeric" placeholder="Ex.: 4843">
+                </div>
+                <div class="field span-2">
+                    <label for="filterModelo">Modelo</label>
+                    <input type="text" id="filterModelo" placeholder="Todos">
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary" id="searchButton" type="button">Gerar romaneio</button>
+                    <button class="btn btn-secondary" id="clearButton" type="button">Limpar</button>
+                </div>
+            </div>
+
+            <div id="messageBox" class="message"></div>
+        </section>
+
+        <section class="results" id="results">
+            <div class="panel report-title" id="reportTitle"></div>
+
+            <div class="cards">
+                <div class="panel metric-card">
+                    <div class="label">Total de pares</div>
+                    <div class="value" id="metricPares">0</div>
+                    <div class="detail">Somados nas movimentações filtradas</div>
+                </div>
+                <div class="panel metric-card">
+                    <div class="label">Talões únicos</div>
+                    <div class="value" id="metricTaloes">0</div>
+                    <div class="detail">Sem duplicar o mesmo talão</div>
+                </div>
+                <div class="panel metric-card">
+                    <div class="label">Movimentações</div>
+                    <div class="value" id="metricMovimentos">0</div>
+                    <div class="detail">Eventos encontrados no período</div>
+                </div>
+                <div class="panel metric-card">
+                    <div class="label">Linhas / modelos</div>
+                    <div class="value" id="metricModelos">0</div>
+                    <div class="detail">Combinações presentes no romaneio</div>
+                </div>
+            </div>
+
+            <div class="report-grid">
+                <section class="panel section-card">
+                    <div class="section-head">
+                        <h2>Resumo por linha e modelo</h2>
+                        <small id="modelSummaryCount"></small>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Linha</th>
+                                    <th>Modelo</th>
+                                    <th class="num">Talões</th>
+                                    <th class="num">Pares</th>
+                                    <th class="num">% pares</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modelSummaryBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="panel section-card">
+                    <div class="section-head">
+                        <h2>Resumo por ateliê</h2>
+                        <small id="atelierSummaryCount"></small>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ateliê</th>
+                                    <th class="num">Talões</th>
+                                    <th class="num">Pares</th>
+                                </tr>
+                            </thead>
+                            <tbody id="atelierSummaryBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <section class="panel section-card">
+                <div class="section-head">
+                    <h2>Detalhamento das movimentações</h2>
+                    <small id="detailCount"></small>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Setor</th>
+                                <th>Mov.</th>
+                                <th>Ateliê</th>
+                                <th>Remessa</th>
+                                <th>Talão</th>
+                                <th>Linha.Modelo</th>
+                                <th class="num">Pares</th>
+                                <th>Usuário / leitura</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <div class="warning-note">
+                <strong>Importante:</strong> este romaneio é somente leitura e não altera o banco. Em etapas posteriores, o sistema atual pode preencher automaticamente datas de etapas anteriores quando elas estão vazias. Por isso, para auditoria 100% exata de “quem bipou o quê” no futuro, o ideal é também registrar cada leitura em um histórico de movimentações separado.
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        const firebaseConfig = window.FIREBASE_CONFIG;
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const $ = (id) => document.getElementById(id);
+        const filterDataInicio = $('filterDataInicio');
+        const filterDataFim = $('filterDataFim');
+        const filterMovimento = $('filterMovimento');
+        const filterAtelie = $('filterAtelie');
+        const filterLinha = $('filterLinha');
+        const filterModelo = $('filterModelo');
+        const searchButton = $('searchButton');
+        const clearButton = $('clearButton');
+        const printButton = $('printButton');
+        const results = $('results');
+        const messageBox = $('messageBox');
+
+        const MOVEMENTS = {
+            atelier_entrada: {
+                id: 'atelier_entrada',
+                setor: 'Ateliê / Costura',
+                tipo: 'Entrada',
+                dateFields: ['costuraDataInicio', 'dataEntradaCostura', 'dataEntradaAtelie'],
+                userFields: ['costuraUsuario', 'usuarioCostura']
+            },
+            atelier_saida: {
+                id: 'atelier_saida',
+                setor: 'Ateliê / Costura',
+                tipo: 'Saída',
+                dateFields: ['dataSaidaCostura', 'costuraDataFim'],
+                userFields: ['usuarioCostura', 'costuraUsuario']
+            },
+            distribuicao_entrada: {
+                id: 'distribuicao_entrada',
+                setor: 'Distribuição',
+                tipo: 'Entrada',
+                dateFields: ['dataEntradaDistribuicao', 'entradaDistribuicao', 'dataEntradaFabrica'],
+                userFields: ['usuarioDistribuicao']
+            },
+            talonagem_entrada: {
+                id: 'talonagem_entrada',
+                setor: 'Talonagem',
+                tipo: 'Entrada',
+                dateFields: ['dataEntradaTalonagem'],
+                userFields: ['usuarioTalonagem']
+            },
+            montagem_entrada: {
+                id: 'montagem_entrada',
+                setor: 'Montagem',
+                tipo: 'Entrada',
+                dateFields: ['dataEntradaMontagem'],
+                userFields: ['usuarioMontagem']
+            }
+        };
+
+        let currentUserName = '';
+        let lastEvents = [];
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const userDocSnap = await getDoc(doc(db, 'Usuario', user.email));
+                if (!userDocSnap.exists()) {
+                    await signOut(auth);
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
+                const nivelAcesso = String(userData.nivelAcesso || '');
+                currentUserName = userData.Nome || 'Usuário';
+                localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+                localStorage.setItem('calcadosroma-65ac6:userName', currentUserName);
+
+                if (window.SistemaNavegacao) {
+                    window.SistemaNavegacao.init({
+                        userLevel: nivelAcesso,
+                        userName: currentUserName,
+                        title: 'Romaneio de movimentações',
+                        onLogout: async () => {
+                            await signOut(auth);
+                            localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+                            localStorage.removeItem('calcadosroma-65ac6:userName');
+                            window.location.href = 'login.html';
+                        }
+                    });
+                }
+
+                await loadAtelies();
+                applyPeriod('week');
+            } catch (error) {
+                console.error(error);
+                showMessage('Erro ao carregar a página: ' + error.message, 'error');
+            }
+        });
+
+        async function loadAtelies() {
+            try {
+                const q = query(collection(db, 'atelies'), where('setor', '==', 'costura'));
+                const snap = await getDocs(q);
+                const nomes = snap.docs
+                    .map((d) => String(d.data().nome || '').trim())
+                    .filter(Boolean)
+                    .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+
+                filterAtelie.innerHTML = '<option value="">Todos os ateliês</option>';
+                [...new Set(nomes)].forEach((nome) => {
+                    const option = document.createElement('option');
+                    option.value = nome;
+                    option.textContent = nome;
+                    filterAtelie.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar ateliês:', error);
+            }
+        }
+
+        function localDateToISO(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function applyPeriod(period) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let start = new Date(today);
+            let end = new Date(today);
+
+            if (period === 'week' || period === 'lastWeek') {
+                const day = today.getDay();
+                const diffToMonday = day === 0 ? -6 : 1 - day;
+                start.setDate(today.getDate() + diffToMonday);
+                end = new Date(start);
+                end.setDate(start.getDate() + 6);
+
+                if (period === 'lastWeek') {
+                    start.setDate(start.getDate() - 7);
+                    end.setDate(end.getDate() - 7);
+                }
+            } else if (period === 'month') {
+                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            }
+
+            filterDataInicio.value = localDateToISO(start);
+            filterDataFim.value = localDateToISO(end);
+
+            document.querySelectorAll('.quick-btn').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.period === period);
+            });
+        }
+
+        document.querySelectorAll('.quick-btn').forEach((btn) => {
+            btn.addEventListener('click', () => applyPeriod(btn.dataset.period));
+        });
+
+        [filterDataInicio, filterDataFim].forEach((input) => {
+            input.addEventListener('change', () => {
+                document.querySelectorAll('.quick-btn').forEach((btn) => btn.classList.remove('active'));
+            });
+        });
+
+        clearButton.addEventListener('click', () => {
+            filterMovimento.value = 'all';
+            filterAtelie.value = '';
+            filterLinha.value = '';
+            filterModelo.value = '';
+            applyPeriod('week');
+            results.classList.remove('show');
+            printButton.style.display = 'none';
+            clearMessage();
+            lastEvents = [];
+        });
+
+        printButton.addEventListener('click', () => window.print());
+
+        searchButton.addEventListener('click', generateReport);
+
+        async function generateReport() {
+            const start = filterDataInicio.value;
+            const end = filterDataFim.value;
+
+            if (!start || !end) {
+                showMessage('Informe a data inicial e a data final.', 'error');
+                return;
+            }
+
+            if (start > end) {
+                showMessage('A data inicial não pode ser maior que a data final.', 'error');
+                return;
+            }
+
+            const selectedMovement = filterMovimento.value;
+            const movementList = selectedMovement === 'all'
+                ? Object.values(MOVEMENTS)
+                : [MOVEMENTS[selectedMovement]].filter(Boolean);
+
+            try {
+                searchButton.disabled = true;
+                results.classList.remove('show');
+                printButton.style.display = 'none';
+                showMessage('Buscando movimentações no período...', 'info');
+
+                const events = await fetchMovementEvents(movementList, start, end);
+                lastEvents = applyLocalFilters(events);
+                renderReport(lastEvents, start, end);
+
+                showMessage(
+                    lastEvents.length
+                        ? `${formatNumber(lastEvents.length)} movimentação(ões) encontrada(s).`
+                        : 'Nenhuma movimentação encontrada para os filtros informados.',
+                    lastEvents.length ? 'success' : 'info'
+                );
+            } catch (error) {
+                console.error('Erro ao gerar romaneio:', error);
+                showMessage('Erro ao buscar o romaneio: ' + error.message, 'error');
+            } finally {
+                searchButton.disabled = false;
+            }
+        }
+
+        async function fetchMovementEvents(movementList, start, end) {
+            const docsByMovement = new Map();
+            const taloesRef = collection(db, 'taloes');
+
+            const jobs = [];
+            movementList.forEach((movement) => {
+                movement.dateFields.forEach((field) => {
+                    jobs.push((async () => {
+                        try {
+                            const q = query(
+                                taloesRef,
+                                where(field, '>=', start),
+                                where(field, '<=', end)
+                            );
+                            const snap = await getDocs(q);
+                            snap.forEach((docSnap) => {
+                                const key = `${movement.id}|${docSnap.id}`;
+                                if (!docsByMovement.has(key)) {
+                                    docsByMovement.set(key, {
+                                        docId: docSnap.id,
+                                        movement,
+                                        data: docSnap.data()
+                                    });
+                                }
+                            });
+                        } catch (error) {
+                            console.warn(`Falha ao consultar ${field}:`, error);
+                        }
+                    })());
+                });
+            });
+
+            await Promise.all(jobs);
+
+            const events = [];
+            docsByMovement.forEach(({ docId, movement, data }) => {
+                const date = resolveDate(data, movement.dateFields);
+                if (!date || date < start || date > end) return;
+
+                events.push({
+                    key: `${movement.id}|${docId}`,
+                    docId,
+                    movementId: movement.id,
+                    setor: movement.setor,
+                    tipo: movement.tipo,
+                    dataMovimento: date,
+                    usuario: resolveText(data, movement.userFields),
+                    atelie: getAtelie(data),
+                    linha: getText(data, ['linha', 'Linha', 'codLinha']),
+                    modelo: getText(data, ['modelo', 'Modelo', 'codModelo']),
+                    pares: getNumber(data, ['pares', 'Pares', 'quantidadePares', 'qtdPares']),
+                    remessa: getText(data, ['numeroRemessa', 'remessa', 'Remessa']),
+                    talao: getText(data, ['numeroTalaoSequencial', 'numeroTalao', 'talao'])
+                });
+            });
+
+            return events.sort((a, b) => {
+                if (a.dataMovimento !== b.dataMovimento) return b.dataMovimento.localeCompare(a.dataMovimento);
+                const lmA = `${a.linha}.${a.modelo}`;
+                const lmB = `${b.linha}.${b.modelo}`;
+                const lmCompare = lmA.localeCompare(lmB, 'pt-BR', { numeric: true });
+                if (lmCompare !== 0) return lmCompare;
+                return String(a.talao).localeCompare(String(b.talao), 'pt-BR', { numeric: true });
+            });
+        }
+
+        function applyLocalFilters(events) {
+            const atelier = normalize(filterAtelie.value);
+            const linha = normalizeCode(filterLinha.value);
+            const modelo = normalizeCode(filterModelo.value);
+
+            return events.filter((event) => {
+                if (atelier && normalize(event.atelie) !== atelier) return false;
+                if (linha && normalizeCode(event.linha) !== linha) return false;
+                if (modelo && normalizeCode(event.modelo) !== modelo) return false;
+                return true;
+            });
+        }
+
+        function renderReport(events, start, end) {
+            results.classList.add('show');
+            printButton.style.display = 'inline-flex';
+
+            const uniqueTaloes = new Set(events.map((e) => e.docId));
+            const totalParesByTalao = new Map();
+            events.forEach((e) => {
+                if (!totalParesByTalao.has(e.docId)) totalParesByTalao.set(e.docId, e.pares);
+            });
+
+            // Para um único movimento, o total de pares é a soma direta dos eventos.
+            // Em "Todos os movimentos", o mesmo talão pode aparecer em mais de uma etapa;
+            // o card principal mostra pares movimentados (soma dos eventos), não pares físicos únicos.
+            const totalPares = events.reduce((sum, e) => sum + e.pares, 0);
+            const modelKeys = new Set(events.map((e) => `${e.linha || 'Sem linha'}|${e.modelo || 'Sem modelo'}`));
+
+            $('metricPares').textContent = formatNumber(totalPares);
+            $('metricTaloes').textContent = formatNumber(uniqueTaloes.size);
+            $('metricMovimentos').textContent = formatNumber(events.length);
+            $('metricModelos').textContent = formatNumber(modelKeys.size);
+
+            renderTitle(events, start, end);
+            renderModelSummary(events, totalPares);
+            renderAtelierSummary(events);
+            renderDetails(events);
+        }
+
+        function renderTitle(events, start, end) {
+            const movementLabel = filterMovimento.options[filterMovimento.selectedIndex]?.textContent || 'Movimentações';
+            const parts = [movementLabel];
+            if (filterAtelie.value) parts.push(`Ateliê: ${filterAtelie.value}`);
+            if (filterLinha.value.trim()) parts.push(`Linha: ${filterLinha.value.trim()}`);
+            if (filterModelo.value.trim()) parts.push(`Modelo: ${filterModelo.value.trim()}`);
+
+            $('reportTitle').innerHTML = `
+                <strong>${escapeHtml(parts.join(' • '))}</strong>
+                <span>Período de ${formatDate(start)} a ${formatDate(end)} • ${formatNumber(events.length)} movimentação(ões)</span>
+            `;
+        }
+
+        function renderModelSummary(events, totalPares) {
+            const groups = new Map();
+            events.forEach((e) => {
+                const key = `${e.linha || 'Sem linha'}|${e.modelo || 'Sem modelo'}`;
+                if (!groups.has(key)) {
+                    groups.set(key, {
+                        linha: e.linha || '-',
+                        modelo: e.modelo || '-',
+                        pares: 0,
+                        taloes: new Set()
+                    });
+                }
+                const g = groups.get(key);
+                g.pares += e.pares;
+                g.taloes.add(e.docId);
+            });
+
+            const rows = [...groups.values()].sort((a, b) => {
+                const linhaCompare = String(a.linha).localeCompare(String(b.linha), 'pt-BR', { numeric: true });
+                if (linhaCompare !== 0) return linhaCompare;
+                return String(a.modelo).localeCompare(String(b.modelo), 'pt-BR', { numeric: true });
+            });
+
+            $('modelSummaryCount').textContent = `${formatNumber(rows.length)} grupo(s)`;
+            $('modelSummaryBody').innerHTML = rows.length
+                ? rows.map((g) => `
+                    <tr>
+                        <td class="strong">${escapeHtml(g.linha)}</td>
+                        <td>${escapeHtml(g.modelo)}</td>
+                        <td class="num">${formatNumber(g.taloes.size)}</td>
+                        <td class="num strong">${formatNumber(g.pares)}</td>
+                        <td class="num">${totalPares ? ((g.pares / totalPares) * 100).toFixed(1).replace('.', ',') : '0,0'}%</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="5" class="empty">Nenhum dado para resumir.</td></tr>';
+        }
+
+        function renderAtelierSummary(events) {
+            const groups = new Map();
+            events.forEach((e) => {
+                const atelie = e.atelie || 'Sem ateliê';
+                if (!groups.has(atelie)) groups.set(atelie, { atelie, pares: 0, taloes: new Set() });
+                const g = groups.get(atelie);
+                g.pares += e.pares;
+                g.taloes.add(e.docId);
+            });
+
+            const rows = [...groups.values()].sort((a, b) => b.pares - a.pares || a.atelie.localeCompare(b.atelie, 'pt-BR'));
+            $('atelierSummaryCount').textContent = `${formatNumber(rows.length)} ateliê(s)`;
+            $('atelierSummaryBody').innerHTML = rows.length
+                ? rows.map((g) => `
+                    <tr>
+                        <td class="strong">${escapeHtml(g.atelie)}</td>
+                        <td class="num">${formatNumber(g.taloes.size)}</td>
+                        <td class="num strong">${formatNumber(g.pares)}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="3" class="empty">Nenhum dado para resumir.</td></tr>';
+        }
+
+        function renderDetails(events) {
+            $('detailCount').textContent = `${formatNumber(events.length)} registro(s)`;
+            $('detailBody').innerHTML = events.length
+                ? events.map((e) => `
+                    <tr>
+                        <td>${formatDate(e.dataMovimento)}</td>
+                        <td><span class="badge setor">${escapeHtml(e.setor)}</span></td>
+                        <td><span class="badge ${e.tipo === 'Saída' ? 'saida' : 'entrada'}">${escapeHtml(e.tipo)}</span></td>
+                        <td>${escapeHtml(e.atelie || '-')}</td>
+                        <td>${escapeHtml(e.remessa || '-')}</td>
+                        <td>${escapeHtml(e.talao || '-')}</td>
+                        <td class="strong">${escapeHtml(joinLinhaModelo(e.linha, e.modelo))}</td>
+                        <td class="num strong">${formatNumber(e.pares)}</td>
+                        <td>${escapeHtml(e.usuario || '-')}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="9" class="empty">Nenhuma movimentação encontrada.</td></tr>';
+        }
+
+        function resolveDate(data, fields) {
+            for (const field of fields) {
+                const value = normalizeDate(data?.[field]);
+                if (value) return value;
+            }
+            return '';
+        }
+
+        function normalizeDate(value) {
+            if (!value) return '';
+            try {
+                if (typeof value.toDate === 'function') return localDateToISO(value.toDate());
+            } catch (_) {}
+            if (value instanceof Date && !Number.isNaN(value.getTime())) return localDateToISO(value);
+            const str = String(value).trim();
+            const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+            const br = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+            return '';
+        }
+
+        function resolveText(data, fields) {
+            for (const field of fields) {
+                const value = data?.[field];
+                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                    return String(value).trim();
+                }
+            }
+            return '';
+        }
+
+        function getText(data, fields) {
+            return resolveText(data, fields);
+        }
+
+        function getNumber(data, fields) {
+            for (const field of fields) {
+                const value = data?.[field];
+                if (value === undefined || value === null || value === '') continue;
+                if (typeof value === 'number' && Number.isFinite(value)) return value;
+                const parsed = Number(String(value).replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, ''));
+                if (Number.isFinite(parsed)) return parsed;
+            }
+            return 0;
+        }
+
+        function getAtelie(data) {
+            return getText(data, [
+                'idAtelieResponsavel', 'idAtelierResponsavel', 'atelieResponsavel',
+                'atelierResponsavel', 'nomeAtelie', 'nomeAtelier', 'atelie', 'atelier', 'Atelie', 'Atelier'
+            ]) || 'Sem ateliê';
+        }
+
+        function normalize(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim()
+                .toLowerCase();
+        }
+
+        function normalizeCode(value) {
+            return normalize(value).replace(/\s+/g, '');
+        }
+
+        function joinLinhaModelo(linha, modelo) {
+            const l = String(linha || '').trim();
+            const m = String(modelo || '').trim();
+            if (l && m) return `${l}.${m}`;
+            return l || m || '-';
+        }
+
+        function formatDate(value) {
+            const iso = normalizeDate(value) || String(value || '');
+            const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!match) return value || '-';
+            return `${match[3]}/${match[2]}/${match[1]}`;
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, (char) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[char]));
+        }
+
+        function showMessage(text, type = 'info') {
+            messageBox.textContent = text;
+            messageBox.className = `message show ${type}`;
+        }
+
+        function clearMessage() {
+            messageBox.textContent = '';
+            messageBox.className = 'message';
+        }
+    </script>
+</body>
+</html>

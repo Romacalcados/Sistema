@@ -1,0 +1,164 @@
+VERIFICAÇÃO DA ROMA — PERMISSÕES V2
+Data: 22/10/2026
+Projeto de destino: calcadosroma-65ac6
+
+1. RESULTADOS DA BASE V2 — ANTES DO AJUSTE DE CADASTRO AUTOMÁTICO
+
+- Regras no Firestore Emulator: 74/74 aprovados.
+- Componentes e distribuição — lógica: 32/32 aprovados.
+- Setores — contrato de acesso e transições: 32/32 aprovados.
+- Perfis, componentes e preparação — lógica: 30/30 aprovados.
+- Busca de modelos por linha e referência: 4/4 aprovados.
+- 15 páginas dos setores — navegador simulado: 28/28 aprovados.
+- Modelos e distribuição — navegador simulado: 5/5 aprovados.
+- Corte, cadastro, edição e menu — navegador simulado: 10/10 aprovados.
+- Preparação e login — navegador simulado: 8/8 aprovados.
+- Cronogramas e Giro — cálculos e navegador simulado: 18/18 aprovados.
+
+Total: 241 cenários/verificações aprovados nas baterias da base V2.
+Os cenários contêm múltiplas asserções e não representam testes em produção.
+
+2. INTEGRIDADE E INTEGRAÇÃO
+
+- 44 arquivos HTML presentes; 57 scripts JavaScript passaram na análise
+  de sintaxe. A checagem estática final não encontrou falhas ou avisos.
+- 33 páginas originais preservadas, 10 páginas novas de Sola/Palmilha e
+  uma página administrativa de preparação de dados.
+- 43 páginas do menu têm perfis explicitamente definidos; Login é público.
+- As regras firestore.rules e Regras_Firestore_Roma.txt são idênticas.
+- Configuração principal centralizada no projeto da Roma informado.
+- Nenhuma conexão executável aos projetos Firebase antigos foi encontrada.
+- O JSON contém 29 índices compostos para publicar no projeto da Roma.
+
+3. CENÁRIOS RELEVANTES
+
+- Nove perfis com revisão explícita v2; ativo deve ser true e o UID deve
+  corresponder à conta. Perfil antigo não recebe outro papel pelo código.
+- Somente Admin09 lista e administra usuários; 07 e 08 são bloqueados.
+- Edição de Talões somente01/09;01 não pode falsificar leituras setoriais.
+- 03/04/05 consultam e operam somente o próprio UID do setor, inclusive
+  nas consultas por código de barras e período. Nomes iguais não autorizam.
+- 07/08 não registram entrada/saída nem chamando o Firestore diretamente.
+- Admin opera para o responsável já definido, sem assumir sua atribuição.
+- Leitura duplicada, saída sem entrada e setor não aplicável são recusados.
+- Corte altera somente componentes e responsáveis permitidos; não muda
+  produção dos outros setores. Montagem não completa Corte/Costura à força.
+- Seleção de componentes alimenta Corte, Sola, Palmilha, cronogramas e Giro.
+- Preço total do modelo e preços das demais etapas não são legíveis por07.
+- Lançamento único por modelo e data é válido; modelo dividido fica no Corte.
+- Relançamento preserva atribuições manuais, migração, etapas iniciadas e
+  responsáveis legados sem origem automática comprovada.
+- Cadastro não sobrescreve talões existentes; composição exige modelo ativo.
+- Chaves com zeros, referência completa e IDs curtos não confundem linhas.
+- Preparação só vincula nomes antigos quando há correspondência única.
+- Preparação reconfere dados e dependências em transação; mudança de modelo
+  ou perfil após análise impede aplicar um plano antigo nos talões.
+- Falha de publicação de cadastros impede a etapa dependente de talões.
+- Criação de conta preserva a sessão do Admin e desfaz a nova conta se
+  falhar a publicação do perfil/diretório no cenário simulado.
+- O emulador aprovou lote de 450 novos talões com um modelo compartilhado
+  e lote de 25 talões com três responsáveis do Corte.
+- Relatórios mantêm totais coerentes para os componentes não aplicáveis,
+  Tiras, os três responsáveis e as entradas/saídas independentes.
+
+4. MÉTODO E LIMITES
+
+As regras foram compiladas e avaliadas no Firestore Emulator 1.19.8, projeto
+fictício demo-calcados-roma-v2, com dados de teste. Os testes de navegador
+usam Chromium com requisições Firebase simuladas e dados fictícios. Houve
+inspeção visual de telas de modelos, distribuição, Corte, setores e relatórios.
+
+Nenhum usuário, talão, regra ou índice do projeto Firebase real foi criado
+ou alterado por esta entrega. Não houve publicação em hospedagem nem teste
+de autenticação com contas reais da Roma. A configuração recebida identifica
+o projeto, mas não concede acesso administrativo à conta Firebase.
+
+Os índices de produção devem ser publicados e aguardar construção. O
+emulador verifica autorização; não comprova a existência de todos os índices
+em produção. Combinações diferentes de filtros podem exigir outros índices.
+
+As páginas de backup continuam desabilitadas, pois falta o segundo projeto
+da Roma. Storage permanece fechado e não é usado pelas rotinas atuais.
+O parser de PDF herdado conserva o formato existente; um novo layout da
+Roma exigirá um PDF de exemplo e adaptação específica.
+
+A instalação deve seguir LEIA-ME_ROMA.txt. ACESSOS_ROMA.txt lista todas as
+páginas e os limites de operação por perfil.
+
+5. AJUSTE — CADASTRO AUTOMÁTICO DOS MODELOS DA DISTRIBUIÇÃO
+Data: 22/10/2026
+
+As regras atuais passaram novamente nos 74 cenários de regressão e em
+20 novos cenários dirigidos, totalizando 94/94 no emulador, sem falhas.
+O fluxo de navegador passou em 12/12 cenários dirigidos com dados simulados.
+A inspeção estática atual conferiu 44 HTML e 57 scripts, sem falhas ou avisos.
+
+Verificações específicas:
+- Cadastro inicial por07/08/09 com ID e chave linha.modelo;07 não lê modelos.
+- Três documentos novos e coerentes no mesmo commit.
+- Valores iniciais, componentes, autor e timestamps estritamente validados.
+- Perfis e operações financeiras não autorizados continuam bloqueados.
+- Modelos existentes, inativos e referências legadas reconhecidas preservados.
+- Referências curta, completa e com zeros não duplicam; pares são somados.
+- Varredura considera os itens editados; cancelamento não grava nada.
+- Linha divergente do prefixo é recusada antes de salvar.
+- Repetição não altera preços, componentes ou histórico de um existente.
+- Duas sessões podem disputar o cadastro; o vencedor permanece intacto,
+  e o segundo reconhece o registro após reler as projeções permitidas.
+- Falha posterior deixa explícito que a distribuição foi salva e há modelos
+  pendentes, sem apresentar sucesso completo.
+- Modelos mostra referência completa; edição posterior conserva campos
+  separados e evita prefixo duplicado.
+
+Nenhum dado real foi criado e nenhuma regra foi publicada por esta alteração.
+Os índices permanecem os mesmos29. As regras novas devem ser publicadas junto
+com os arquivos atualizados para habilitar a criação limitada pelo perfil07.
+
+6. AJUSTE — DISTRIBUIÇÃO INDIVIDUAL DOS ATELIÊS
+Data: 22/10/2026
+
+O fluxo passou em 7/7 cenários dirigidos de navegador com Firebase simulado.
+A análise estática conferiu 44 HTML e 57 scripts, sem falhas ou avisos.
+
+- Seleção de uma ou duas datas pelo modal ou pelos campos de corte.
+- Ausência de datas e duas datas iguais continuam impedindo a montagem.
+- Selecionar uma origem limpa a segunda data anterior.
+- Individual salva com uma única origem e identificador independente da
+  conjunta; totais e pares por origem consideram somente a data escolhida.
+- Reabertura preserva divisões e observações, com Corte 2 vazio.
+- Troca entre Costura, Palmilha e Sola conserva a data única; cada setor
+  mantém sua distribuição e respeita os componentes aplicáveis.
+- Lançamento altera somente os talões da data selecionada e preserva
+  modelos divididos, atribuições manuais e produção já iniciada.
+- Duas datas continuam somando e lançando ambas normalmente.
+- Resumo e impressão exibem somente as datas realmente selecionadas.
+- Programação continua sem consultar a coleção financeira modelos.
+
+Somente distribuicaoatt.html mudou no código do aplicativo. As regras,
+índices, permissões e helpers permanecem iguais aos do pacote anterior.
+Nenhum registro real foi alterado e nenhuma publicação foi realizada.
+
+7. CORREÇÃO — ABERTURA LOCAL DE CRIAR DISTRIBUIÇÃO
+Data: 22/10/2026
+
+Reproduzido o bloqueio original de CORS ao abrir distribuicao_montagem.html
+por file://: o import do helper local impedia executar o módulo principal
+e a tela permanecia oculta. O helper agora é carregado como script clássico,
+recebendo o SDK Firestore já importado pela página. A lógica do cadastro
+automático, as permissões e as regras do banco permanecem iguais.
+
+- 5/5 cenários de abertura aprovados: reprodução do defeito original,
+  abertura e salvamento local por07, abertura e salvamento local por09,
+  funcionamento via HTTPS e orientação visível com helper desatualizado.
+- 12/12 cenários anteriores de cadastro automático novamente aprovados.
+- Perfil07 continua sem consultar a coleção financeira modelos.
+- A combinação de HTML novo com helper antigo mostra como corrigir os
+  arquivos e não grava dados, em vez de deixar a tela em branco.
+- 44 HTML e 57 scripts conferidos, sem falhas ou avisos de sintaxe.
+
+O teste local usou Chromium padrão abrindo os arquivos reais pelo disco,
+sem desabilitar a segurança do navegador. Somente dependências HTTPS foram
+simuladas. Nenhum acesso ao Firebase real ou publicação foi realizado.
+
+Para aplicar esta correção, substitua juntos distribuicao_montagem.html
+e roma-cadastro-modelos.js. Não há novas regras ou índices para publicar.
