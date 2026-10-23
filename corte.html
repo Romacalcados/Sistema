@@ -171,20 +171,24 @@
         .table-container {
             width: 100%;
             max-width: 100%; 
+            overflow-x: auto;
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
         table {
-        table-layout: fixed;
-        width: 100%;
+            table-layout: fixed;
+            width: 100%;
+            min-width: 1280px;
+            border-collapse: collapse;
         }
         table th,
         table td {
+            box-sizing: border-box;
             padding: 4px 6px;
             font-size: 0.75em;
-            line-height: 1;
+            line-height: 1.25;
             height: 25px; 
             vertical-align: middle;
         }
@@ -201,27 +205,31 @@
         .atelie-dropdown {
             font-size: 0.85em;     
             padding: 4px 8px;      
-            min-width: 100px;     
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            box-sizing: border-box;
             border-radius: 4px;
             height: 25px; 
         }
 
-        /* Define column widths */
-        table th:nth-child(1), table td:nth-child(1) { width: 8%; } 
-        table th:nth-child(2), table td:nth-child(2) { width: 5%; } 
-        table th:nth-child(3), table td:nth-child(3) { width: 3%; } 
-        table th:nth-child(4), table td:nth-child(4) { width: 5%; } 
-        table th:nth-child(5), table td:nth-child(5) { width: 5%; } 
-        table th:nth-child(6), table td:nth-child(6) { width: 5%; } 
-        table th:nth-child(7), table td:nth-child(7) { width: 3%; } 
-        table th:nth-child(8), table td:nth-child(8) { width: 8%; } 
-        table th:nth-child(9), table td:nth-child(9) { width: 8%; } 
-        table th:nth-child(10), table td:nth-child(10) { width: 8%; } 
-        table th:nth-child(11), table td:nth-child(11) { width: 8%; } 
-        table th:nth-child(12), table td:nth-child(12) { width: 5%; text-align: center; } 
-        table th:nth-child(13), table td:nth-child(13) { width: 5%; text-align: center; } 
-        table th:nth-child(14), table td:nth-child(14) { width: 5%; text-align: center; } 
-        table th:nth-child(15), table td:nth-child(15) { width: 5%; text-align: center; } 
+        /* Larguras das 16 colunas da tabela de Corte. */
+        table th:nth-child(1), table td:nth-child(1) { width: 3%; text-align: center; }
+        table th:nth-child(2), table td:nth-child(2) { width: 7%; }
+        table th:nth-child(3), table td:nth-child(3) { width: 6%; }
+        table th:nth-child(4), table td:nth-child(4) { width: 4%; }
+        table th:nth-child(5), table td:nth-child(5) { width: 5%; }
+        table th:nth-child(6), table td:nth-child(6) { width: 5%; }
+        table th:nth-child(7), table td:nth-child(7) { width: 6%; }
+        table th:nth-child(8), table td:nth-child(8) { width: 4%; }
+        table th:nth-child(9), table td:nth-child(9) { width: 8.5%; }
+        table th:nth-child(10), table td:nth-child(10) { width: 11%; }
+        table th:nth-child(11), table td:nth-child(11) { width: 10%; text-align: center; }
+        table th:nth-child(12), table td:nth-child(12) { width: 8%; text-align: center; }
+        table th:nth-child(13), table td:nth-child(13) { width: 6%; text-align: center; }
+        table th:nth-child(14), table td:nth-child(14) { width: 4.5%; text-align: center; }
+        table th:nth-child(15), table td:nth-child(15) { width: 4%; text-align: center; }
+        table th:nth-child(16), table td:nth-child(16) { width: 8%; text-align: center; }
 
         /* Row colors based on client type */
         .row-azul { background-color: #8dbafd; } /* Exportação */
@@ -238,7 +246,9 @@
             font-weight: bold;
             color: rgb(0, 0, 0);
             text-align: center;
-            white-space: nowrap;
+            max-width: 100%;
+            box-sizing: border-box;
+            white-space: normal;
         }
 
         input[type="checkbox"] {
@@ -597,7 +607,7 @@
                         <th>Cor</th>
                         <th>Pares</th>
                         <th>Tipo Cliente</th>
-                        <th>Ateliê Costura</th><th>Ateliê Palmilha</th><th>Ateliê Sola</th>
+                        <th>Ateliê Costura</th>
                         <th>Status Corte</th>
                         <th>Entrada Costura</th>
                         <th>Cabedal</th>
@@ -607,7 +617,7 @@
                     </tr>
                 </thead>
                 <tbody id="taloesTableBody">
-                    <tr><td colspan="18" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>
+                    <tr><td colspan="16" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -1006,7 +1016,7 @@
         const cor = filterCor.value.toLowerCase().trim();
 
         taloesTableBody.classList.add('is-loading');
-        taloesTableBody.innerHTML = '<tr><td colspan="18" style="text-align: center;">Buscando talões...</td></tr>';
+        taloesTableBody.innerHTML = '<tr><td colspan="16" style="text-align: center;">Buscando talões...</td></tr>';
 
         const startedAt = performance.now();
 
@@ -1074,7 +1084,7 @@
                 errorMessage = 'O Firestore pediu um índice para combinar estes filtros. Abra o console do navegador, copie o link do erro e crie o índice sugerido pelo Firebase.';
             }
 
-            taloesTableBody.innerHTML = `<tr><td colspan="18" style="text-align: center; color: red;">${errorMessage}</td></tr>`;
+            taloesTableBody.innerHTML = `<tr><td colspan="16" style="text-align: center; color: red;">${errorMessage}</td></tr>`;
         } finally {
             taloesTableBody.classList.remove('is-loading');
         }
@@ -1129,7 +1139,7 @@
         
         allTaloes = [];
         filteredTaloes = [];
-        taloesTableBody.innerHTML = '<tr><td colspan="18" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>';
+        taloesTableBody.innerHTML = '<tr><td colspan="16" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>';
     });
 
     // --- Listener para Ação em Massa ---
@@ -1166,7 +1176,7 @@
 
     function renderTable(taloes) {
         if (taloes.length === 0) {
-            taloesTableBody.innerHTML = '<tr><td colspan="18" style="text-align: center;">Nenhum talão encontrado com os filtros aplicados.</td></tr>';
+            taloesTableBody.innerHTML = '<tr><td colspan="16" style="text-align: center;">Nenhum talão encontrado com os filtros aplicados.</td></tr>';
             return;
         }
 
@@ -1216,7 +1226,7 @@
                     <td>${escapeHtml(talao.corSapato)}</td>
                     <td>${escapeHtml(talao.pares || 0)}</td>
                     <td>${escapeHtml(talao.tipoCliente)}</td>
-                    <td>${getAtelieSelect(talao,'costura')}</td><td>${getAtelieSelect(talao,'palmilha')}</td><td>${getAtelieSelect(talao,'sola')}</td>
+                    <td>${getAtelieSelect(talao,'costura')}</td>
                     <td><span class="status-badge ${escapeHtml(getStatusClass(talao.statusCorte))}">${escapeHtml(talao.statusCorte || 'N/A')}</span></td>
                     <td>${escapeHtml(formatDate(talao.costuraDataInicio))}</td>
                     <td>${getComponentInput(talao,'cabedal')}</td>
@@ -1228,7 +1238,7 @@
         }).join('');
 
         const limitWarning = taloes.length > MAX_ROWS_RENDER
-            ? `<tr><td colspan="18" style="text-align:center; background:#fff3cd; font-weight:bold;">
+            ? `<tr><td colspan="16" style="text-align:center; background:#fff3cd; font-weight:bold;">
                     Mostrando ${MAX_ROWS_RENDER} de ${taloes.length} talões. Refine o filtro para ver menos linhas e deixar a tela mais rápida.
                </td></tr>`
             : '';
