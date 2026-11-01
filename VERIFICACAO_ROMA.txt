@@ -162,3 +162,329 @@ simuladas. Nenhum acesso ao Firebase real ou publicação foi realizado.
 
 Para aplicar esta correção, substitua juntos distribuicao_montagem.html
 e roma-cadastro-modelos.js. Não há novas regras ou índices para publicar.
+
+8. AJUSTE — COLUNAS DA PÁGINA DE CORTE
+Data: 23/10/2026
+
+Removidas as colunas Ateliê Palmilha e Ateliê Sola do cabeçalho e das linhas.
+A tabela agora possui 16 colunas; os seis estados de carregamento, erro,
+limpeza, vazio, mensagem inicial e limite de resultados usam colspan 16.
+Larguras redistribuídas, com seletor de Costura contido na célula e status
+com quebra de linha. Em telas estreitas, a tabela permite rolagem horizontal.
+
+Realizada inspeção visual no Chromium, com dados fictícios e Firebase
+simulado. Cabeçalho e linhas renderizam 16 colunas, sem erros JavaScript.
+A revisão do diff confirmou que as ações em massa dos três setores,
+permissões, campos do banco e rotinas de gravação permanecem intactos.
+
+Somente corte.html mudou no código do aplicativo. Para aplicar este ajuste,
+substitua corte.html na hospedagem. Não há novas regras ou índices.
+
+9. ATUALIZAÇÃO — RECEBIMENTOS NA FÁBRICA E UNIÃO NA TALONAGEM
+Data: 31/10/2026
+
+Criadas Recebimento Sola e Recebimento Palmilha. Distribuição recebe a
+Costura; Talonagem confere as saídas e os recebimentos aplicáveis em uma
+leitura. Montagem exige Talonagem já registrada. Nenhuma dessas telas
+preenche automaticamente leituras de etapas anteriores.
+
+Verificações desta atualização, todas aprovadas:
+- 16 cenários de lógica dos recebimentos, componentes, datas e pendências.
+- 29 cenários de navegador das quatro páginas de recebimento/Talonagem.
+- 8 cenários de navegador de Montagem, incluindo históricos e edição.
+- 5 cenários de relatórios, menu, datas, responsáveis e perfis de consulta.
+- 28 cenários dirigidos de regras no Firestore Emulator.
+- 74 cenários de regressão das regras no Firestore Emulator.
+Total: 160 cenários/verificações com dados fictícios, sem falhas.
+
+A análise estática conferiu 46 páginas HTML e 64 scripts JavaScript,
+sem falhas ou avisos. Houve inspeção visual em tela de computador e celular.
+
+Casos relevantes:
+- Uma transação confirma a Talonagem com uma leitura, sem refazer recibos.
+- Componentes não aplicáveis são dispensados; cada pendência é indicada.
+- Documento relido antes da gravação: mudanças de código, saída removida
+  e recebimento concorrente impedem usar uma informação antiga da tela.
+- Duplicatas, códigos ambíguos e falhas de commit não criam sucesso falso.
+- 06/09 registram;07/08 consultam;03/04/05 não acessam os recebimentos de fábrica.
+- Saída do ateliê e recebimento na fábrica usam campos independentes.
+- Histórico por data mostra o ateliê e operador corretos; nomes iguais
+  entre setores não misturam responsáveis em Movimentações.
+- Leituras confirmadas atualizam a lista sem reler todos os talões do dia.
+- Quatro páginas abrem por file:// com scripts locais reais e SDK simulado;
+  não houve import local de módulo nem desativação da segurança do navegador.
+- Talões já talonados antes da atualização podem seguir para Montagem sem
+  receber datas retroativas. Correções administrativas09 foram preservadas.
+- Giro conserva produzidos aguardando recebimento; cronogramas exibem as
+  novas datas no detalhe; disponibilidade de Montagem depende de Talonagem.
+
+As regras firestore.rules e Regras_Firestore_Roma.txt são idênticas.
+É necessário publicar as regras atualizadas junto com o aplicativo para
+habilitar os recebimentos pelo perfil06. Os índices não foram alterados.
+
+A versão pública do código no repositório foi comparada com a base usada
+antes das alterações; não havia divergências nos arquivos do aplicativo.
+Todos os testes usaram mocks ou o projeto fictício demo-calcados-roma-v2.
+Nenhum talão, conta, regra ou índice de produção foi criado ou alterado.
+Os arquivos foram preparados para publicação; não houve envio ao GitHub.
+
+10. AJUSTE VISUAL — IDENTIFICAÇÃO DOS RECEBIMENTOS
+Data: 01/11/2026
+
+Distribuição foi renomeada para Recebimento Costura no menu e na página.
+As três páginas de recebimento usam cores próprias:
+- Costura: verde (#087a58).
+- Palmilha: azul (#1d4ed8).
+- Sola: roxo (#7535b5).
+
+O destaque aparece no cabeçalho, cartão de leitura, campo de código,
+botão de registro, cabeçalhos da tabela e item do menu. O nome do setor
+também aparece na área de leitura e no botão, reforçando a identificação.
+
+Conferidas visualmente as três páginas no Chromium, o menu e a versão
+estreita da Sola. Não houve erro JavaScript nem expansão da largura da
+página. A Talonagem foi aberta para conferir a preservação de seu estilo.
+Os dois scripts modificados passaram na verificação de sintaxe do Node.
+
+Esta é uma alteração de apresentação. Formulários, identificadores,
+operações de leitura/gravação e regras do Firebase não foram modificados.
+A página Costura conserva o arquivo distribuicao.html para manter os links.
+Não foram criados testes novos nem repetidas baterias funcionais nesta
+alteração visual. A verificação anterior do fluxo consta na seção9.
+
+11. AJUSTE VISUAL — MENU UNIFORME
+Data: 01/11/2026
+
+Retiradas as regras CSS específicas dos três recebimentos no menu.
+Os itens voltaram ao padrão neutro dos demais links, incluindo marcador,
+espaçamento e seleção cinza. As cores permanecem nas próprias páginas:
+Costura verde, Palmilha azul e Sola roxo. O nome Recebimento Costura foi mantido.
+
+Somente navegacao.js mudou no aplicativo. A sintaxe foi conferida e o
+menu foi inspecionado no navegador. Nenhuma regra do Firebase ou operação
+de registro foi alterada.
+
+12. PLANEJAMENTO DE MONTAGEM — REMESSAS, TALÕES E SEMANA POR TRILHO
+Data: 01/11/2026
+
+Criada planejamento.html, com planejamento.css, roma-planejamento.js e
+roma-planejamento-page.js. A página tem as abas Planejamento e Programação.
+O menu inclui Planejamento de Montagem para 06/07/08/09;06 consulta e os
+demais perfis autorizados alteram trilho/data. Menu neutro preservado.
+
+O plano é gravado por talão, permitindo aplicar uma previsão à remessa
+inteira ou dividir grupos entre trilhos 1–5 e datas distintas. A semana
+considera segunda a domingo, sem repetir talões. Planejamento e produção
+real usam campos independentes. As regras do Firestore foram atualizadas.
+
+Validações desta entrega, todas aprovadas:
+- 37 cenários do serviço de consulta, agrupamento, semana e gravação.
+- 27 cenários novos de regras no Firestore Emulator.
+- 74 cenários de regressão geral das regras.
+- 28 cenários de regressão das regras de recebimentos/fábrica.
+- 20 cenários de regressão das regras do autocadastro de modelos.
+- 2 cenários completos de navegador, cobrindo o fluxo de planejamento,
+  divisão individual, relatório, limpeza, impressão e consulta do perfil 06.
+- 8 cenários de navegador para falha parcial, concorrência, montagem,
+  exclusão/inclusão, falha na releitura, conteúdo escapado e sessão.
+Total: 196 cenários/verificações, sem falhas.
+
+A verificação estática conferiu 47 páginas HTML e 67 scripts JavaScript,
+sem falhas ou avisos. Houve inspeção visual em computador e celular,
+modal de seleção e modo de impressão. As tabelas mantêm a rolagem interna;
+o título superior da nova página foi abreviado para caber no celular.
+
+Casos confirmados:
+- Mesmo com filtro de modelo, abrir a remessa consulta todos os talões.
+- Um talão transferido para outro trilho/data deixa o total anterior.
+- A Programação semanal não herda filtros da lista de remessas.
+- Sem plano ou fora da semana: talão não entra no relatório semanal.
+- Montados ficam preservados e bloqueados para replanejamento.
+- Prontos correspondem a talonados ainda não montados.
+- Nenhuma gravação de planejamento altera campos reais de produção.
+- Perfil 06 consulta/imprime sem gravações;07/08/09 podem planejar.
+- Não há consulta a documentos de valores financeiros dos modelos.
+- A versão e os dados cadastrais são relidos antes de cada gravação.
+- Transação de 200 talões passou também no emulador real do Firestore.
+- Falha no segundo lote de 205 talões confirma apenas 200; os 5 restantes
+  ficam selecionados e podem ser revistos e salvos sem duplicar os anteriores.
+- Se a releitura falha, a edição fica bloqueada até consultar novamente.
+- Talões novos/excluídos atualizam a remessa e os contadores da consulta.
+- Uma resposta tardia de perfil antigo não desativa uma sessão posterior.
+- Valores cadastrados que contenham HTML são exibidos como texto.
+- Regras firestore.rules e Regras_Firestore_Roma.txt são idênticas.
+
+Todos os testes usaram dados fictícios, SDK simulado ou o emulador local
+demo-calcados-roma-v2. Nenhum registro, usuário, índice ou regra foi alterado
+no projeto real. A entrega precisa ser publicada no GitHub e as regras
+precisam ser publicadas no Firebase, conforme GUIA_PLANEJAMENTO_ROMA.txt.
+
+13. PLANEJAMENTO NO FORMATO DO CRONOGRAMA
+Data: 01/11/2026
+
+Revisada a aba Planejamento para seguir a tabela do Cronograma: Linha,
+Remessa, Pares, Talões, Dt. Corte, Dt. Entr. e as sete etapas em pares/talões.
+As duas últimas colunas são Trilho e Prev. Mont., editáveis na própria linha.
+Salvar alterações grava as linhas alteradas; clicar no número da remessa
+abre o detalhe existente para seleção de talões. Programação semanal,
+impressão, perfis e regras do Firebase permanecem com o comportamento
+da entrega anterior. Cabeçalhos abreviados e cores por tipo de cliente.
+
+O agrupamento usa remessa, linha, corte e entrega, como o Cronograma.
+Modelo/tipo filtram grupos completos para que quantidade exibida e alcance
+da edição sejam iguais. Rascunhos são associados à chave do grupo, e não
+à posição da linha. As datas de corte/entrega passaram a fazer parte da
+conferência de identidade dentro da transação de planejamento.
+
+Verificação dirigida do navegador: 4/4 cenários aprovados.
+- Comparação com o Cronograma real usando os mesmos dados simulados:
+  agrupamento e cálculos das sete etapas coincidiram.
+- Filtro por modelo manteve o grupo completo; dois grupos receberam
+  trilhos/datas distintos e entraram corretamente no relatório semanal.
+- Falha no segundo lote de uma linha com 205 talões preservou os 200
+  confirmados, manteve a próxima linha intacta e informou resultado parcial.
+- Perfil 06 consultou tabela, detalhe de talões e semana, sem gravar.
+
+O serviço passou novamente pelos 37 cenários existentes, incluindo a
+verificação ampliada de alteração concorrente das datas de corte e entrega.
+Sintaxe dos scripts e estrutura de 22 colunas efetivas conferidas.
+Inspeção visual realizada em 1365px, 1920px e celular, incluindo rolagem
+da tabela, estados concluídos/não aplicáveis, edição e impressão da semana.
+
+Regras do Firebase e dados de produção não foram alterados nesta revisão.
+Todos os ensaios utilizaram dados fictícios e Firebase simulado. Nenhum
+arquivo foi publicado no GitHub nem houve gravação no banco real.
+
+
+14. SALVAMENTO AUTOMÁTICO E DISPONIBILIDADE NA FÁBRICA
+Data: 01/11/2026
+
+Esta revisão substitui o salvamento manual da tabela descrito na seção 13.
+Trilho e Prev. Mont. salvam automaticamente com ambos os campos válidos.
+A fila serial conserva a última alteração e permite continuar editando
+outras linhas. Os campos e o foco não são recriados após cada gravação.
+A cor da remessa agora continua até as duas últimas células da tabela.
+
+O topo do modal inclui Cliente, Normativas, Entrega e Corte. Valores únicos
+são mostrados em linhas separadas, com datas completas; a leitura considera
+sempre todos os talões da remessa e insere os metadados como texto seguro.
+O planejamento por seleção de talões mantém seu botão Salvar planejamento.
+
+Dis na Fab substitui Rec. Cost. somente nesta página. Conta pares e talões
+ainda não montados com Costura recebida e Palmilha/Sola recebidas quando
+exigidas pelo modelo. Conta a interseção por talão, não o menor total dos
+setores nem apenas a saída do ateliê. Talonados permanecem na contagem;
+montados ficam fora mesmo ao incluí-los na consulta. Os cálculos das outras
+etapas e a página Cronograma permanecem iguais à entrega anterior.
+
+Verificações executadas nesta revisão:
+- 10/10 cenários dirigidos de autosave no navegador: primeira definição,
+ alterações posteriores, edição de outra linha durante commit, fila serial,
+ preservação do DOM/foco, última intenção 1 → 2 → 1, múltiplas mudanças em voo,
+ conflito externo, inclusão/exclusão/montagem concorrentes, falha parcial,
+ sessão, resposta semanal antiga e perfil 06 somente consulta.
+ O cenário de 205 talões confirmou 200, manteve 5 sem conclusão e permitiu que
+ outra linha fosse salva, sem repetição automática do lote com falha.
+- 4/4 cenários de disponibilidade e metadados: fixture com 18 pares / 2 talões,
+ recebimentos históricos, componentes opcionais, dados ausentes, N/A,
+ filtros, cliente/normativa sem duplicação, datas completas e texto seguro.
+- 1/1 percurso de navegação: abrir a remessa antes do intervalo de autosave
+ aguardou a gravação e mostrou o plano atualizado; alterar um único talão
+ no modal preservou os demais e não sofreu gravação tardia da tabela.
+- 37/37 cenários existentes do serviço de planejamento passaram novamente.
+- Verificador estrutural: 47 HTML e 67 scripts JavaScript, sem falhas ou avisos.
+- Inspeção visual em 1365 × 900 e 390 × 844, com tabela, modal, salvamento e falha.
+ As cores continuam até o final; os metadados longos não causam excesso
+ horizontal no modal. O erro na célula ocupa até 3 linhas, conservando a
+ mensagem completa acima da tabela.
+
+Não foram alterados campos de produção, perfis, regras, coleções ou índices.
+As regras mantêm o mesmo conteúdo da entrega anterior; sua suíte de 149
+cenários não foi repetida nesta revisão, pois esses arquivos não mudaram.
+Todos os testes usaram dados fictícios e Firebase simulado. Nenhum arquivo
+foi publicado no GitHub e nenhuma operação foi feita no banco real.
+
+
+15. PROGRAMAÇÃO EM CARDS SEMANAIS POR TRILHO
+Data: 01/11/2026
+
+A aba Programação agora apresenta cinco cards, um por trilho, conforme o
+esboço solicitado. Cada card tem dias lado a lado, com data, dia da semana,
+remessa, pares e total diário. Os botões Anterior/Próxima dos cards e os
+controles superiores navegam pela mesma semana nos três trilhos.
+Segunda a sexta sempre aparecem; sábado e domingo são acrescentados em
+todos os cards quando houver programação em qualquer um desses dias.
+
+Os modelos da mesma remessa são somados por dia e trilho. Clicar na remessa
+abre uma consulta das linhas, modelos, talões, pares e estados apenas daquela
+programação. O total semanal de remessas é único por trilho. Dias vazios
+mostram Sem programação e zero; todos os cinco cards permanecem visíveis.
+
+O helper puro weekCalendar foi acrescentado ao script de planejamento.
+Ele organiza o resumo existente sem alterar os registros recebidos. O
+serviço do Firestore, o salvamento automático, o planejamento por talão e
+as regras de acesso não foram modificados nesta revisão.
+
+Verificações dirigidas:
+- 8/8 testes de agrupamento e calendário: múltiplos modelos por remessa,
+ divisão entre trilhos/dias, totais, contagem única, registros fora do período,
+ estados de produção, fim de semana, virada do ano e ausência de mutação.
+- 5/5 cenários no Chromium com Firebase simulado: cards e detalhe isolado,
+ fim de semana, navegação compartilhada, semana vazia, consulta pelo perfil
+ 06, texto seguro, consulta pendente/falha/recuperação e impressão bloqueada
+ enquanto os dados não estão disponíveis. Nenhuma escrita ou transação.
+- Verificador estrutural: 47 páginas HTML e 67 scripts JavaScript, sem falhas
+ ou avisos. Mantidos os nomes e dependências dos arquivos existentes.
+- Inspeção visual em computador de 1365 × 900 e celular de 390 × 844.
+ Rolagem horizontal fica dentro do card; datas, remessas, pares e totais
+ permanecem legíveis. O detalhe também usa rolagem interna no celular.
+- Impressão em A4 paisagem conferida com cinco e sete dias: a amostra comum
+ gerou duas páginas. Uma amostra com 55 remessas num dia gerou quatro páginas
+ e preservou todas as entradas, sem truncar a lista ou os totais.
+
+A alteração é de apresentação e agrupamento da programação já gravada.
+As regras do Firebase permanecem idênticas; as suítes anteriores do serviço
+e das regras não foram repetidas nesta revisão. Nenhum arquivo foi publicado
+no GitHub, e nenhuma gravação ocorreu no banco real.
+
+
+16. CARDS FIXOS DE SEGUNDA A SEXTA
+Data: 01/11/2026
+
+Refinado o formato da Programação para corresponder ao desenho enviado:
+um card por trilho, cabeçalho simples Anterior / Trilho / Próxima e cinco
+colunas fixas, de segunda a sexta, com data, remessa, pares e total diário.
+Removida a linha adicional de resumo dentro de cada card. Mantidos os
+modais de consulta e o detalhamento por linha/modelo ao clicar na remessa.
+
+Os totais dos cards e do resumo superior consideram apenas os cinco dias
+exibidos. Planos existentes de sábado/domingo são contabilizados à parte e
+aparecem em uma nota quando existirem; não criam colunas extras, não entram
+nos totais úteis e não são alterados. O período no título termina na sexta.
+A consulta e o serviço de gravação do Firestore não foram alterados.
+
+Os arquivos planejamento.css, roma-planejamento.js e
+roma-planejamento-page.js passaram a ser referenciados com identificação
+de versão na URL, para evitar o reaproveitamento do formato anterior pelo
+cache do navegador. Os arquivos devem ser publicados junto com o HTML.
+
+Verificações desta revisão:
+- 3/3 cenários do calendário: modelos e remessas divididos entre dias e
+ trilhos, totais úteis separados dos de fim de semana, período com apenas
+ sábado/domingo, remessas únicas, virada do ano e limite da consulta.
+- 2/2 cenários no navegador: cinco cards com cinco dias, totais diários e
+ gerais, aviso real de fim de semana, detalhe dos modelos, navegação para
+ outra semana e retorno, carregamento dos assets versionados e perfil 06.
+ A fixture principal exibiu 3.225 pares úteis e informou 300 pares de
+ sábado/domingo separadamente. Nenhuma escrita, transação ou erro JS.
+- Estrutura e sintaxe: 47 páginas HTML e 67 scripts, sem falhas ou avisos.
+- Inspeção visual em 1365 px e 390 px. Cabeçalhos simples, dias lado a lado,
+ totais alinhados no pé e rolagem horizontal apenas dentro do card móvel.
+- Impressão em duas páginas preservou todas as remessas de segunda a sexta;
+ a nota de domingo permaneceu fora do quadro, sem criar uma sexta coluna.
+
+Esta seção atualiza o comportamento de fim de semana descrito na seção 15:
+os cards agora mantêm sempre cinco colunas. As regras, os dados de produção,
+o autosave da aba Planejamento e o serviço de gravação não foram alterados.
+Os testes usaram dados fictícios e Firebase simulado. A entrega não publica
+arquivos no GitHub nem realiza operações no banco real.

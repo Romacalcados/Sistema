@@ -146,15 +146,15 @@
         <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="costuraLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="costuraModelos"></div></div></div>
       </article>
       <article class="sector-card palmilha" id="palmilhaCard" tabindex="0">
-        <div class="sector-head"><div class="sector-head-row"><div><h2>Palmilha</h2><small>Componentes para produzir nos ateliês</small></div><div class="sector-total"><strong id="palmilhaTotal">0</strong><span>pares</span></div></div></div>
+        <div class="sector-head"><div class="sector-head-row"><div><h2>Palmilha</h2><small>Componentes em produção ou aguardando recebimento</small></div><div class="sector-total"><strong id="palmilhaTotal">0</strong><span>pares</span></div></div></div>
         <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="palmilhaLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="palmilhaModelos"></div></div></div>
       </article>
       <article class="sector-card sola" id="solaCard" tabindex="0">
-        <div class="sector-head"><div class="sector-head-row"><div><h2>Sola</h2><small>Componentes para produzir nos ateliês</small></div><div class="sector-total"><strong id="solaTotal">0</strong><span>pares</span></div></div></div>
+        <div class="sector-head"><div class="sector-head-row"><div><h2>Sola</h2><small>Componentes em produção ou aguardando recebimento</small></div><div class="sector-total"><strong id="solaTotal">0</strong><span>pares</span></div></div></div>
         <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="solaLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="solaModelos"></div></div></div>
       </article>
       <article class="sector-card montagem" id="montagemCard" tabindex="0">
-        <div class="sector-head"><div class="sector-head-row"><div><h2>Montagem</h2><small>Talões entregues na fábrica e não montados</small></div><div class="sector-total"><strong id="montagemTotal">0</strong><span>pares</span></div></div></div>
+        <div class="sector-head"><div class="sector-head-row"><div><h2>Montagem</h2><small>Talões conferidos na Talonagem e disponíveis para montar</small></div><div class="sector-total"><strong id="montagemTotal">0</strong><span>pares</span></div></div></div>
         <div class="sector-body"><div><div class="section-label">Linhas</div><div class="line-grid" id="montagemLinhas"></div></div><div><div class="section-label">Modelos</div><div class="model-list" id="montagemModelos"></div></div></div>
       </article>
     </section>
@@ -212,10 +212,10 @@
       function isCutComplete(t){return materialComplete(t)}
       function isAvailableCorte(t){return !isAmostra(t)&&!isCutComplete(t)}
       function isAvailableCostura(t){return !isAmostra(t)&&window.RomaProducao.missing(t,'costura')}
-      function isAvailableSector(t,sector){return !isAmostra(t)&&window.RomaProducao.missing(t,sector)}
+      function isAvailableSector(t,sector){return !isAmostra(t)&&window.RomaProducao.applicable(t,sector)&&(window.RomaProducao.missing(t,sector)||(!window.Roma.factoryReceived(t,sector)&&!has(t.dataEntradaTalonagem)&&!has(t.dataEntradaMontagem)))}
       function isCosturaInsideAtelier(t){return !isAmostra(t)&&has(t.costuraDataInicio)&&!has(t.dataSaidaCostura)&&has(t.idAtelieResponsavel)}
       function isProducedNotFactory(t){return !isAmostra(t)&&has(t.dataSaidaCostura)&&!has(t.dataEntradaDistribuicao)&&has(t.idAtelieResponsavel)}
-      function isAvailableMontagem(t){return !isAmostra(t)&&has(t.dataEntradaDistribuicao)&&!has(t.dataEntradaMontagem)}
+      function isAvailableMontagem(t){return !isAmostra(t)&&has(t.dataEntradaTalonagem)&&!has(t.dataEntradaMontagem)}
       function isMissingMontagem(t){return !isAmostra(t)&&!has(t.dataEntradaMontagem)}
       function groupSum(list,keyFn){const map=new Map(); list.forEach(t=>{const k=keyFn(t); map.set(k,(map.get(k)||0)+normalizePares(t.pares));}); return Array.from(map.entries()).sort((a,b)=>compareText(a[0],b[0]));}
       function groupDocs(list,keyFn){const map=new Map(); list.forEach(t=>{const k=keyFn(t); if(!map.has(k))map.set(k,[]); map.get(k).push(t);}); return map}
@@ -269,7 +269,8 @@
       function getStatusText(t,sector='costura'){
         const cfg=window.Roma.SECTORS[sector];
         if(!window.RomaProducao.applicable(t,sector))return'Não se aplica';
-        if(window.RomaProducao.complete(t,sector))return has(t.dataEntradaDistribuicao)?'Entregue fábrica':'Produzido';
+        if(window.Roma.factoryReceived(t,sector))return 'Entregue à fábrica';
+        if(window.RomaProducao.complete(t,sector))return 'Aguardando recebimento';
         return has(t[cfg.start])?'Em produção':'Sem entrada';
       }
       function statusClass(t,sector='costura'){return window.RomaProducao.missing(t,sector)?'alert-cell':''}
@@ -280,7 +281,7 @@
         const groups=Array.from(groupDocs(list,t=>String(t.numeroRemessa||'Sem remessa')).entries()).sort((a,b)=>compareText(a[0],b[0]));
         return `<div class="remessa-list">${groups.map(([remessa,items])=>{
           items=[...items].sort((a,b)=>compareText(a.numeroTalaoSequencial,b.numeroTalaoSequencial));const first=items[0]||{};
-          const rows=items.map(t=>`<tr><td>${escapeHTML(t.numeroTalaoSequencial||'')}</td><td class="model-cell">${escapeHTML(modelKey(t))}</td><td>${escapeHTML(t.corSapato||t.cor||'')}</td><td class="num">${normalizePares(t.pares).toLocaleString('pt-BR')}</td><td>${escapeHTML(getAtelieKey(t,sector))}</td><td>${window.RomaProducao.detail(t,'corte',formatDate)}</td><td>${window.RomaProducao.detail(t,'palmilha',formatDate)}</td><td>${window.RomaProducao.detail(t,'sola',formatDate)}</td><td>${window.RomaProducao.entryDetail(t,sector,formatDate)}</td><td>${window.RomaProducao.detail(t,sector,formatDate)}</td><td>${formatDate(t.dataEntradaDistribuicao)}</td><td class="${statusClass(t,sector)}">${escapeHTML(getStatusText(t,sector))}</td></tr>`).join('');
+          const rows=items.map(t=>`<tr><td>${escapeHTML(t.numeroTalaoSequencial||'')}</td><td class="model-cell">${escapeHTML(modelKey(t))}</td><td>${escapeHTML(t.corSapato||t.cor||'')}</td><td class="num">${normalizePares(t.pares).toLocaleString('pt-BR')}</td><td>${escapeHTML(getAtelieKey(t,sector))}</td><td>${window.RomaProducao.detail(t,'corte',formatDate)}</td><td>${window.RomaProducao.detail(t,'palmilha',formatDate)}</td><td>${window.RomaProducao.detail(t,'sola',formatDate)}</td><td>${window.RomaProducao.entryDetail(t,sector,formatDate)}</td><td>${window.RomaProducao.detail(t,sector,formatDate)}</td><td>${window.RomaProducao.applicable(t,sector)?(formatDate(t[window.Roma.FACTORY_RECEIPTS[sector].date])||'Pendente'):'Não se aplica'}</td><td class="${statusClass(t,sector)}">${escapeHTML(getStatusText(t,sector))}</td></tr>`).join('');
           return `<div class="remessa-card ${tipoClass(first)}"><div class="remessa-card-header"><div><span class="remessa-info-label">Remessa</span><span class="remessa-info-value">${escapeHTML(remessa)}</span></div><div><span class="remessa-info-label">Data de corte</span><span class="remessa-info-value">${formatDate(first.dataCorte)}</span></div><div><span class="remessa-info-label">Entrega</span><span class="remessa-info-value">${formatDate(first.dataEntrega)}</span></div><div><span class="remessa-info-label">Tipo cliente</span><span class="remessa-info-value">${escapeHTML(tipoLabel(first))}</span></div></div><table class="remessa-card-table"><thead><tr><th>Talão</th><th>Linha/Modelo</th><th>Cor</th><th>Pares</th><th>Ateliê ${cfg.name}</th><th>Corte</th><th>Palmilha</th><th>Sola</th><th>Entrada ${cfg.name}</th><th>Saída ${cfg.name}</th><th>Entrada Fábrica</th><th>Status ${cfg.name}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
         }).join('')}</div>`;
       }
@@ -350,10 +351,12 @@
           const name=getAtelieKey(list[0],sector);
           const dates=Array.from(groupDocs(list,t=>toISODateOnly(t.dataCorte)||'Sem data').entries()).sort((a,b)=>compareText(a[0],b[0]));
           const rows=dates.map(([date,items])=>{
-            const waiting=items.filter(t=>!has(t[cfg.start])),started=items.filter(t=>has(t[cfg.start]));
-            return `<tr><td>${dateLabel(date)}</td><td class="num">${valueButton(waiting,`${cfg.name} • ${name} • ${dateLabel(date)} — Sem entrada`,sector)}</td><td class="num">${valueButton(started,`${cfg.name} • ${name} • ${dateLabel(date)} — Em produção`,sector)}</td></tr>`;
+            const waiting=items.filter(t=>!has(t[cfg.start])&&!window.RomaProducao.complete(t,sector));
+            const started=items.filter(t=>has(t[cfg.start])&&!window.RomaProducao.complete(t,sector));
+            const awaitingReceipt=items.filter(t=>window.RomaProducao.complete(t,sector)&&!window.Roma.factoryReceived(t,sector));
+            return `<tr><td>${dateLabel(date)}</td><td class="num">${valueButton(waiting,`${cfg.name} • ${name} • ${dateLabel(date)} — Sem entrada`,sector)}</td><td class="num">${valueButton(started,`${cfg.name} • ${name} • ${dateLabel(date)} — Em produção`,sector)}</td><td class="num">${valueButton(awaitingReceipt,`${cfg.name} • ${name} • ${dateLabel(date)} — Aguardando recebimento`,sector)}</td></tr>`;
           }).join('');
-          return `<div class="modal-card"><div class="modal-card-head"><h4>${escapeHTML(name)}</h4><strong>${sumTotal(list).toLocaleString('pt-BR')} pares</strong></div><div class="modal-card-body"><table class="atelier-status-table"><thead><tr><th>Data corte</th><th>Sem entrada</th><th>Em produção</th></tr></thead><tbody>${rows}</tbody></table><p class="sector-status-note">Clique no valor para abrir modelos e talões deste ateliê.</p></div></div>`;
+          return `<div class="modal-card"><div class="modal-card-head"><h4>${escapeHTML(name)}</h4><strong>${sumTotal(list).toLocaleString('pt-BR')} pares</strong></div><div class="modal-card-body"><table class="atelier-status-table"><thead><tr><th>Data corte</th><th>Sem entrada</th><th>Em produção</th><th>Aguardando recebimento</th></tr></thead><tbody>${rows}</tbody></table><p class="sector-status-note">Clique no valor para abrir modelos e talões deste ateliê.</p></div></div>`;
         }).join('')||'<div class="modal-card full"><div class="modal-card-body">Nenhum componente pendente neste setor.</div></div>';
         openModal(`Giro de ${cfg.name}`,`${pending.length.toLocaleString('pt-BR')} talões • ${sumTotal(pending).toLocaleString('pt-BR')} pares pendentes`,`<div class="modal-grid">${cards}</div>`);
       }

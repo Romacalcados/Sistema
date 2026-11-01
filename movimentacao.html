@@ -329,22 +329,6 @@
             th, td { padding: 6px 7px; }
         }
     </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            if (window.SistemaNavegacao && !document.querySelector('.sistema-topbar')) {
-                window.SistemaNavegacao.init({
-                    userLevel: localStorage.getItem('calcadosroma-65ac6:userNivelAcesso') || '05',
-                    userName: localStorage.getItem('calcadosroma-65ac6:userName') || 'Usuário',
-                    title: 'Romaneio de movimentações',
-                    onLogout: function () {
-                        localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
-                        localStorage.removeItem('calcadosroma-65ac6:userName');
-                        window.location.href = 'login.html';
-                    }
-                });
-            }
-        });
-    </script>
 </head>
 <body>
     <main class="main-content">
@@ -380,6 +364,8 @@
                         <option value="atelier_entrada">Ateliê / Costura - Entrada</option>
                         <option value="atelier_saida">Ateliê / Costura - Saída</option>
                         <option value="distribuicao_entrada">Distribuição - Entrada</option>
+                        <option value="recebimento_sola">Fábrica - Recebimento Sola</option>
+                        <option value="recebimento_palmilha">Fábrica - Recebimento Palmilha</option>
                         <option value="talonagem_entrada">Talonagem - Entrada</option>
                         <option value="montagem_entrada">Montagem - Entrada</option>
                     </select>
@@ -501,7 +487,7 @@
             </section>
 
             <div class="warning-note">
-                <strong>Importante:</strong> este romaneio é somente leitura e não altera o banco. Em etapas posteriores, o sistema atual pode preencher automaticamente datas de etapas anteriores quando elas estão vazias. Por isso, para auditoria 100% exata de “quem bipou o quê” no futuro, o ideal é também registrar cada leitura em um histórico de movimentações separado.
+                <strong>Como ler o relatório:</strong> a chegada da Costura é registrada na Distribuição. Sola e Palmilha têm recebimentos próprios na fábrica. A leitura da Talonagem confirma a reunião dos componentes do talão. Cada movimento abaixo usa a data e o usuário registrados na respectiva etapa.
             </div>
         </section>
     </main>
@@ -533,6 +519,7 @@
         const MOVEMENTS = {
             atelier_entrada: {
                 id: 'atelier_entrada',
+                atelierSector: 'costura',
                 setor: 'Ateliê / Costura',
                 tipo: 'Entrada',
                 dateFields: ['costuraDataInicio', 'dataEntradaCostura', 'dataEntradaAtelie'],
@@ -540,6 +527,7 @@
             },
             atelier_saida: {
                 id: 'atelier_saida',
+                atelierSector: 'costura',
                 setor: 'Ateliê / Costura',
                 tipo: 'Saída',
                 dateFields: ['dataSaidaCostura', 'costuraDataFim'],
@@ -547,13 +535,31 @@
             },
             distribuicao_entrada: {
                 id: 'distribuicao_entrada',
+                atelierSector: 'costura',
                 setor: 'Distribuição',
                 tipo: 'Entrada',
                 dateFields: ['dataEntradaDistribuicao', 'entradaDistribuicao', 'dataEntradaFabrica'],
                 userFields: ['usuarioDistribuicao']
             },
+            recebimento_sola: {
+                id: 'recebimento_sola',
+                atelierSector: 'sola',
+                setor: 'Fábrica / Sola',
+                tipo: 'Recebimento',
+                dateFields: ['dataRecebimentoSola'],
+                userFields: ['usuarioRecebimentoSola']
+            },
+            recebimento_palmilha: {
+                id: 'recebimento_palmilha',
+                atelierSector: 'palmilha',
+                setor: 'Fábrica / Palmilha',
+                tipo: 'Recebimento',
+                dateFields: ['dataRecebimentoPalmilha'],
+                userFields: ['usuarioRecebimentoPalmilha']
+            },
             talonagem_entrada: {
                 id: 'talonagem_entrada',
+                atelierSector: 'costura',
                 setor: 'Talonagem',
                 tipo: 'Entrada',
                 dateFields: ['dataEntradaTalonagem'],
@@ -561,6 +567,7 @@
             },
             montagem_entrada: {
                 id: 'montagem_entrada',
+                atelierSector: 'costura',
                 setor: 'Montagem',
                 tipo: 'Entrada',
                 dateFields: ['dataEntradaMontagem'],
@@ -615,18 +622,20 @@
 
         async function loadAtelies() {
             try {
-                const q = query(collection(db, 'atelies'), where('setor', '==', 'costura'));
-                const snap = await getDocs(q);
-                const nomes = snap.docs
-                    .map((d) => String(d.data().nome || '').trim())
-                    .filter(Boolean)
-                    .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+                const snap = await getDocs(collection(db, 'atelies'));
+                const atelies = snap.docs
+                    .map(d => ({...d.data(),id:d.id,nome:String(d.data().nome || '').trim()}))
+                    .filter(a => window.Roma.SECTORS[a.setor] && String(a.nome || '').trim())
+                    .sort((a, b) => a.setor.localeCompare(b.setor) || a.nome.localeCompare(b.nome, 'pt-BR', { numeric: true }));
 
                 filterAtelie.innerHTML = '<option value="">Todos os ateliês</option>';
-                [...new Set(nomes)].forEach((nome) => {
+                atelies.forEach((atelie) => {
                     const option = document.createElement('option');
-                    option.value = nome;
-                    option.textContent = nome;
+                    option.value = `${atelie.setor}:${atelie.id}`;
+                    option.dataset.sector = atelie.setor;
+                    option.dataset.atelieId = atelie.id;
+                    option.dataset.atelieName = String(atelie.nome).trim();
+                    option.textContent = `${window.Roma.SECTORS[atelie.setor].name} — ${String(atelie.nome).trim()}`;
                     filterAtelie.appendChild(option);
                 });
             } catch (error) {
@@ -787,7 +796,9 @@
                     tipo: movement.tipo,
                     dataMovimento: date,
                     usuario: resolveText(data, movement.userFields),
-                    atelie: getAtelie(data),
+                    atelie: getAtelie(data, movement.atelierSector),
+                    atelieSector: movement.atelierSector,
+                    atelieId: String(data[window.Roma.SECTORS[movement.atelierSector].owner] || ''),
                     linha: getText(data, ['linha', 'Linha', 'codLinha']),
                     modelo: getText(data, ['modelo', 'Modelo', 'codModelo']),
                     pares: getNumber(data, ['pares', 'Pares', 'quantidadePares', 'qtdPares']),
@@ -807,12 +818,15 @@
         }
 
         function applyLocalFilters(events) {
-            const atelier = normalize(filterAtelie.value);
+            const atelier = filterAtelie.value ? filterAtelie.selectedOptions[0] : null;
             const linha = normalizeCode(filterLinha.value);
             const modelo = normalizeCode(filterModelo.value);
 
             return events.filter((event) => {
-                if (atelier && normalize(event.atelie) !== atelier) return false;
+                if (atelier) {
+                    if (event.atelieSector !== atelier.dataset.sector) return false;
+                    if (event.atelieId ? event.atelieId !== atelier.dataset.atelieId : normalize(event.atelie) !== normalize(atelier.dataset.atelieName)) return false;
+                }
                 if (linha && normalizeCode(event.linha) !== linha) return false;
                 if (modelo && normalizeCode(event.modelo) !== modelo) return false;
                 return true;
@@ -849,7 +863,7 @@
         function renderTitle(events, start, end) {
             const movementLabel = filterMovimento.options[filterMovimento.selectedIndex]?.textContent || 'Movimentações';
             const parts = [movementLabel];
-            if (filterAtelie.value) parts.push(`Ateliê: ${filterAtelie.value}`);
+            if (filterAtelie.value) parts.push(`Ateliê: ${filterAtelie.selectedOptions[0].textContent}`);
             if (filterLinha.value.trim()) parts.push(`Linha: ${filterLinha.value.trim()}`);
             if (filterModelo.value.trim()) parts.push(`Modelo: ${filterModelo.value.trim()}`);
 
@@ -900,8 +914,9 @@
             const groups = new Map();
             events.forEach((e) => {
                 const atelie = e.atelie || 'Sem ateliê';
-                if (!groups.has(atelie)) groups.set(atelie, { atelie, pares: 0, taloes: new Set() });
-                const g = groups.get(atelie);
+                const key = `${e.atelieSector}|${e.atelieId || atelie}`;
+                if (!groups.has(key)) groups.set(key, { atelie, setor:window.Roma.SECTORS[e.atelieSector].name, pares: 0, taloes: new Set() });
+                const g = groups.get(key);
                 g.pares += e.pares;
                 g.taloes.add(e.docId);
             });
@@ -911,7 +926,7 @@
             $('atelierSummaryBody').innerHTML = rows.length
                 ? rows.map((g) => `
                     <tr>
-                        <td class="strong">${escapeHtml(g.atelie)}</td>
+                        <td class="strong">${escapeHtml(g.setor)} — ${escapeHtml(g.atelie)}</td>
                         <td class="num">${formatNumber(g.taloes.size)}</td>
                         <td class="num strong">${formatNumber(g.pares)}</td>
                     </tr>
@@ -985,7 +1000,11 @@
             return 0;
         }
 
-        function getAtelie(data) {
+        function getAtelie(data, sector = 'costura') {
+            if (sector !== 'costura') {
+                const config = window.Roma.SECTORS[sector];
+                return getText(data, [config.nameField]) || 'Sem ateliê';
+            }
             return getText(data, [
                 'idAtelieResponsavel', 'idAtelierResponsavel', 'atelieResponsavel',
                 'atelierResponsavel', 'nomeAtelie', 'nomeAtelier', 'atelie', 'atelier', 'Atelie', 'Atelier'

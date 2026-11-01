@@ -6,9 +6,9 @@
 <script src="roma-core.js"></script>
   <script src="roma-producao.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cronograma - Calçados Roma (v5 - resumo estilo Excel)</title>
+  <title>Cronograma - Calçados Roma | Padrão Factor + Planejamento</title>
   <style>
-    :root { --bg:#f4f4f4; --ink:#333; --ink-2:#555; --card:#fff; --muted:#777;
+:root { --bg:#f4f4f4; --ink:#333; --ink-2:#555; --card:#fff; --muted:#777;
       --pri:#007bff; --pri-700:#0056b3; --danger:#dc3545; --danger-700:#c82333; --ok:#345fec; --bd:#ddd; --chip:#f0f0f0; }
     *{box-sizing:border-box}
     body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;min-height:100vh;display:flex;flex-direction:column}
@@ -63,7 +63,7 @@
 
     #logoutButton{background:var(--danger);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer}
     #logoutButton:hover{background:var(--danger-700)}
-    .container{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.08);width:100%;max-width:1200px}
+    .container{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.08);width:100%;max-width:100%;min-width:0}
     .summary-info{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;background:var(--chip);padding:8px;border-radius:8px;margin-bottom:12px;font-size:.9em}
     .summary-item{
       background:#fff;border:1px solid var(--bd);border-radius:10px;padding:8px 10px;text-align:center;
@@ -71,6 +71,38 @@
       min-width: 100px;
     }
     .summary-item strong{display:block;font-size:1.15em}
+    /* v8: o card conserva o tamanho e abre o detalhamento dos modelos. */
+    .summary-item.summary-total-pares {
+      background:var(--pri);color:#fff;font:inherit;line-height:inherit;
+      appearance:none;cursor:pointer;transition:background .15s;
+    }
+    .summary-item.summary-total-pares:hover{background:var(--pri-700)}
+    .summary-item.summary-total-pares:focus-visible{outline:3px solid var(--pri-700);outline-offset:3px}
+    #totalParesModal .modal-content{max-width:680px}
+    #totalParesModal .modal-head h3{margin:0;font-size:1.1rem}
+    #totalParesCloseButton{
+      position:absolute;right:10px;top:6px;border:0;background:transparent;
+      color:#666;font-size:26px;line-height:1;padding:4px 6px;cursor:pointer;
+    }
+    #totalParesCloseButton:hover{color:#111}
+    #totalParesCloseButton:focus-visible{outline:2px solid var(--pri);border-radius:4px}
+    #totalParesResumo{
+      margin:12px 0 8px;padding:10px;border-radius:8px;background:var(--chip);
+      color:var(--ink);font-size:.9rem;font-weight:700;line-height:1.4;
+    }
+    #totalParesModal .total-pares-note{margin:8px 0;color:var(--ink-2);font-size:.82rem;line-height:1.4}
+    #totalParesModal .total-pares-table-wrapper{max-height:60vh;overflow:auto;margin-top:10px}
+    #totalParesModal table{font-size:.88rem;table-layout:fixed}
+    #totalParesModal th,#totalParesModal td{padding:8px 10px;white-space:normal;overflow-wrap:anywhere}
+    #totalParesModal th:first-child,#totalParesModal td:first-child{text-align:left;width:56%}
+    #totalParesModal th:not(:first-child),#totalParesModal td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+    #totalParesModal thead th{position:sticky;top:0;background:#f2f2f2;z-index:1}
+    #totalParesModal tbody tr:nth-child(even){background:#f8f9fb}
+    #totalParesModal tfoot th,#totalParesModal tfoot td{background:#eaf2ff;font-weight:700}
+    @media(max-width:768px){
+      #totalParesModal table{font-size:.8rem}
+      #totalParesModal th,#totalParesModal td{padding:7px 6px}
+    }
     /* Estilos para os novos filtros (links) */
     .filter-link {
         cursor: pointer;
@@ -98,7 +130,7 @@
         border-radius: 10px;
         box-shadow: 0 2px 10px rgba(0,0,0,.08);
         width: 100%;
-        max-width: 1200px;
+        max-width: 100%;
         margin-bottom: 14px;
         text-align: left;
         font-size: 0.9em;
@@ -452,49 +484,174 @@
     }
 
 
-    /* Correção mobile: evita que o checkbox de linhas fique por cima do número */
-    #lineCheckboxes label {
+    /* Filtros sem rolagem e botoes com texto em duas linhas. */
+    .main-content > .container,
+    .main-content > .filters-container {
+      width: 96%;
+      max-width: 1600px;
+    }
+    #lineFilterContainer.line-filter-container {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      padding: 7px 9px;
+      margin-bottom: 12px;
       gap: 7px;
-      min-width: 58px;
-      padding: 4px 6px;
+      flex-wrap: nowrap;
       align-items: center;
       justify-content: flex-start;
+      font-size: 12px;
+      border-color: #d7dee8;
+    }
+    #lineFilterContainer .line-filter-title {
+      flex: 0 0 auto;
+      width: auto;
+      margin: 0;
+      color: var(--ink-2);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    #toggleAllLinesButton {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-height: 38px;
+      padding: 4px 8px;
+      border: 1px solid #b7d0f7;
+      border-radius: 16px;
+      background: #eef5ff;
+      color: #1d4ed8;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: normal;
+      transition: background .2s, border-color .2s;
+    }
+    #toggleAllLinesButton .line-toggle-text {
+      display: block;
+      text-align: center;
+      white-space: nowrap;
+    }
+    #toggleAllLinesButton:hover {
+      background: #e6f0ff;
+      border-color: #8bb4f0;
+    }
+    #toggleAllLinesButton .toggle-all-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 14px;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: #2563eb;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    #lineCheckboxes.line-pill-list {
+      display: flex;
+      flex: 1 1 0%;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+      width: auto;
+      min-width: 0;
+      padding: 1px;
+      font-size: 12px;
+      overflow: visible;
+    }
+    #lineCheckboxes label {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 4px;
+      min-width: 0;
+      min-height: 28px;
+      margin: 0;
+      padding: 4px 6px;
+      border: 1px solid #d7dee8;
+      border-radius: 16px;
+      background: #fff;
+      color: #22324a;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      cursor: pointer;
     }
     #lineCheckboxes input[type="checkbox"] {
-      width: 18px !important;
-      min-width: 18px !important;
-      height: 18px !important;
+      flex: 0 0 13px !important;
+      width: 13px !important;
+      min-width: 13px !important;
+      height: 13px !important;
       margin: 0 !important;
-      flex: 0 0 18px !important;
-      display: inline-block !important;
+      padding: 0;
+      accent-color: #2563eb;
     }
-    @media (max-width: 768px) {
-      #lineCheckboxes {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(70px, 1fr));
-        gap: 8px;
+    #lineFilterContainer #selectRemessasButton {
+      flex: 0 0 auto;
+      width: auto;
+      min-width: 0;
+      min-height: 38px;
+      margin: 0;
+      padding: 4px 9px;
+      justify-content: center;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.2;
+      text-align: center;
+      white-space: pre-line;
+    }
+    #toggleAllLinesButton:focus-visible,
+    #lineFilterContainer #selectRemessasButton:focus-visible,
+    #lineCheckboxes label:focus-within {
+      outline: 2px solid #2563eb;
+      outline-offset: -2px;
+    }
+    @media (max-width: 1100px) {
+      .main-content > .container,
+      .main-content > .filters-container {
+        width: 100%;
+        max-width: 100%;
+      }
+      #lineFilterContainer.line-filter-container {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 7px;
+        margin-bottom: 10px;
+      }
+      #lineFilterContainer #selectRemessasButton { margin-left: auto; }
+      #lineCheckboxes.line-pill-list {
+        order: 1;
+        flex: 1 1 100%;
         width: 100%;
       }
-      #lineCheckboxes label {
+    }
+    @media (max-width: 480px) {
+      #lineFilterContainer .line-filter-title { flex-basis: 100%; }
+      #toggleAllLinesButton,
+      #lineFilterContainer #selectRemessasButton {
+        flex: 1 1 calc(50% - 3px);
         min-width: 0;
-        padding: 6px 8px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        background: #fff;
-        font-size: .82em;
+        margin: 0;
+        padding: 4px 6px;
       }
-      #lineCheckboxes input[type="checkbox"] {
-        width: 18px !important;
-        min-width: 18px !important;
-        height: 18px !important;
+      #lineCheckboxes label {
+        flex: 1 0 auto;
+        justify-content: center;
+        min-height: 32px;
       }
     }
-    @media (max-width: 380px) {
-      #lineCheckboxes {
-        grid-template-columns: repeat(2, minmax(80px, 1fr));
-      }
-    }
-
 
     /* Correção específica para o menu padrão do navegacao.js nesta página.
        O CSS antigo do cronograma tinha regras globais para "nav" que achatavam
@@ -534,14 +691,82 @@
       }
     }
 
-  </style>
+
+    /* v7: campos de busca compactos, sem alterar filtros internos do relatorio. */
+    @media (min-width: 769px) {
+      .main-content > .report-search-filters {
+        gap: 6px;
+        padding: 9px 10px;
+      }
+      .report-search-filters > .form-group {
+        flex: 0 1 132px;
+        min-width: 116px;
+        max-width: 132px;
+      }
+      .report-search-filters > .filter-linha {
+        flex-basis: 78px;
+        min-width: 68px;
+        max-width: 78px;
+      }
+      .report-search-filters > .filter-modelo {
+        flex-basis: 84px;
+        min-width: 68px;
+        max-width: 84px;
+      }
+      .report-search-filters > .filter-remessa {
+        flex-basis: 112px;
+        min-width: 100px;
+        max-width: 112px;
+      }
+      .report-search-filters > .date-range-field {
+        flex: 0 0 182px;
+        min-width: 182px;
+        max-width: 182px;
+      }
+      .report-search-filters label {
+        font-size: 12px;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+      .report-search-filters input:not([type="hidden"]),
+      .report-search-filters select,
+      .report-search-filters .date-range-button {
+        width: 100%;
+        min-width: 0;
+        height: 34px;
+        padding: 7px;
+        font-size: 13px;
+      }
+      .report-search-filters .date-range-button {
+        white-space: nowrap;
+      }
+      .report-search-filters > .btn {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: 7px 10px;
+        font-size: 13px;
+        line-height: 20px;
+        justify-content: center;
+        white-space: nowrap;
+      }
+    }
+    @media (min-width: 1280px) {
+      .main-content > .report-search-filters { flex-wrap: nowrap; }
+    }
+
+    /* Roma: colunas de planejamento */
+    .plan-value{font-weight:700;color:#17365d}
+    .plan-partial{font-size:.82em;color:#7c5a00;font-weight:700}
+    .plan-divided{font-size:.82em;color:#7c3aed;font-weight:700}
+    .col-prev-mont,.col-trilho-planejado{background-clip:padding-box}
+</style>
   <script src="navegacao.js"></script>
 
   <style id="roma-etapas-v2">.stage-na{color:#64748b;font-size:.86em}.stage-pending{color:#9a3412}.table-container,#detailsTableContainer,.open-stage-table-wrap{overflow-x:auto}#detailsTableContainer table{min-width:1500px}.stage-chip.stage-na{background:#f1f5f9;color:#64748b;cursor:default}</style>
 </head>
 <body>
   <div class="main-content">
-    <div class="filters-container">
+    <div class="filters-container report-search-filters">
       <div class="form-group filter-linha"><label for="filterLinha">Linha:</label><input type="text" id="filterLinha" placeholder="Ex: 7142" maxlength="5" /></div>
       <div class="form-group filter-modelo"><label for="filterModelo">Modelo:</label><input type="text" id="filterModelo" placeholder="Ex: 522" maxlength="5" /></div>
       <div class="form-group filter-remessa">
@@ -580,15 +805,15 @@
           <button class="btn btn-secondary" type="button" data-roma-whats="sola">Sola Whats</button>
         </div>
       </div>
-        <div id="lineFilterContainer" class="filters-container" style="display:none; justify-content: flex-start; max-width: 1200px; margin-bottom: 14px; align-items: flex-start;">
-            <h4 style="margin: 5px 10px 0 0; color: var(--ink-2); font-size: 1em;">Filtrar Linhas:</h4>
-            <div id="lineCheckboxes" class="column-checkboxes">
-                </div>
-               <button class="btn btn-secondary" id="selectRemessasButton" disabled style="padding: 0 20; min-width: 120px;">
-                  <span id="remessaCount">0</span> Clique para Selecionar as Remessas
-              </button>
-
-
+        <div id="lineFilterContainer" class="filters-container line-filter-container" style="display:none;">
+            <h4 class="line-filter-title">Linhas visíveis:</h4>
+            <button class="line-toggle-all-btn" id="toggleAllLinesButton" type="button">
+                <span class="toggle-all-icon">−</span>
+                <span class="line-toggle-text">Marcar/desmarcar<br>todas</span>
+            </button>
+            <div id="lineCheckboxes" class="column-checkboxes line-pill-list"></div>
+            <button class="btn btn-secondary" id="selectRemessasButton" type="button" disabled>Clique para selecionar&#10;as remessas</button>
+            <span id="remessaCount" hidden>0</span>
         </div>
       <div id="loading" class="loader" style="display:none">Carregando dados...</div>
       <div id="noData" class="loader">Selecione ao menos um filtro para iniciar a busca.</div>
@@ -627,7 +852,9 @@
                 <th colspan="2" class="separator-border col-sola-group">Sola</th>
                 <th colspan="2" class="separator-border col-distribuicao-group">Distribuir</th>
                 <th colspan="2" class="separator-border col-talonagem-group">Talonar</th>
-                <th colspan="2" class="col-montagem-group">Montar</th>
+                <th colspan="2" class="separator-border col-montagem-group">Montar</th>
+                <th rowspan="2" class="col-prev-mont">Prev. Mont.</th>
+                <th rowspan="2" class="col-trilho-planejado">Trilho</th>
               </tr>
               <tr>
                 <th class="col-corte">Pares</th><th class="separator-border col-corte">Talões</th>
@@ -636,7 +863,7 @@
                 <th class="col-sola">Pares</th><th class="separator-border col-sola">Talões</th>
                 <th class="col-distribuicao">Pares</th><th class="separator-border col-distribuicao">Talões</th>
                 <th class="col-talonagem">Pares</th><th class="separator-border col-talonagem">Talões</th>
-                <th class="col-montagem">Pares</th><th class="col-montagem">Talões</th>
+                <th class="col-montagem">Pares</th><th class="separator-border col-montagem">Talões</th>
               </tr>
             </thead>
             <tbody id="cronogramaTableBody"></tbody>
@@ -767,6 +994,7 @@
     // NOVO: Referências para o controle de Linhas
     const lineFilterContainer = document.getElementById('lineFilterContainer');
     const lineCheckboxes = document.getElementById('lineCheckboxes');
+    const toggleAllLinesButton = document.getElementById('toggleAllLinesButton');
 
     // NOVO: Referências para o controle de Remessas
     const selectRemessasButton = document.getElementById('selectRemessasButton');
@@ -881,6 +1109,15 @@
       // Recarrega a busca para incluir ou remover amostras conforme a opção marcada.
       if(reportContent.style.display !== 'none' || allFetchedTaloes.length > 0) runSearch();
     });
+
+    if (toggleAllLinesButton) {
+      toggleAllLinesButton.addEventListener('click', () => {
+        if (availableLines.size === 0) return;
+        selectedLines = areAllLinesSelected() ? new Set() : new Set([...availableLines]);
+        syncLineCheckboxUI();
+        filterAndGenerateReport();
+      });
+    }
 
     // Helpers
     function hasDate(v){ return v!==undefined && v!==null && String(v).trim()!==''; }
@@ -1272,6 +1509,26 @@
         return filteredTaloes;
     }
     
+    function areAllLinesSelected() {
+        return availableLines.size > 0 && selectedLines.size === availableLines.size;
+    }
+
+    function updateToggleAllLinesButton() {
+        if (!toggleAllLinesButton) return;
+        const icon = toggleAllLinesButton.querySelector('.toggle-all-icon');
+        if (icon) icon.textContent = areAllLinesSelected() ? '−' : '+';
+        toggleAllLinesButton.disabled = availableLines.size === 0;
+        toggleAllLinesButton.style.opacity = availableLines.size === 0 ? '0.6' : '1';
+        toggleAllLinesButton.style.cursor = availableLines.size === 0 ? 'default' : 'pointer';
+    }
+
+    function syncLineCheckboxUI() {
+        document.querySelectorAll('#lineCheckboxes input[type="checkbox"]').forEach(cb => {
+            cb.checked = selectedLines.has(cb.value);
+        });
+        updateToggleAllLinesButton();
+    }
+
     // NOVO: Função para renderizar e gerenciar o filtro de linhas (a mesma função original)
     function renderLineCheckboxes(taloes) {
         // 1. Coleta todas as linhas únicas dos talões
@@ -1285,6 +1542,9 @@
             selectedLines = new Set([...uniqueLines]);
         }
         
+        // Remove seleções que não existem mais no resultado atual.
+        selectedLines = new Set([...selectedLines].filter(line => uniqueLines.has(line)));
+
         // 4. Ordena as linhas
         const sortedLines = Array.from(uniqueLines).sort((a, b) => parseInt(a) - parseInt(b));
 
@@ -1313,6 +1573,7 @@
 
         // 6. Exibe o container de controle
         lineFilterContainer.style.display = uniqueLines.size > 0 ? 'flex' : 'none';
+        updateToggleAllLinesButton();
         
         // 7. Chama a função de filtragem e geração do relatório
         filterAndGenerateReport();
@@ -1326,6 +1587,7 @@
         } else {
             selectedLines.delete(line);
         }
+        syncLineCheckboxUI();
         // Força a re-geração do relatório com o novo filtro
         filterAndGenerateReport();
     }
@@ -1492,9 +1754,15 @@
         const linha=t.linha||'N/A',remessa=t.numeroRemessa||'N/A',tipo=t.tipoCliente||'',dataCorte=t.dataCorte||'N/A',dataEntrega=t.dataEntrega||'N/A',pares=Number(t.pares)||0;
         totalPares+=pares;
         const key=JSON.stringify([remessa,linha,dataCorte,dataEntrega]);
-        if(!grouped[key]) grouped[key]={remessa,linha,tipoCliente:tipo,paresTotal:0,taloesTotal:0,dataCorte,dataEntrega, ...Object.fromEntries(window.RomaProducao.STAGES.map(stage=>[stage,window.RomaProducao.emptyStage()]))};
+        if(!grouped[key]) grouped[key]={remessa,linha,tipoCliente:tipo,paresTotal:0,taloesTotal:0,dataCorte,dataEntrega, planTracks:new Set(),planDates:new Set(),planCount:0, ...Object.fromEntries(window.RomaProducao.STAGES.map(stage=>[stage,window.RomaProducao.emptyStage()]))};
         const g=grouped[key];g.paresTotal+=pares;g.taloesTotal++;
-        
+        const planTrack=String(t.trilhoMontagemPlanejado||'').trim();
+        const planDate=String(t.dataMontagemPlanejada||'').trim();
+        if(planTrack||planDate){
+          g.planCount++;
+          if(planTrack) g.planTracks.add(planTrack);
+          if(planDate) g.planDates.add(planDate);
+        }
         window.RomaProducao.STAGES.forEach(stage=>window.RomaProducao.addToStage(g[stage],t,stage));
       });
       updateSummaryExcel(totalPares,taloes.length,window.RomaProducao.pendingTotals(taloes));
@@ -1516,6 +1784,16 @@
       if(etapa.aplicaveis===0) return `<td colspan="2" class="${classes} stage-na" title="Componente ausente dos modelos deste grupo">Não se aplica</td>`;
       if(etapa.allDone) return `<td colspan="2" class="${classes}"><span class="status-check">✔ ${etapa.maxDate?formatDateAbreviado(etapa.maxDate):'Concluído'}</span></td>`;
       return `<td class="col-${stageName}">${etapa.paresFaltando}</td><td class="${classes}">${etapa.taloesFaltando}</td>`;
+    }
+
+    function planningGroupValue(grp, type){
+      const values=type==='track'?grp.planTracks:grp.planDates;
+      if(!grp.planCount||!values||values.size===0) return '<span class="stage-na">—</span>';
+      if(values.size>1) return '<span class="plan-divided">Dividido</span>';
+      const raw=Array.from(values)[0];
+      const value=type==='date'?formatDateAbreviado(raw):raw;
+      if(grp.planCount<grp.taloesTotal) return `<span class="plan-value">${value}</span><br><span class="plan-partial">parcial</span>`;
+      return `<span class="plan-value">${value}</span>`;
     }
 
     function renderTable(data){ 
@@ -1552,7 +1830,7 @@
       });
       
       if (filteredKeys.length === 0 && currentStageFilter) {
-          cronogramaTableBody.innerHTML = `<tr><td colspan="20" style="text-align:center;">Nenhuma remessa encontrada com a etapa de **${currentStageFilter.toUpperCase()}** em aberto.</td></tr>`;
+          cronogramaTableBody.innerHTML = `<tr><td colspan="22" style="text-align:center;">Nenhuma remessa encontrada com a etapa de **${currentStageFilter.toUpperCase()}** em aberto.</td></tr>`;
           return;
       }
 
@@ -1579,16 +1857,25 @@
         html += etapaCell(grp.talonagem,true, 'talonagem');
         
         if(grp.montagem.paresFaltando===0 && grp.montagem.allDone && grp.montagem.maxDate){ 
-          html += `<td colspan="2" class="col-montagem"><span class="status-check">✔ ${formatDateAbreviado(grp.montagem.maxDate)}</span></td>`; 
+          html += `<td colspan="2" class="separator-border col-montagem"><span class="status-check">✔ ${formatDateAbreviado(grp.montagem.maxDate)}</span></td>`; 
         } else { 
-          html += `<td class="col-montagem">${grp.montagem.paresFaltando}</td><td class="col-montagem">${grp.montagem.taloesFaltando}</td>`; 
+          html += `<td class="col-montagem">${grp.montagem.paresFaltando}</td><td class="separator-border col-montagem">${grp.montagem.taloesFaltando}</td>`; 
         }
+        html += `<td class="col-prev-mont">${planningGroupValue(grp,'date')}</td><td class="col-trilho-planejado">${planningGroupValue(grp,'track')}</td>`;
         tr.innerHTML=html; cronogramaTableBody.appendChild(tr);
       }); 
     }
     
     // === FUNÇÕES DO MODAL DE DETALHES DA REMESSA (TABELA) ===
     
+    function factoryReceiptDetail(t,sector) {
+      if(!window.Roma.stageApplicable(t,sector))return '<span class="stage-na">Não se aplica</span>';
+      const field=window.Roma.FACTORY_RECEIPTS[sector].date;
+      return window.Roma.factoryReceived(t,sector)
+        ? `<span class="status-check">✔ ${formatDateAbreviado(t[field])}</span>`
+        : '<span class="stage-pending">Pendente</span>';
+    }
+
     // Define a estrutura HTML padrão para a tabela de detalhes
     function setupModalForDetails() {
         modalBodyContent.innerHTML = `
@@ -1601,7 +1888,7 @@
                     <thead>
                         <tr>
                         <th>Talão</th><th>Linha</th><th>Modelo</th><th>Pares</th><th>Cor</th><th>Data Corte</th><th>Ateliê</th>
-                        <th>Corte</th><th>Entrada Costura</th><th>Saída Costura</th><th>Ateliê Palmilha</th><th>Entrada Palmilha</th><th>Saída Palmilha</th><th>Ateliê Sola</th><th>Entrada Sola</th><th>Saída Sola</th><th>Distribuição</th><th>Talonagem</th><th>Montagem</th><th>Trilho</th>
+                        <th>Corte</th><th>Entrada Costura</th><th>Saída Costura</th><th>Ateliê Palmilha</th><th>Entrada Palmilha</th><th>Saída Palmilha</th><th>Recebimento Palmilha</th><th>Ateliê Sola</th><th>Entrada Sola</th><th>Saída Sola</th><th>Recebimento Sola</th><th>Distribuição</th><th>Talonagem</th><th>Montagem</th><th>Prev. Mont.</th><th>Trilho Plan.</th><th>Trilho Real</th>
                         </tr>
                     </thead>
                     <tbody id="modalTableBody"></tbody>
@@ -1625,7 +1912,7 @@
       document.getElementById('remessaCliente').textContent = valoresUnicos('cliente').join('\n') || 'Não informado';
       document.getElementById('remessaNormativa').textContent = valoresUnicos('normativa').join('\n\n') || 'Não informada';
       if(list.length===0){ 
-        modalTableBody.innerHTML = `<tr><td colspan="20" style="text-align:center;">Nenhum detalhe encontrado para esta remessa.</td></tr>`; 
+        modalTableBody.innerHTML = `<tr><td colspan="24" style="text-align:center;">Nenhum detalhe encontrado para esta remessa.</td></tr>`; 
         detailsModal.style.display='block'; 
         return; 
       } 
@@ -1646,12 +1933,16 @@
           <td>${window.RomaProducao.escape(t.idAteliePalmilhaResponsavel||'')}</td>
           <td>${window.RomaProducao.entryDetail(t,'palmilha',formatDateAbreviado)}</td>
           <td>${window.RomaProducao.detail(t,'palmilha',formatDateAbreviado)}</td>
+          <td>${factoryReceiptDetail(t,'palmilha')}</td>
           <td>${window.RomaProducao.escape(t.idAtelieSolaResponsavel||'')}</td>
           <td>${window.RomaProducao.entryDetail(t,'sola',formatDateAbreviado)}</td>
           <td>${window.RomaProducao.detail(t,'sola',formatDateAbreviado)}</td>
+          <td>${factoryReceiptDetail(t,'sola')}</td>
           <td>${t.dataEntradaDistribuicao? `✔ ${formatDateAbreviado(t.dataEntradaDistribuicao)}` : ''}</td>
           <td>${t.dataEntradaTalonagem? `✔ ${formatDateAbreviado(t.dataEntradaTalonagem)}` : ''}</td>
           <td>${t.dataEntradaMontagem? `✔ ${formatDateAbreviado(t.dataEntradaMontagem)}` : ''}</td>
+          <td>${t.dataMontagemPlanejada?formatDateAbreviado(t.dataMontagemPlanejada):''}</td>
+          <td>${t.trilhoMontagemPlanejado||''}</td>
           <td>${t.trilhoProduzido||''}</td>
         `;
         modalTableBody.appendChild(tr); 
@@ -1872,9 +2163,9 @@
 
     function showResumoGiroFabricaModal(taloes) {
         
-        // 1. Disponível para Montar (Entrou em Dist. ou Tal. E Não entrou em Mont.)
+        // 1. Disponível para Montar: conjunto conferido na Talonagem e ainda não montado.
         const disponivelTaloes = taloes.filter(t => 
-            (hasDate(t.dataEntradaDistribuicao) || hasDate(t.dataEntradaTalonagem)) && 
+            hasDate(t.dataEntradaTalonagem) && 
             !hasDate(t.dataEntradaMontagem)
         );
         
@@ -1902,7 +2193,7 @@
 
         const cardData = [
             {
-                title: 'Na Fabrica por modelo',
+                title: 'Disponível para Montagem por modelo',
                 items: disponivelML,
                 cardColor: '#bdbdbd' // Verde Claro (Pronto/Estoque)
             },
@@ -1912,7 +2203,7 @@
                 cardColor: '#bdbdbd' // Laranja Claro (Em Etapa Chave)
             },
             {
-                title: 'Na Fabrica por Linha',
+                title: 'Disponível para Montagem por linha',
                 items: disponivelL,
                 cardColor: '#bdbdbd' // Azul Claro (Resumo Linha)
             },
@@ -2063,6 +2354,8 @@
         { label: 'Distribuição', selectors: ['.col-distribuicao-group', '.col-distribuicao'], defaultChecked: true },
         { label: 'Talonagem', selectors: ['.col-talonagem-group', '.col-talonagem'], defaultChecked: true },
         { label: 'Montagem', selectors: ['.col-montagem-group', '.col-montagem'], defaultChecked: true },
+        { label: 'Prev. Mont.', selectors: ['.col-prev-mont'], defaultChecked: true },
+        { label: 'Trilho', selectors: ['.col-trilho-planejado'], defaultChecked: true },
     ];
 
     function setupColumnControl() {

@@ -1,0 +1,47 @@
+CALÇADOS ROMA — NOMES E CORES DOS RECEBIMENTOS
+Atualização visual: 01/11/2026
+
+O QUE MUDOU
+
+- Distribuição agora se chama Recebimento Costura.
+- Recebimento Costura: VERDE.
+- Recebimento Palmilha: AZUL.
+- Recebimento Sola: ROXO.
+
+Cada página usa sua cor no cabeçalho, na área de leitura, no botão de
+registro e nos detalhes da tabela. O menu usa o mesmo padrão neutro em
+todos os itens, com destaque cinza na página aberta.
+
+Se as cores já foram aplicadas ao menu pela primeira entrega, extraia
+Ajuste_Menu_Roma.zip e substitua somente navegacao.js na hospedagem.
+
+O nome do setor aparece junto da leitura e do botão Registrar Costura,
+Registrar Palmilha ou Registrar Sola, para facilitar a conferência antes
+de bipar. As permissões e o funcionamento dos recebimentos são os mesmos.
+
+COMO APLICAR
+
+1) Extraia Atualizacao_Cores_Recebimentos_Roma.zip.
+2) Envie todos os arquivos extraídos à pasta principal do repositório
+   Romacalcados/Sistema, substituindo os existentes e mantendo os nomes.
+3) Confirme a alteração no GitHub e aguarde a publicação do site.
+4) Recarregue as páginas abertas com Ctrl+F5.
+
+Os seis arquivos do aplicativo que precisam ser atualizados juntos são:
+distribuicao.html
+recebimento_palmilha.html
+recebimento_sola.html
+roma-fabrica.css
+roma-fabrica.js
+navegacao.js
+
+O pacote também contém a documentação atualizada. O arquivo da Costura
+continua se chamando distribuicao.html; seu nome visível passou a ser
+Recebimento Costura. Preserve esse nome de arquivo ao enviar ao GitHub.
+
+Esta atualização visual não exige publicar novas regras ou índices no
+Firebase. Ela pressupõe o fluxo de recebimentos entregue em31/10/2026.
+
+O pacote Sistema_Calcados_Roma.zip contém o sistema completo com esta
+alteração incorporada. Os arquivos foram preparados para publicação;
+nenhuma alteração foi enviada automaticamente ao GitHub ou ao Firebase.

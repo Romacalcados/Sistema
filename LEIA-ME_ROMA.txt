@@ -1,5 +1,11 @@
 CALÇADOS ROMA — INSTALAÇÃO E OPERAÇÃO DA VERSÃO 2
 Preparado em 22/10/2026
+Atualizado em 31/10/2026 — recebimentos da fábrica e Talonagem
+Identificação visual em 01/11/2026 — Costura verde, Palmilha azul e Sola roxo
+Planejamento de Montagem em 01/11/2026 — remessas, talões e três trilhos
+Formato revisado em 01/11/2026 — tabela do Cronograma, Trilho e Prev. Mont.
+Salvamento automático em 01/11/2026 — dados da remessa e Dis na Fab
+Programação revisada em 01/11/2026 — um card por trilho, de segunda a sexta
 Projeto Firebase: calcadosroma-65ac6
 Banco: Cloud Firestore, instância (default)
 
@@ -7,8 +13,29 @@ Banco: Cloud Firestore, instância (default)
 
 A versão 2 inclui os nove perfis, os setores Costura, Palmilha e Sola, a
 composição dos modelos, a distribuição dos ateliês em três abas e as regras
-de acesso correspondentes. São 44 páginas HTML: as 33 páginas da base,
-dez páginas dos novos setores e a página Preparação da Roma.
+de acesso correspondentes. São 47 páginas HTML: as 33 páginas da base,
+dez páginas dos novos setores, a página Preparação da Roma e duas páginas
+de recebimento na fábrica, para Sola e Palmilha, e Planejamento de Montagem.
+
+A planejamento.html tem as abas Planejamento e Programação. A tabela segue
+o Cronograma e permite editar Trilho e Prev. Mont. nas duas últimas colunas,
+com salvamento automático a cada alteração e a cor da linha até o final.
+Dis na Fab mostra pares disponíveis com todos os componentes exigidos já
+recebidos, excluindo montados. O número da remessa abre os talões para ajustes
+individuais e mostra cliente, normativas, entrega e corte no topo.
+A Programação mostra cinco cards semanais, um por trilho, com remessas,
+pares e total de cada dia. Os modelos ficam no detalhe ao clicar na remessa.
+A navegação troca a semana dos três trilhos juntos. Cada card mantém cinco
+colunas fixas, de segunda a sexta, e a impressão usa o mesmo formato.
+Previsões para sábado/domingo são informadas à parte, quando existirem.
+Siga GUIA_PLANEJAMENTO_ROMA.txt. Esta revisão usa as mesmas
+regras já entregues para o Planejamento. Montagem 06 consulta;
+Programação 07, Financeiro 08 e Admin 09 alteram o planejamento. O menu mantém
+o padrão neutro; as cores dos recebimentos permanecem somente nas páginas.
+
+Para aplicar somente a atualização de recebimentos de 31/10/2026, siga
+GUIA_RECEBIMENTOS_ROMA.txt. Ela inclui novas regras do Firestore e altera
+a conferência de Talonagem e Montagem; os arquivos devem ser atualizados juntos.
 
 A configuração principal está centralizada em firebase-config.js:
 
@@ -172,9 +199,11 @@ Os mesmos cinco fluxos, no setor Palmilha. Consulta e opera somente os
 talões atribuídos ao seu UID na Palmilha e em que esse componente se aplica.
 
 06 — Montagem
-Distribuição, Talonagem, Montagem, Talões Perdidos, Programação de Corte,
-Cronograma, Cronograma Celular e Giro de Produção. Executa os registros
-operacionais da fábrica permitidos para esse setor.
+Recebimento Costura, Recebimento Sola, Recebimento Palmilha, Talonagem, Montagem,
+Talões Perdidos, Programação de Corte, Cronograma, Cronograma Celular e Giro
+de Produção. Executa os registros operacionais da fábrica permitidos para
+esse setor. Talonagem confere os componentes em uma leitura; Montagem
+exige Talonagem já registrada.
 
 07 — Programação
 Acesso às páginas de planejamento, criação de distribuições, Distribuição
@@ -217,7 +246,7 @@ Restrições que valem em todas as telas:
 - Um setor não toma para si um talão sem responsável. O vínculo deve ser
   definido na distribuição ou pelo Corte antes da leitura.
 
-ACESSOS_ROMA.txt contém a relação completa das 43 páginas do menu e os
+ACESSOS_ROMA.txt contém a relação completa das 45 páginas do menu e os
 perfis de cada página, além dos limites de operação.
 
 5. MODELOS, COMPONENTES E PREÇOS

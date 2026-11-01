@@ -10,7 +10,13 @@
   const COMPONENTS = Object.freeze(['cabedal','forro','tiras','aviamentos','palmilha','sola']);
   const CUT_COMPONENTS = Object.freeze(['cabedal','forro','tiras','aviamentos']);
   const CUT_FIELDS = Object.freeze({cabedal:'cabedal',forro:'forro',tiras:'tiras',aviamentos:'aviamento'});
+  const FACTORY_RECEIPTS = Object.freeze({
+    costura: Object.freeze({date:'dataEntradaDistribuicao',user:'usuarioDistribuicao'}),
+    sola: Object.freeze({date:'dataRecebimentoSola',user:'usuarioRecebimentoSola'}),
+    palmilha: Object.freeze({date:'dataRecebimentoPalmilha',user:'usuarioRecebimentoPalmilha'})
+  });
   const LEGACY_COMPONENTS = Object.freeze({cabedal:true,forro:true,tiras:true,aviamentos:true,palmilha:false,sola:false});
+  const DEFAULT_MODEL_COMPONENTS = Object.freeze({cabedal:true,forro:true,tiras:true,aviamentos:true,palmilha:true,sola:true});
   let session = null;
   function normalizeComponents(data) {
     const raw = data && (data.componentes || (COMPONENTS.some(k=>typeof data[k]==='boolean') ? data : null));
@@ -26,7 +32,7 @@
     const activeStatuses=['Em Produção','Em produção','Finalizado','Concluído','Montado'];
     return Object.values(CUT_FIELDS).some(f=>data?.[f+'Concluido']===true || hasDate(data?.[f+'Data']))
       || Object.values(SECTORS).some(s=>hasDate(data?.[s.start])||hasDate(data?.[s.end])||activeStatuses.includes(data?.[s.status]))
-      || ['dataEntradaDistribuicao','dataEntradaTalonagem','dataEntradaMontagem'].some(f=>hasDate(data?.[f]));
+      || ['dataEntradaDistribuicao','dataRecebimentoSola','dataRecebimentoPalmilha','dataEntradaTalonagem','dataEntradaMontagem'].some(f=>hasDate(data?.[f]));
   }
   function cutCompletionDate(data) {
     if (!cutComplete(data)) return null;
@@ -34,6 +40,56 @@
   }
   function stageApplicable(data,sector) { return sector==='costura' || requiresComponent(data,sector); }
   function stageComplete(data,sector) { const s=SECTORS[sector]; return !stageApplicable(data,sector) || data?.[s.status]==='Finalizado' || hasDate(data?.[s.end]); }
+  function localISODate(date=new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  }
+  function factoryDate(value) {
+    if(typeof value!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+    const date=new Date(`${value}T12:00:00Z`);
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0,10)===value ? value : '';
+  }
+  function factoryReceived(data,sector) {
+    const receipt=FACTORY_RECEIPTS[sector];
+    return !!receipt && hasDate(data?.[receipt.date]);
+  }
+  function factoryChecks(data) {
+    return Object.entries(FACTORY_RECEIPTS).map(([sector,receipt])=>{
+      const applicable=stageApplicable(data,sector);
+      const exitDate=hasDate(data?.[SECTORS[sector].end]) ? data[SECTORS[sector].end] : '';
+      const receiptDate=hasDate(data?.[receipt.date]) ? data[receipt.date] : '';
+      const finished=!!exitDate, received=!!receiptDate;
+      return {sector,label:SECTORS[sector].name,applicable,finished,received,ready:!applicable || (finished && received),receiptDate,exitDate};
+    });
+  }
+  function factoryReady(data) { return factoryChecks(data).every(check=>check.ready); }
+  function factoryPending(data) {
+    return factoryChecks(data).filter(check=>check.applicable).flatMap(check=>[
+      ...(!check.finished ? [`${check.label}: saída do ateliê pendente`] : []),
+      ...(!check.received ? [`${check.label}: recebimento na fábrica pendente`] : [])
+    ]);
+  }
+  function validateFactoryStamp(date,operatorName) {
+    if(!factoryDate(date)) throw new Error('Data de leitura inválida.');
+    if(typeof operatorName!=='string' || !operatorName.trim()) throw new Error('Operador da leitura não identificado. Entre novamente.');
+  }
+  function factoryReceiptPatch(data,sector,date=localISODate(),operatorName='') {
+    const receipt=FACTORY_RECEIPTS[sector], stage=SECTORS[sector];
+    if(!receipt || !stage) throw new Error('Setor de recebimento inválido.');
+    validateFactoryStamp(date,operatorName);
+    if(!stageApplicable(data,sector)) throw new Error(`Este modelo não contém ${stage.name.toLowerCase()}.`);
+    if(hasDate(data?.[receipt.date])) throw new Error(`${stage.name} já recebida na fábrica.`);
+    if(hasDate(data?.dataEntradaTalonagem) || hasDate(data?.dataEntradaMontagem)) throw new Error('Este talão já passou pela Talonagem ou Montagem. Confira os registros antes de receber novamente.');
+    if(!hasDate(data?.[stage.end])) throw new Error(`Registre a saída do ateliê de ${stage.name} antes do recebimento na fábrica.`);
+    return {[receipt.date]:date,[receipt.user]:operatorName,...(sector==='costura'?{statusGeral:'Distribuído'}:{})};
+  }
+  function talonagemPatch(data,date=localISODate(),operatorName='') {
+    validateFactoryStamp(date,operatorName);
+    if(hasDate(data?.dataEntradaTalonagem)) throw new Error('Este talão já foi lido na Talonagem.');
+    if(hasDate(data?.dataEntradaMontagem)) throw new Error('Este talão já passou pela Montagem.');
+    const pending=factoryPending(data);
+    if(pending.length) throw new Error(`Talonagem pendente: ${pending.join('; ')}.`);
+    return {dataEntradaTalonagem:date,usuarioTalonagem:operatorName,statusGeral:'Talonado'};
+  }
   function modelKey(linha,modelo) {
     const l=String(linha??'').trim().replace(/\D/g,''),m=String(modelo??'').trim();
     const parts=m.split(/[.\-_\/]/).filter(Boolean);
@@ -76,5 +132,5 @@
   function setReadOnly(elements,message) {
     elements.forEach(el=>{if(el){el.disabled=true;el.title=message||'Operação reservada ao setor responsável e ao Admin.';}});
   }
-  root.Roma=Object.freeze({ROLES,SECTORS,COMPONENTS,CUT_COMPONENTS,CUT_FIELDS,LEGACY_COMPONENTS,normalizeComponents,requiresComponent,cutItemComplete,cutComplete,cutStarted,productionStarted,cutCompletionDate,stageApplicable,stageComplete,modelKey,modelKeys,assignmentPatch,validateProfile,canWrite,requireWrite,setReadOnly,get session(){return session;}});
+  root.Roma=Object.freeze({ROLES,SECTORS,COMPONENTS,CUT_COMPONENTS,CUT_FIELDS,FACTORY_RECEIPTS,LEGACY_COMPONENTS,DEFAULT_MODEL_COMPONENTS,normalizeComponents,requiresComponent,cutItemComplete,cutComplete,cutStarted,productionStarted,cutCompletionDate,stageApplicable,stageComplete,localISODate,factoryReceived,factoryChecks,factoryReady,factoryPending,factoryReceiptPatch,talonagemPatch,modelKey,modelKeys,assignmentPatch,validateProfile,canWrite,requireWrite,setReadOnly,get session(){return session;}});
 })(typeof window!=='undefined'?window:globalThis);

@@ -33,6 +33,8 @@ Distribuição de Ateliês (distribuicaoatt.html)
   Perfis: 07 Programação; 08 Financeiro; 09 Admin.
 Criar Programação (programacao_montagem.html)
   Perfis: 07 Programação; 08 Financeiro; 09 Admin.
+Planejamento de Montagem (planejamento.html)
+  Perfis: 06 Montagem (consulta); 07 Programação; 08 Financeiro; 09 Admin.
 Romaneio (romaneio.html)
   Perfis: 07 Programação; 08 Financeiro; 09 Admin.
 Movimentações (movimentacao.html)
@@ -89,7 +91,11 @@ Entrada Ateliê (sola_entrada.html)
   Perfis: 04 Sola; 09 Admin.
 Saída Ateliê (sola_saida.html)
   Perfis: 04 Sola; 09 Admin.
-Distribuição (distribuicao.html)
+Recebimento Costura (distribuicao.html)
+  Perfis: 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Recebimento Sola (recebimento_sola.html)
+  Perfis: 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
+Recebimento Palmilha (recebimento_palmilha.html)
   Perfis: 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
 Talonagem (talonagem.html)
   Perfis: 06 Montagem; 07 Programação; 08 Financeiro; 09 Admin.
@@ -114,12 +120,18 @@ LIMITES DAS OPERAÇÕES
 - Programação07 vê apenas preços dos serviços Costura, Palmilha e Sola, com
   os subtotais desses serviços na Distribuição de Ateliês.
 - Corte e escolha dos três responsáveis:02/09;07/08 consultam.
-- Distribuição de fábrica, Talonagem e Montagem:06/09;07/08 consultam.
+- Recebimento Costura, recebimentos de Sola/Palmilha, Talonagem e Montagem:
+  06/09 registram;07/08 consultam.
+- Talonagem reúne o conjunto em uma leitura, exigindo as saídas e os
+  recebimentos dos componentes aplicáveis. Montagem exige Talonagem.
 - Entrada/saída de Costura:03/09; Sola:04/09; Palmilha:05/09.
 - Perfis03/04/05 consultam apenas talões atribuídos ao próprio UID no setor.
 - Lançar Distribuição de Ateliês:07/08/09; modelos com um destino definido
   recebem responsável. Modelos divididos ficam para a seleção do Corte.
-- Planejamento, distribuições e metas:07/08/09.
+- Planejamento de Montagem:06 consulta;07/08/09 definem ou limpam trilho e
+  data desejada por remessa ou talão. Talões já montados ficam para consulta.
+  O planejamento não altera registros de produção nem libera novas leituras.
+- Distribuições, programação por arquivos e metas:07/08/09.
 - Ocorrências de Talões Perdidos:02/06/09 resolvem;07/08 consultam.
 - Fechamento de Remessas:09 altera;07/08 consultam.
 - As duas páginas de backup estão no menu09, mas permanecem desabilitadas

@@ -89,6 +89,17 @@
   },
   {
     "group": "Planejamento",
+    "name": "Planejamento de Montagem",
+    "href": "planejamento.html",
+    "levels": [
+      "06",
+      "07",
+      "08",
+      "09"
+    ]
+  },
+  {
+    "group": "Planejamento",
     "name": "Criar Distribuição",
     "href": "distribuicao_montagem.html",
     "levels": [
@@ -414,7 +425,7 @@
   },
   {
     "group": "Fábrica",
-    "name": "Distribuição",
+    "name": "Recebimento Costura",
     "href": "distribuicao.html",
     "levels": [
       "06",
@@ -422,6 +433,18 @@
       "08",
       "09"
     ]
+  },
+  {
+    "group": "Fábrica",
+    "name": "Recebimento Sola",
+    "href": "recebimento_sola.html",
+    "levels": ["06", "07", "08", "09"]
+  },
+  {
+    "group": "Fábrica",
+    "name": "Recebimento Palmilha",
+    "href": "recebimento_palmilha.html",
+    "levels": ["06", "07", "08", "09"]
   },
   {
     "group": "Fábrica",
@@ -519,14 +542,11 @@
 
       body {
         margin: 0;
-        padding-top: 54px;
+        padding-top: 0;
       }
 
       .sistema-topbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
+        position: relative;
         z-index: 2000;
         height: 54px;
         background: var(--nav-bg);
@@ -736,7 +756,7 @@
 
       @media (max-width: 760px) {
         body {
-          padding-top: 50px;
+          padding-top: 0;
         }
 
         .sistema-topbar {

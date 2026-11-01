@@ -1,0 +1,117 @@
+CALÇADOS ROMA — RECEBIMENTOS NA FÁBRICA E TALONAGEM
+Atualização: 31/10/2026
+Identificação visual atualizada em 01/11/2026: Costura verde, Palmilha azul
+e Sola roxo. A página Distribuição agora aparece como Recebimento Costura.
+Para aplicar apenas nomes e cores, siga GUIA_CORES_RECEBIMENTOS_ROMA.txt.
+
+1. FLUXO OPERACIONAL
+
+Costura: saída do ateliê -> Recebimento Costura.
+Sola: saída do ateliê -> Recebimento Sola.
+Palmilha: saída do ateliê -> Recebimento Palmilha.
+
+Depois de reunir os componentes, leia uma única vez o código do talão
+na Talonagem. O sistema confere as saídas e os recebimentos exigidos pelo
+modelo e registra o conjunto como Talonado. Se faltar alguma etapa, mostra
+qual é a pendência e aguarda sua regularização.
+
+Um modelo sem Sola ou sem Palmilha não exige o recebimento correspondente.
+Cada setor conserva o próprio registro: receber Sola não registra Costura,
+Palmilha ou Talonagem. A Montagem exige Talonagem previamente registrada.
+
+No menu Fábrica, os itens são:
+- Recebimento Costura
+- Recebimento Sola
+- Recebimento Palmilha
+- Talonagem
+- Montagem
+
+2. COMO USAR AS PÁGINAS
+
+1) Registre a saída no ateliê do setor correspondente.
+2) Ao conferir a chegada do material, abra a página de recebimento.
+3) Leia o código de barras e pressione Enter, ou use o botão Registrar
+   Costura, Registrar Sola ou Registrar Palmilha da página correspondente.
+4) Confira a mensagem de confirmação e o registro na tabela.
+5) Quando o conjunto estiver reunido, abra Talonagem e faça uma única
+   leitura do mesmo talão. Não é necessário bipar seus componentes novamente.
+6) Siga para Montagem após a confirmação da Talonagem.
+
+O mesmo recebimento não é gravado duas vezes. Componentes não aplicáveis,
+saídas pendentes e códigos cadastrados em mais de um talão são informados
+na tela. As operações releem o registro antes de salvar, para não sobrescrever
+uma leitura feita por outra pessoa durante a conferência.
+
+Cada página permite consultar os registros por data, com total de talões,
+pares, ateliê e operador. Atualizar recarrega os registros feitos também em
+outros computadores. As leituras feitas na tela atual entram na lista após
+confirmar a gravação. Nenhum histórico depende apenas do navegador local.
+
+3. ACESSOS
+
+06 Montagem e 09 Admin: registram recebimentos, Talonagem e Montagem.
+07 Programação e 08 Financeiro: consultam as páginas e os registros.
+03 Costura, 04 Sola e 05 Palmilha: mantêm as entradas e saídas dos próprios
+ateliês; o recebimento na fábrica pertence à operação da Montagem/Admin.
+
+As permissões administrativas já existentes para correções históricas
+na Edição de Talões foram preservadas. Nenhuma permissão de edição de
+leituras foi acrescentada ao Cadastro.
+
+4. RELATÓRIOS E HISTÓRICO
+
+- Giro: separa o material produzido do material recebido na fábrica;
+  Sola e Palmilha permanecem identificadas enquanto aguardam recebimento.
+- Movimentações: inclui os dois novos tipos de recebimento, seus operadores
+  e os responsáveis de cada setor.
+- Cronograma e Cronograma Celular: mostram os novos recebimentos no
+  detalhamento dos talões.
+- Edição de Talões: mostra as novas datas como consulta.
+- Disponível para Montagem: considera Talonagem registrada e Montagem pendente.
+
+Talões que já tinham Talonagem registrada antes desta atualização podem
+seguir para Montagem. Não são criadas datas de recebimento retroativas e
+não há migração automática dos registros antigos.
+
+5. COMO ATUALIZAR O SISTEMA PUBLICADO
+
+Esta entrega contém arquivos preparados. A publicação deve ser aplicada
+no repositório GitHub e no projeto Firebase da Roma.
+
+1) No Firebase Console, selecione o projeto calcadosroma-65ac6.
+2) Abra Cloud Firestore -> Regras. Substitua o conteúdo pelo arquivo
+   Regras_Firestore_Roma.txt deste pacote e publique. firestore.rules
+   contém exatamente as mesmas regras.
+3) Extraia Atualizacao_Recebimentos_Fabrica_Roma.zip. Envie TODOS os
+   arquivos extraídos à pasta principal do repositório Romacalcados/Sistema,
+   substituindo os existentes e mantendo os nomes. Envie os arquivos,
+   não apenas o ZIP. Preserve os demais arquivos já existentes no repositório.
+4) Aguarde a publicação do GitHub Pages e recarregue o sistema com Ctrl+F5.
+   Recarregue também as páginas que já estavam abertas nos computadores.
+
+Faça a troca das regras e dos arquivos na mesma atualização, em um momento
+sem leituras em andamento. As regras novas são necessárias para autorizar
+o perfil06 a gravar os recebimentos. O sistema continua usando o mesmo
+projeto Firebase; não é necessário cadastrar novos tipos de usuário.
+
+Nenhum índice composto adicional foi necessário para estas consultas.
+Os índices e as regras de Storage do sistema anterior permanecem os mesmos.
+
+Após publicar, as páginas ficam em:
+https://romacalcados.github.io/Sistema/recebimento_sola.html
+https://romacalcados.github.io/Sistema/recebimento_palmilha.html
+https://romacalcados.github.io/Sistema/talonagem.html
+
+6. ARQUIVOS PRINCIPAIS DESTA ATUALIZAÇÃO
+
+Páginas: recebimento_sola.html, recebimento_palmilha.html, distribuicao.html,
+talonagem.html e montagem.html.
+Código compartilhado: roma-fabrica.js, roma-fabrica.css, roma-core.js,
+navegacao.js.
+Relatórios: giro_geral.html, movimentacao.html, cronograma.html,
+cronograma_mobile.html e relatoriogeral.html.
+Regras: firestore.rules e Regras_Firestore_Roma.txt.
+Documentação: este guia, LEIA-ME_ROMA.txt, ACESSOS_ROMA.txt e VERIFICACAO_ROMA.txt.
+
+Os arquivos compartilhados são obrigatórios. A atualização não funciona
+corretamente se forem enviados somente os dois HTMLs novos.

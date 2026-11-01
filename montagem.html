@@ -271,14 +271,6 @@
                         <input type="radio" name="trilho" value="Trilho - 03">
                         Trilho - 03
                     </label>
-                    <label class="trilho-option" id="trilho-04">
-                        <input type="radio" name="trilho" value="Trilho - 04">
-                        Trilho - 04
-                    </label>
-                    <label class="trilho-option" id="trilho-05">
-                        <input type="radio" name="trilho" value="Trilho - 05">
-                        Trilho - 05
-                    </label>
                 </div>
                 <div class="periodo-producao-box">
                     <label for="periodoProducaoSelect">Horário em que a produção será contabilizada</label>
@@ -325,7 +317,7 @@
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, onSnapshot, updateDoc, runTransaction, Timestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -345,6 +337,7 @@
         let allTaloes = [];
         let currentUserEmail = '';
         let currentUserName = '';
+        let isProcessing = false;
         const LIST_LIMIT = 100;
 
         // Carrega a lista do localStorage ao iniciar
@@ -439,7 +432,7 @@
             const trilhoAtual = lastScannedTaloes.find(t => t.id === talaoId)?.trilhoProduzido || 'N/A';
             const novoTrilho = prompt(`Digite o novo trilho para o talão ${talaoId} (atual: ${trilhoAtual}):`);
             
-            if (novoTrilho && ['Trilho - 01', 'Trilho - 02', 'Trilho - 03', 'Trilho - 04', 'Trilho - 05'].includes(novoTrilho.trim())) {
+            if (novoTrilho && ['Trilho - 01', 'Trilho - 02', 'Trilho - 03'].includes(novoTrilho.trim())) {
                 try {
                     const talaoRef = doc(db, 'taloes', talaoId);
                     await updateDoc(talaoRef, { trilhoProduzido: novoTrilho.trim() });
@@ -496,7 +489,7 @@
 
             try {
                 const talaoRef = doc(db, 'taloes', talaoId);
-                const dataRef = talaoLocal?.dataReferenciaProducao || talaoLocal?.dataEntradaMontagem || new Date().toISOString().split('T')[0];
+                const dataRef = talaoLocal?.dataReferenciaProducao || talaoLocal?.dataEntradaMontagem || window.Roma.localISODate();
                 await updateDoc(talaoRef, {
                     periodoProducao: periodoNormalizado,
                     dataReferenciaProducao: dataRef,
@@ -530,7 +523,7 @@
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();  window.Roma.validateProfile(user,userData); if(!window.Roma.canWrite('montagem')){ document.querySelectorAll('input[id^=barcode],input[name=trilho],#periodoProducao').forEach(el=>el.disabled=true); const info=document.createElement('p');info.textContent='Modo consulta. As leituras são realizadas pela Montagem ou pelo Admin.';info.style.cssText='padding:12px;background:#e7f1ff;color:#084298';(document.querySelector('.container')||document.body).prepend(info); }
+                    const userData = userDocSnap.data();  window.Roma.validateProfile(user,userData); if(!window.Roma.canWrite('montagem')){ document.querySelectorAll('input[id^=barcode],input[name=trilho],#periodoProducaoSelect').forEach(el=>el.disabled=true); const info=document.createElement('p');info.textContent='Modo consulta. As leituras são realizadas pela Montagem ou pelo Admin.';info.style.cssText='padding:12px;background:#e7f1ff;color:#084298';(document.querySelector('.container')||document.body).prepend(info); }
                     const nivelAcesso = userData.nivelAcesso;
                     currentUserName = userData.Nome;
 
@@ -570,25 +563,24 @@ function listenToTaloes() {
             window.Roma.requireWrite('montagem');
             try {
                 const talaoRef = doc(db, 'taloes', talaoId);
-                await updateDoc(talaoRef, updates);
-                
-                // Atualiza o objeto local com as novas informações antes de inseri-lo na lista
-                talaoData.trilhoProduzido = updates.trilhoProduzido;
-                talaoData.dataProducao = updates.dataProducao;
-                talaoData.dataLeituraMontagem = updates.dataLeituraMontagem;
-                talaoData.periodoProducao = updates.periodoProducao;
-                talaoData.dataReferenciaProducao = updates.dataReferenciaProducao;
-                if(updates.dataEntradaTalonagem) {
-                    talaoData.dataEntradaTalonagem = updates.dataEntradaTalonagem;
-                }
-                if(updates.usuarioTalonagem) {
-                    talaoData.usuarioTalonagem = updates.usuarioTalonagem;
-                }
-                if(updates.statusGeral) {
-                    talaoData.statusGeral = updates.statusGeral;
-                }
+                const saved = await runTransaction(db, async transaction => {
+                    const snapshot = await transaction.get(talaoRef);
+                    if (!snapshot.exists()) throw new Error('Talão não encontrado. Atualize a página e confira o código.');
+                    const current = snapshot.data();
+                    if (current.codigoBarrasIdentificador !== talaoData.codigoBarrasIdentificador) {
+                        throw new Error('O código deste talão foi alterado. Atualize a página antes de ler novamente.');
+                    }
+                    if (current.dataEntradaMontagem && !['N/A', 'Não se aplica'].includes(current.dataEntradaMontagem)) {
+                        throw new Error(`Talão já lido em Montagem. Data: ${formatDateToDDMMYYYY(String(current.dataEntradaMontagem))}`);
+                    }
+                    if (!current.dataEntradaTalonagem || ['N/A', 'Não se aplica'].includes(current.dataEntradaTalonagem)) {
+                        throw new Error('Registre a Talonagem antes da Montagem. A Talonagem reúne Costura, Sola e Palmilha.');
+                    }
+                    transaction.update(talaoRef, updates);
+                    return { ...current, ...updates, id: talaoId };
+                });
 
-                lastScannedTaloes.unshift(talaoData);
+                lastScannedTaloes.unshift(saved);
                 if (lastScannedTaloes.length > LIST_LIMIT) {
                     lastScannedTaloes.pop();
                 }
@@ -615,6 +607,7 @@ function listenToTaloes() {
 
         trilhoOptions.forEach(option => {
             option.addEventListener('click', () => {
+                if(!window.Roma.canWrite('montagem'))return;
                 trilhoOptions.forEach(opt => opt.classList.remove('selected'));
                 option.classList.add('selected');
                 option.querySelector('input').checked = true;
@@ -626,6 +619,7 @@ function listenToTaloes() {
             if(!window.Roma.canWrite('montagem'))return;
             if (event.key === 'Enter') {
                 event.preventDefault();
+                if (isProcessing) return;
                 const barcode = barcodeInputMontagem.value.trim();
                 barcodeInputMontagem.value = '';
                 montagemMessageDiv.textContent = 'Processando...';
@@ -653,16 +647,8 @@ function listenToTaloes() {
                     return;
                 }
                 
-                // Validação para evitar leituras duplicadas de Montagem
-                if (talao.dataEntradaMontagem) {
-                    const formattedDate = formatDateToDDMMYYYY(talao.dataEntradaMontagem);
-                    montagemMessageDiv.textContent = `Erro: Talão já lido em Montagem. Data: ${formattedDate}`;
-                    montagemMessageDiv.className = 'scanner-message error';
-                    return;
-                }
-                
                 const momentoLeitura = Timestamp.now();
-                const dataMontagemISO = new Date().toISOString().split('T')[0];
+                const dataMontagemISO = window.Roma.localISODate();
                 const periodoSelecionado = periodoProducaoSelect.value;
                 const updates = {
                     statusGeral: 'Montado',
@@ -676,23 +662,15 @@ function listenToTaloes() {
                     usuarioMontagem: currentUserName
                 };
 
-                // Lógica para registrar data de talonagem se estiver vazia
-                if (!talao.dataEntradaTalonagem) {
-                    updates.dataEntradaTalonagem = new Date().toISOString().split('T')[0];
-                    updates.usuarioTalonagem = currentUserName;
+                isProcessing = true;
+                barcodeInputMontagem.disabled = true;
+                try {
+                    await updateTalaoInFirestore(talao.id, updates, talao, montagemMessageDiv);
+                } finally {
+                    isProcessing = false;
+                    barcodeInputMontagem.disabled = !window.Roma.canWrite('montagem');
+                    if (!barcodeInputMontagem.disabled) barcodeInputMontagem.focus();
                 }
-
-                // Lógica para registrar data de distribuição se estiver vazia
-                if (!talao.dataEntradaDistribuicao) {
-                    updates.dataEntradaDistribuicao = new Date().toISOString().split('T')[0];
-                    updates.usuarioDistribuicao = currentUserName;
-                }
-
-                //Logica para registrar a costura datas
-
-
-
-                await updateTalaoInFirestore(talao.id, updates, talao, montagemMessageDiv);
             }
         });
 

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2f343a">
+  <title>Planejamento de Montagem - Calçados Roma</title>
+  <script>
+    (function () {
+      let pendingError = '';
+      window.showPlanningStartupError = function (text) {
+        const message = document.getElementById('planningPageMessage');
+        if (!message) { pendingError = text; return; }
+        message.textContent = text;
+        message.className = 'planning-message error';
+        message.hidden = false;
+        message.setAttribute('role', 'alert');
+      };
+      window.addEventListener('error', function (event) {
+        if (event.target && event.target.tagName === 'SCRIPT') {
+          window.showPlanningStartupError('Não foi possível iniciar o planejamento. Confira a conexão e atualize os arquivos desta página junto com o sistema.');
+        }
+      }, true);
+      document.addEventListener('DOMContentLoaded', function () {
+        if (pendingError) window.showPlanningStartupError(pendingError);
+      });
+    })();
+  </script>
+  <script src="firebase-config.js"></script>
+  <script src="roma-core.js"></script>
+  <script src="roma-producao.js"></script>
+  <script src="roma-planejamento.js?v=20261101-trilhos123"></script>
+  <script src="navegacao.js"></script>
+  <link rel="stylesheet" href="planejamento.css?v=20261101-atelier-msg-v1">
+</head>
+<body class="planning-page">
+  <main class="planning-main">
+    <div class="planning-heading">
+      <div>
+        <p class="planning-eyebrow">Calçados Roma · Produção</p>
+        <h1>Planejamento de Montagem</h1>
+        <p>Organize as remessas e os talões nos trilhos e acompanhe a programação da semana.</p>
+      </div>
+      <span class="planning-heading-label">Trilhos 1 a 3</span>
+    </div>
+
+    <p id="planningPageMessage" class="planning-message info" role="status" aria-live="polite">Validando acesso ao planejamento...</p>
+    <p id="readOnlyNotice" class="planning-message info" role="note" hidden>Seu acesso permite consultar o planejamento e a programação. As alterações são feitas por Programação, Financeiro ou Admin.</p>
+
+    <div class="planning-tabs" role="tablist" aria-label="Planejamento de montagem">
+      <button id="tabPlanejamento" class="planning-tab" type="button" role="tab" aria-selected="true" aria-controls="panelPlanejamento" tabindex="0">Planejamento</button>
+      <button id="tabProgramacao" class="planning-tab" type="button" role="tab" aria-selected="false" aria-controls="panelProgramacao" tabindex="-1">Programação</button>
+    </div>
+
+    <section id="panelPlanejamento" class="planning-panel" role="tabpanel" aria-labelledby="tabPlanejamento" tabindex="0">
+      <section class="planning-card filter-card" aria-labelledby="planningFiltersTitle">
+        <h2 id="planningFiltersTitle" class="visually-hidden">Consultar remessas</h2>
+        <div class="planning-filters planning-filters-cronograma" role="search" aria-label="Filtros das remessas">
+          <div class="plan-field filter-remessa">
+            <label for="filterRemessa">Remessa</label>
+            <input id="filterRemessa" type="text" inputmode="numeric" placeholder="Ex.: 2903212" autocomplete="off" maxlength="80">
+          </div>
+          <div class="plan-field filter-linha">
+            <label for="filterLinha">Linha</label>
+            <input id="filterLinha" type="text" placeholder="Ex.: 8560" autocomplete="off" maxlength="80">
+          </div>
+          <div class="plan-field filter-modelo">
+            <label for="filterModelo">Modelo</label>
+            <input id="filterModelo" type="text" placeholder="Ex.: 8560.417" autocomplete="off" maxlength="100">
+          </div>
+          <div class="plan-field filter-date-range filter-corte-range">
+            <label>Data de Corte</label>
+            <button type="button" class="planning-date-range-button" id="openPlanningCorteDatePicker"><span id="planningCorteRangeLabel">Selecionar data/período</span></button>
+            <input type="hidden" id="filterDataCorteInicio"><input type="hidden" id="filterDataCorteFim">
+          </div>
+          <div class="plan-field filter-date-range filter-entrega-range">
+            <label>Data de Entrega</label>
+            <button type="button" class="planning-date-range-button" id="openPlanningEntregaDatePicker"><span id="planningEntregaRangeLabel">Selecionar data/período</span></button>
+            <input type="hidden" id="filterDataEntregaInicio"><input type="hidden" id="filterDataEntregaFim">
+          </div>
+          <div class="plan-field filter-tipo">
+            <label for="filterTipoCliente">Tipo de cliente</label>
+            <select id="filterTipoCliente">
+              <option value="todos">Todos</option>
+              <option value="Exportação">Exportação</option>
+              <option value="Cliente especial">Cliente especial</option>
+              <option value="Mercado Interno">Mercado Interno</option>
+              <option value="Estoque">Estoque</option>
+              <option value="Amostra">Amostra</option>
+            </select>
+          </div>
+          <div class="plan-field filter-fabrica-programada">
+            <label for="filterTrilho">Trilho</label>
+            <select id="filterTrilho">
+              <option value="all">Todos</option>
+              <option value="1">Trilho 1</option>
+              <option value="2">Trilho 2</option>
+              <option value="3">Trilho 3</option>
+            </select>
+          </div>
+          <fieldset class="plan-check-group filter-program-status">
+            <legend>Programação</legend>
+            <label class="plan-check"><input id="filterShowProgrammed" type="checkbox" checked>Programadas</label>
+            <label class="plan-check"><input id="filterShowUnprogrammed" type="checkbox" checked>Não programadas</label>
+          </fieldset>
+          <div class="plan-field filter-date-range filter-programada-range">
+            <label>Data programada da montagem</label>
+            <button type="button" class="planning-date-range-button" id="openPlanningProgramadaDatePicker"><span id="planningProgramadaRangeLabel">Selecionar data/período</span></button>
+            <input type="hidden" id="filterDataProgramadaInicio"><input type="hidden" id="filterDataProgramadaFim">
+          </div>
+          <fieldset class="plan-check-group filter-mount-status">
+            <legend>Montagem da remessa</legend>
+            <label class="plan-check"><input id="filterShowCompleteMounted" type="checkbox">Montadas completas</label>
+            <label class="plan-check"><input id="filterShowNotCompleteMounted" type="checkbox" checked>Não montadas completas</label>
+          </fieldset>
+          <div class="filter-actions">
+            <div class="planning-button-group">
+              <button id="clearPlanningFilters" class="planning-button secondary" type="button">Limpar filtros</button>
+              <button id="searchPlanningButton" class="planning-button primary" type="button">Buscar remessas</button>
+            </div>
+          </div>
+        </div>
+        <p class="planning-footnote">A busca por uma remessa exata ignora o período de corte. Data de Entrega, Trilho, status de programação, montagem completa e Data programada da montagem continuam refinando o resultado.</p>
+      </section>
+
+      <div class="planning-summary planning-summary-compact" aria-label="Resumo das remessas consultadas">
+        <div class="planning-stat"><span>Remessas</span><strong id="planRemessasCount">0</strong></div>
+        <div class="planning-stat"><span>Pares a montar</span><strong id="planPairsCount">0</strong></div>
+        <div class="planning-stat"><span>Pares planejados</span><strong id="planPlannedPairs">0</strong></div>
+        <div class="planning-stat"><span>Pares sem plano</span><strong id="planUnplannedPairs">0</strong></div>
+      </div>
+
+      <section class="planning-card planning-results" aria-labelledby="planningResultsTitle">
+        <div class="planning-section-heading results-heading schedule-toolbar">
+          <div><h2 id="planningResultsTitle">Planejamento das remessas</h2><p>Edite Trilho e Prev. Mont. na linha. Clique na remessa para planejar por talão.</p></div>
+          <span class="schedule-autosave-note">Salvamento automático</span>
+        </div>
+        <p id="inlinePlanningMessage" class="planning-message info" role="status" aria-live="polite" hidden></p>
+        <div class="planning-table-wrap" tabindex="0" role="region" aria-label="Remessas consultadas. Role para ver todas as colunas.">
+          <table id="planningTable" class="planning-table planning-schedule-table">
+            <colgroup>
+              <col class="schedule-col-line"><col class="schedule-col-remessa"><col class="schedule-col-pairs"><col class="schedule-col-count"><col class="schedule-col-date"><col class="schedule-col-date">
+              <col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count">
+              <col class="schedule-col-track"><col class="schedule-col-planned-date">
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col" rowspan="2">Linha</th>
+                <th scope="col" rowspan="2">Remessa</th>
+                <th scope="col" rowspan="2">Pares</th>
+                <th scope="col" rowspan="2">Talões</th>
+                <th scope="col" rowspan="2"><abbr title="Data de corte">Dt. Corte</abbr></th>
+                <th scope="col" rowspan="2" class="schedule-stage-end"><abbr title="Data de entrega">Dt. Entr.</abbr></th>
+                <th scope="colgroup" colspan="2" class="schedule-stage-end">Corte</th>
+                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Costura">Cost.</abbr></th>
+                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Palmilha">Palm.</abbr></th>
+                <th scope="colgroup" colspan="2" class="schedule-stage-end">Sola</th>
+                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Disponível na fábrica: pares com Costura e os componentes Palmilha/Sola aplicáveis recebidos">Dis na Fab</abbr></th>
+                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Talonagem">Talon.</abbr></th>
+                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Montagem">Mont.</abbr></th>
+                <th scope="col" rowspan="2" class="schedule-edit-heading">Trilho</th>
+                <th scope="col" rowspan="2" class="schedule-edit-heading"><abbr title="Previsão de montagem">Prev. Mont.</abbr></th>
+              </tr>
+              <tr>
+                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
+                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
+                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
+                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
+                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
+                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
+                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
+              </tr>
+            </thead>
+            <tbody id="planningTableBody"><tr><td colspan="22" class="plan-empty">Aguardando validação de acesso para consultar as remessas.</td></tr></tbody>
+          </table>
+        </div>
+        <p id="planningResultNote" class="planning-result-note" role="status" aria-live="polite"></p>
+        <p class="planning-footnote">Etapas: pares e talões pendentes. Dis na Fab: quantidades disponíveis na fábrica. O planejamento pode ser feito antes dos recebimentos; os registros de produção continuam na página Montagem.</p>
+      </section>
+    </section>
+
+    <section id="panelProgramacao" class="planning-panel" role="tabpanel" aria-labelledby="tabProgramacao" tabindex="0" hidden>
+      <div class="planning-print-heading"><strong>Calçados Roma</strong><span>Programação de Montagem</span></div>
+      <section class="planning-card week-controls" aria-labelledby="weekControlsTitle">
+        <div class="planning-section-heading"><div><h2 id="weekControlsTitle">Programação semanal</h2><p>Veja as remessas e os pares de cada trilho, organizados por dia.</p></div></div>
+        <div class="week-toolbar">
+          <div class="plan-field"><label for="weekDate">Escolha um dia da semana</label><input id="weekDate" type="date"></div>
+          <div class="planning-button-group week-navigation" aria-label="Mudar semana">
+            <button id="previousWeekButton" class="planning-button secondary" type="button" aria-label="Semana anterior"><span aria-hidden="true">←</span> Anterior</button>
+            <button id="currentWeekButton" class="planning-button secondary" type="button">Esta semana</button>
+            <button id="nextWeekButton" class="planning-button secondary" type="button" aria-label="Próxima semana">Próxima <span aria-hidden="true">→</span></button>
+          </div>
+          <div class="plan-field specific-print-field"><label for="printSpecificDate">Imprimir data específica</label><input id="printSpecificDate" type="date"></div>
+          <div class="planning-button-group week-main-actions">
+            <button id="loadWeekButton" class="planning-button primary" type="button">Consultar semana</button>
+            <button id="printTodayButton" class="planning-button secondary daily-print-button" type="button">Imprimir hoje</button>
+            <button id="printTomorrowButton" class="planning-button secondary daily-print-button" type="button">Imprimir amanhã</button>
+            <button id="printSpecificDateButton" class="planning-button secondary daily-print-button" type="button">Imprimir data</button>
+            <button id="printWeekButton" class="planning-button secondary" type="button">Imprimir semana</button>
+          </div>
+        </div>
+      </section>
+      <div class="week-period-heading"><h2 id="weekRangeLabel" aria-live="polite">Selecione a semana da programação</h2><span>Segunda a sexta-feira</span></div>
+      <p id="weekMessage" class="planning-message info" role="status" aria-live="polite" hidden></p>
+      <p id="weekOutsideMessage" class="planning-message info" role="status" hidden></p>
+      <div class="planning-summary week-summary" aria-label="Resumo da programação de segunda a sexta-feira">
+        <div class="planning-stat"><span>Pares programados</span><strong id="weekTotalPairs">0</strong><small>Segunda a sexta-feira</small></div>
+        <div class="planning-stat"><span>A montar</span><strong id="weekRemainingPairs">0</strong><small>Produção ainda pendente</small></div>
+        <div class="planning-stat"><span>Prontos para montar</span><strong id="weekReadyPairs">0</strong><small>Talonagem concluída</small></div>
+        <div class="planning-stat"><span>Já montados</span><strong id="weekMountedPairs">0</strong><small>Dos talões programados</small></div>
+      </div>
+      <div id="trackCards" class="week-board" role="region" aria-label="Programação dos três trilhos por dia"><div class="planning-card plan-empty">Consulte uma semana para ver as remessas e os pares programados em cada trilho.</div></div>
+      <section id="planningPrintSheet" class="planning-print-sheet" aria-hidden="true"></section>
+      <p class="planning-footnote week-footnote">Clique na remessa para consultar linhas, modelos e quantidades daquele dia e trilho. Cada talão é contado uma vez, na sua data e no seu trilho planejados.</p>
+    </section>
+  </main>
+
+  <dialog id="planningDateRangeModal" class="planning-date-modal" aria-labelledby="planningDatePickerTitle">
+    <div class="planning-date-modal-content">
+      <button type="button" id="planningDatePickerClose" class="planning-date-picker-close" aria-label="Fechar calendário">×</button>
+      <h2 id="planningDatePickerTitle">Selecionar período</h2>
+      <div class="planning-date-picker-header">
+        <button type="button" id="planningDatePickerPrev" aria-label="Mês anterior">‹</button>
+        <strong id="planningDatePickerMonthTitle"></strong>
+        <button type="button" id="planningDatePickerNext" aria-label="Próximo mês">›</button>
+      </div>
+      <div class="planning-date-picker-weekdays"><span>DOM.</span><span>SEG.</span><span>TER.</span><span>QUA.</span><span>QUI.</span><span>SEX.</span><span>SÁB.</span></div>
+      <div id="planningDatePickerGrid" class="planning-date-picker-grid"></div>
+      <div class="planning-date-picker-actions">
+        <p>Clique em uma data para buscar somente aquele dia, ou em duas datas para selecionar um período.</p>
+        <div><button type="button" id="planningDatePickerClear" class="planning-button secondary">Limpar</button><button type="button" id="planningDatePickerApply" class="planning-button primary">Aplicar</button></div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="planModal" class="plan-modal" aria-labelledby="planModalTitle" aria-describedby="planModalSubtitle">
+    <div class="plan-modal-header">
+      <div><p class="planning-eyebrow">Planejamento da montagem</p><h2 id="planModalTitle">Planejar remessa</h2><p id="planModalSubtitle">Selecione os talões que receberão o mesmo trilho e a mesma data.</p></div>
+      <button id="closePlanModalButton" class="plan-modal-close" type="button" aria-label="Fechar planejamento">×</button>
+    </div>
+    <div class="plan-modal-content">
+      <dl class="plan-modal-details" aria-label="Dados da remessa">
+        <div class="modal-detail-client"><dt>Cliente</dt><dd id="modalCliente">—</dd></div>
+        <div class="modal-detail-norms"><dt>Normativas</dt><dd id="modalNormativas">—</dd></div>
+        <div><dt>Entrega</dt><dd id="modalEntrega">—</dd></div>
+        <div><dt>Corte</dt><dd id="modalCorte">—</dd></div>
+      </dl>
+      <p id="planModalMessage" class="planning-message info" role="status" aria-live="polite" hidden></p>
+      <p class="plan-modal-help">Para planejar a remessa, selecione todos os talões disponíveis. Para dividir a montagem, selecione apenas os talões de cada trilho ou data e salve uma etapa por vez.</p>
+      <div class="plan-modal-fields">
+        <div class="plan-field"><label for="modalTrack">Trilho de montagem</label><select id="modalTrack"><option value="">Selecione o trilho</option><option value="1">Trilho 1</option><option value="2">Trilho 2</option><option value="3">Trilho 3</option></select></div>
+        <div class="plan-field"><label for="modalDate">Data desejada de montagem</label><input id="modalDate" type="date"></div>
+        <p id="modalSelectionSummary" class="modal-selection-summary" role="status" aria-live="polite">Nenhum talão selecionado.</p>
+      </div>
+      <div class="plan-modal-table-wrap" tabindex="0" role="region" aria-label="Seleção de talões da remessa. Role para ver todos os talões.">
+        <table class="planning-table plan-taloes-table">
+          <thead><tr><th scope="col" class="select-cell"><label class="select-all-label" for="modalSelectAll"><input id="modalSelectAll" type="checkbox"><span class="visually-hidden">Selecionar todos os talões disponíveis</span></label></th><th scope="col">Talão</th><th scope="col">Linha</th><th scope="col">Modelo</th><th scope="col">Cor</th><th scope="col" class="plan-number">Pares</th><th scope="col">Situação</th><th scope="col">Trilho planejado</th><th scope="col">Data planejada</th></tr></thead>
+          <tbody id="planTaloesBody"><tr><td colspan="9" class="plan-empty">Carregando os talões da remessa...</td></tr></tbody>
+        </table>
+      </div>
+      <p class="planning-footnote modal-footnote">Talões já montados ficam disponíveis para consulta. Salvar ou limpar o planejamento altera somente a previsão dos talões selecionados.</p>
+    </div>
+    <div class="plan-modal-footer">
+      <button id="clearPlanButton" class="planning-button danger" type="button">Limpar planejamento selecionado</button>
+      <div class="planning-button-group"><button id="cancelPlanButton" class="planning-button secondary" type="button">Cancelar</button><button id="savePlanButton" class="planning-button primary" type="button">Salvar planejamento</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="weekDetailModal" class="plan-modal week-detail-modal" aria-labelledby="weekDetailTitle" aria-describedby="weekDetailSubtitle">
+    <div class="plan-modal-header">
+      <div><p class="planning-eyebrow">Programação da montagem</p><h2 id="weekDetailTitle">Detalhes da remessa</h2><p id="weekDetailSubtitle">Linhas e modelos programados para este dia e trilho.</p></div>
+      <button id="closeWeekDetailButton" class="plan-modal-close" type="button" aria-label="Fechar detalhes da programação">×</button>
+    </div>
+    <div class="plan-modal-content">
+      <p id="weekDetailMessage" class="planning-message info" role="status" aria-live="polite" hidden></p>
+      <div class="week-detail-table-wrap" tabindex="0" role="region" aria-label="Linhas e modelos da remessa. Role para ver todas as quantidades.">
+        <table class="week-table week-detail-table">
+          <thead><tr><th scope="col">Linha</th><th scope="col">Modelo</th><th scope="col" class="cell-number">Talões</th><th scope="col" class="cell-number">Pares</th><th scope="col" class="cell-number">A montar</th><th scope="col" class="cell-number">Prontos</th><th scope="col" class="cell-number">Montados</th></tr></thead>
+          <tbody id="weekDetailBody"><tr><td colspan="7" class="empty-state">Selecione uma remessa na programação.</td></tr></tbody>
+          <tfoot><tr id="weekDetailTotals"></tr></tfoot>
+        </table>
+      </div>
+      <p class="planning-footnote">Prontos: talonagem concluída e montagem pendente. Para alterar trilho ou data, utilize a aba Planejamento.</p>
+    </div>
+    <div class="plan-modal-footer"><button id="cancelWeekDetailButton" class="planning-button secondary" type="button">Fechar</button></div>
+  </dialog>
+
+  <dialog id="dayTaloesModal" class="plan-modal day-taloes-modal" aria-labelledby="dayTaloesTitle" aria-describedby="dayTaloesSubtitle">
+    <div class="plan-modal-header">
+      <div><p class="planning-eyebrow">Programação da montagem</p><h2 id="dayTaloesTitle">Talões do dia</h2><p id="dayTaloesSubtitle">Talões ainda não montados desta programação.</p></div>
+      <button id="closeDayTaloesButton" class="plan-modal-close" type="button" aria-label="Fechar relatório de talões">×</button>
+    </div>
+    <div class="plan-modal-content">
+      <div id="dayTaloesSummary" class="day-taloes-summary" aria-live="polite"></div>
+      <div id="dayTaloesGroups" class="day-taloes-groups"><p class="empty-state">Selecione o botão Talões em um dos dias da programação.</p></div>
+    </div>
+    <div class="plan-modal-footer day-taloes-footer">
+      <div class="day-taloes-whats-actions" aria-label="Gerar mensagens por setor">
+        <button id="whatsCosturaButton" class="planning-button whatsapp sector-costura" type="button">Costura mensagem</button>
+        <button id="whatsSolaButton" class="planning-button whatsapp sector-sola" type="button">Sola mensagem</button>
+        <button id="whatsPalmilhaButton" class="planning-button whatsapp sector-palmilha" type="button">Palmilha mensagem</button>
+        <button id="whatsMontagemButton" class="planning-button whatsapp sector-montagem" type="button">Montagem mensagem</button>
+      </div>
+      <div class="day-taloes-footer-actions">
+        <button id="printDayTaloesButton" class="planning-button primary" type="button">Imprimir relatório</button>
+        <button id="cancelDayTaloesButton" class="planning-button secondary" type="button">Fechar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="sectorMessageModal" class="sector-message-modal" aria-labelledby="sectorMessageTitle">
+    <div class="sector-message-header">
+      <h2 id="sectorMessageTitle">Mensagem do setor</h2>
+      <button id="closeSectorMessageButton" class="plan-modal-close" type="button" aria-label="Fechar mensagem">×</button>
+    </div>
+    <div class="sector-message-body">
+      <textarea id="sectorMessageText" readonly aria-label="Mensagem pronta para copiar"></textarea>
+    </div>
+    <div class="sector-message-footer">
+      <button id="copySectorMessageButton" class="planning-button primary" type="button">Copiar mensagem</button>
+      <button id="cancelSectorMessageButton" class="planning-button secondary" type="button">Fechar</button>
+    </div>
+  </dialog>
+
+  <noscript><p class="planning-message error">Ative o JavaScript do navegador para abrir o planejamento de montagem.</p></noscript>
+  <script src="roma-planejamento-page.js?v=20261101-montagem-incompletos"></script>
+  <script type="module">
+    import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
+    import {getAuth,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';
+    import {getFirestore,doc,getDoc,collection,query,where,getDocs,getDocsFromServer,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js';
+    try {
+      if (!window.Roma || !window.RomaProducao || !window.RomaPlanejamento || !window.RomaPlanejamentoPage || !window.SistemaNavegacao) {
+        throw new Error('Atualize os arquivos de planejamento junto com esta página.');
+      }
+      const app = initializeApp(window.FIREBASE_CONFIG);
+      await window.RomaPlanejamentoPage.start({auth:getAuth(app),db:getFirestore(app),sdk:{onAuthStateChanged,signOut,doc,getDoc,collection,query,where,getDocs,getDocsFromServer,runTransaction,serverTimestamp}});
+    } catch (error) {
+      window.showPlanningStartupError('Não foi possível iniciar o planejamento. ' + (error && error.message ? error.message : 'Confira a conexão e recarregue a página.'));
+    }
+  </script>
+</body>
+</html>

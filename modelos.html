@@ -90,6 +90,7 @@ tbody tr.model-row.no-price td{border-color:#f3a8b5}
     </div>
     <div class="top-actions">
       <button class="btn btn-warning" id="adjustPricesButton" type="button">Reajustar preços</button>
+      <button class="btn btn-primary" id="syncAllTaloesButton" type="button">Ajustar todos os talões</button>
       <button class="btn btn-success" id="createModelButton" type="button">Criar modelo</button>
       <button class="btn btn-secondary" id="refreshButton" type="button">Atualizar</button>
     </div>
@@ -165,8 +166,8 @@ tbody tr.model-row.no-price td{border-color:#f3a8b5}
           <label><input type="checkbox" data-component="forro" checked> Forro</label>
           <label><input type="checkbox" data-component="tiras" checked> Tiras</label>
           <label><input type="checkbox" data-component="aviamentos" checked> Aviamentos</label>
-          <label><input type="checkbox" data-component="palmilha"> Palmilha</label>
-          <label><input type="checkbox" data-component="sola"> Sola</label>
+          <label><input type="checkbox" data-component="palmilha" checked> Palmilha</label>
+          <label><input type="checkbox" data-component="sola" checked> Sola</label>
         </div>
       </fieldset>
 
@@ -190,6 +191,32 @@ tbody tr.model-row.no-price td{border-color:#f3a8b5}
       <div class="compact-card" id="historyBlock">
         <div class="compact-title"><strong id="historyTitle">Histórico</strong></div>
         <div id="historyList" class="history-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="syncTaloesModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="syncTaloesTitle">
+    <div class="modal-header">
+      <h3 id="syncTaloesTitle">Ajustar todos os talões pelos modelos</h3>
+      <button class="modal-close" id="closeSyncTaloesModalButton" type="button">Fechar</button>
+    </div>
+    <div class="modal-body">
+      <div class="compact-card">
+        <div class="compact-title"><strong>Sincronização de componentes</strong></div>
+        <p class="mini-help" style="margin-top:0">O sistema compara todos os talões com o cadastro atual do respectivo modelo. Talões sem produção iniciada recebem a composição atual e os status de Palmilha/Sola são corrigidos. Talões com produção iniciada são preservados e entram na lista de revisão.</p>
+        <div id="syncTaloesPreview" class="message info show" style="display:block;margin-top:10px">Clique em analisar para conferir quantos talões podem ser ajustados.</div>
+        <div class="modal-summary" style="margin-top:10px">
+          <div class="total-box"><strong id="syncTotalTaloes">0</strong><small>Talões lidos</small></div>
+          <div class="total-box ok"><strong id="syncCanUpdate">0</strong><small>Podem ajustar</small></div>
+          <div class="total-box warn"><strong id="syncNeedReview">0</strong><small>Revisão</small></div>
+        </div>
+        <div class="form-group" style="margin-top:9px"><label for="syncConfirmInput">Confirmação</label><input id="syncConfirmInput" type="text" placeholder="Digite AJUSTAR" autocomplete="off"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="analyzeSyncTaloesButton" type="button">Analisar talões</button>
+        <button class="btn btn-success" id="applySyncTaloesButton" type="button" disabled>Ajustar talões</button>
       </div>
     </div>
   </div>
@@ -229,12 +256,14 @@ import{getFirestore,doc,getDoc,setDoc,collection,getDocs,serverTimestamp,writeBa
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 const FULL_ACCESS_LEVELS=new Set(["08","09"]);
 let currentUser=null,currentUserLevel="",models=[],currentEditingId=null,currentEditingModel=null;
+let syncAnalysis=null;
 
 const $=id=>document.getElementById(id);
 const els={
   createModelButton:$("createModelButton"),adjustPricesButton:$("adjustPricesButton"),refreshButton:$("refreshButton"),clearFilterButton:$("clearFilterButton"),modelFilterInput:$("modelFilterInput"),categoriaFilterInput:$("categoriaFilterInput"),subcategoriaFilterInput:$("subcategoriaFilterInput"),messageBox:$("messageBox"),listInfo:$("listInfo"),modelsTableBody:$("modelsTableBody"),
   modelModalBackdrop:$("modelModalBackdrop"),modelModalTitle:$("modelModalTitle"),closeModelModalButton:$("closeModelModalButton"),linhaInput:$("linhaInput"),modeloInput:$("modeloInput"),categoriaInput:$("categoriaInput"),subcategoriaInput:$("subcategoriaInput"),precoInput:$("precoInput"),motivoInput:$("motivoInput"),observacaoInput:$("observacaoInput"),
   sectorList:$("sectorList"),addSectorButton:$("addSectorButton"),formPreco:$("formPreco"),formTotalSetores:$("formTotalSetores"),formSaldo:$("formSaldo"),saveModelButton:$("saveModelButton"),historyBlock:$("historyBlock"),historyTitle:$("historyTitle"),historyList:$("historyList"),
+  syncAllTaloesButton:$("syncAllTaloesButton"),syncTaloesModalBackdrop:$("syncTaloesModalBackdrop"),closeSyncTaloesModalButton:$("closeSyncTaloesModalButton"),syncTaloesPreview:$("syncTaloesPreview"),syncTotalTaloes:$("syncTotalTaloes"),syncCanUpdate:$("syncCanUpdate"),syncNeedReview:$("syncNeedReview"),syncConfirmInput:$("syncConfirmInput"),analyzeSyncTaloesButton:$("analyzeSyncTaloesButton"),applySyncTaloesButton:$("applySyncTaloesButton"),
   adjustModalBackdrop:$("adjustModalBackdrop"),closeAdjustModalButton:$("closeAdjustModalButton"),adjustPercentInput:$("adjustPercentInput"),adjustMotivoInput:$("adjustMotivoInput"),adjustConfirmInput:$("adjustConfirmInput"),adjustObsInput:$("adjustObsInput"),adjustPreview:$("adjustPreview"),applyAdjustmentButton:$("applyAdjustmentButton")
 };
 
@@ -247,6 +276,7 @@ onAuthStateChanged(auth,async user=>{
     if(!userSnap.exists()){alert("Dados do usuário não encontrados. Faça login novamente.");await signOut(auth);window.location.href="login.html";return;}
     if(!FULL_ACCESS_LEVELS.has(String(userSnap.data().nivelAcesso||""))){redirectUnauthorized();return;}const userData=window.Roma.validateProfile(user,userSnap.data());
     currentUserLevel=String(userData.nivelAcesso||"");
+    els.syncAllTaloesButton.hidden=currentUserLevel!=="09";
     const userName=userData.Nome||user.email||"Usuário";
     localStorage.setItem("calcadosroma-65ac6:userNivelAcesso",currentUserLevel);
     localStorage.setItem("calcadosroma-65ac6:userName",userName);
@@ -398,7 +428,7 @@ function updateFormTotals(){
   els.formSaldo.textContent=formatMoney(data.saldo);
 }
 function resetFormFields(){
-  setComponentInputs({});
+  setComponentInputs({componentes:{...window.Roma.DEFAULT_MODEL_COMPONENTS}});
   els.linhaInput.disabled=false;els.modeloInput.disabled=false;
   els.linhaInput.value="";els.modeloInput.value="";els.categoriaInput.value="";els.subcategoriaInput.value="";els.precoInput.value="";els.motivoInput.value="";els.observacaoInput.value="";renderSectorInputs({});
 }
@@ -464,6 +494,76 @@ function renderModelsTable(){
   }).join("");
   els.modelsTableBody.querySelectorAll("tr[data-open-model]").forEach(row=>row.addEventListener("click",()=>{const item=models.find(m=>m.id===row.dataset.openModel);if(item)openEditModal(item);}));
 }
+
+
+function sameComponents(a,b){return window.Roma.COMPONENTS.every(key=>a[key]===b[key]);}
+function syncPatchForTalao(talao,model){
+  const desired=window.Roma.normalizeComponents(model);
+  const current=window.Roma.normalizeComponents(talao);
+  if(sameComponents(current,desired)&&String(talao.modeloId||"")===String(model.id||model.chave||""))return null;
+  if(window.Roma.productionStarted(talao))return {review:true,reason:"Produção iniciada"};
+  const cutActive=window.Roma.CUT_COMPONENTS.some(key=>desired[key]);
+  return {patch:{
+    componentes:desired,
+    modeloId:String(model.id||model.chave||window.Roma.modelKey(model.linha,model.modelo)||""),
+    statusCorte:cutActive?"Aguardando Material":"Cortado",
+    statusPalmilha:desired.palmilha?"Aguardando Material":"Não se aplica",
+    statusSola:desired.sola?"Aguardando Material":"Não se aplica"
+  }};
+}
+async function analyzeAllTaloes(){
+  if(currentUserLevel!=="09")throw new Error("Somente o Admin pode ajustar todos os talões.");
+  els.analyzeSyncTaloesButton.disabled=true;els.applySyncTaloesButton.disabled=true;
+  els.syncTaloesPreview.className="message info show";els.syncTaloesPreview.textContent="Lendo modelos e talões...";
+  try{
+    const [modelSnap,talaoSnap]=await Promise.all([getDocs(collection(db,"modelos")),getDocs(collection(db,"taloes"))]);
+    const modelMap=new Map();
+    modelSnap.docs.forEach(d=>{const m={id:d.id,...d.data()};window.Roma.modelKeys(m.linha,m.modelo).concat([d.id]).forEach(k=>modelMap.set(String(k),m));});
+    const updates=[],reviews=[],missing=[],correct=[];
+    talaoSnap.docs.forEach(d=>{
+      const t={id:d.id,...d.data()};
+      const keys=[String(t.modeloId||""),...window.Roma.modelKeys(t.linha,t.modelo)];
+      const model=keys.map(k=>modelMap.get(k)).find(Boolean);
+      if(!model){missing.push(t);return;}
+      const result=syncPatchForTalao(t,model);
+      if(!result){correct.push(t);return;}
+      if(result.review){reviews.push({...t,reason:result.reason});return;}
+      updates.push({id:d.id,patch:result.patch});
+    });
+    syncAnalysis={updates,reviews,missing,correct,total:talaoSnap.size};
+    els.syncTotalTaloes.textContent=String(talaoSnap.size);
+    els.syncCanUpdate.textContent=String(updates.length);
+    els.syncNeedReview.textContent=String(reviews.length+missing.length);
+    els.syncTaloesPreview.className=`message ${reviews.length||missing.length?"warning":"success"} show`;
+    els.syncTaloesPreview.textContent=`${updates.length} talão(ões) podem ser ajustados; ${correct.length} já estão corretos; ${reviews.length} preservados porque a produção já iniciou; ${missing.length} sem modelo correspondente. Digite AJUSTAR para aplicar somente os ${updates.length} ajustes seguros.`;
+    els.applySyncTaloesButton.disabled=!updates.length||els.syncConfirmInput.value.trim().toUpperCase()!=="AJUSTAR";
+  }finally{els.analyzeSyncTaloesButton.disabled=false;}
+}
+async function applyAllTaloesSync(){
+  if(currentUserLevel!=="09")throw new Error("Somente o Admin pode ajustar todos os talões.");
+  if(!syncAnalysis||!syncAnalysis.updates.length)throw new Error("Analise os talões antes de ajustar.");
+  if(els.syncConfirmInput.value.trim().toUpperCase()!=="AJUSTAR")throw new Error("Digite AJUSTAR para confirmar.");
+  els.applySyncTaloesButton.disabled=true;els.analyzeSyncTaloesButton.disabled=true;
+  let saved=0;
+  try{
+    for(let i=0;i<syncAnalysis.updates.length;i+=400){
+      const batch=writeBatch(db);
+      syncAnalysis.updates.slice(i,i+400).forEach(item=>batch.update(doc(db,"taloes",item.id),item.patch));
+      await batch.commit(); saved+=Math.min(400,syncAnalysis.updates.length-i);
+      els.syncTaloesPreview.className="message info show";els.syncTaloesPreview.textContent=`Ajustando talões... ${saved} de ${syncAnalysis.updates.length}.`;
+    }
+    els.syncTaloesPreview.className="message success show";
+    els.syncTaloesPreview.textContent=`Concluído: ${saved} talão(ões) sincronizados. ${syncAnalysis.reviews.length} com produção iniciada e ${syncAnalysis.missing.length} sem modelo foram preservados para revisão.`;
+    syncAnalysis=null;els.syncConfirmInput.value="";els.syncCanUpdate.textContent="0";
+  }finally{els.analyzeSyncTaloesButton.disabled=false;els.applySyncTaloesButton.disabled=true;}
+}
+function openSyncTaloesModal(){
+  if(currentUserLevel!=="09"){showMessage("warning","Somente o Admin pode ajustar todos os talões.");return;}
+  syncAnalysis=null;els.syncConfirmInput.value="";els.syncTotalTaloes.textContent="0";els.syncCanUpdate.textContent="0";els.syncNeedReview.textContent="0";
+  els.syncTaloesPreview.className="message info show";els.syncTaloesPreview.textContent="Clique em analisar para conferir quantos talões podem ser ajustados.";
+  els.applySyncTaloesButton.disabled=true;els.syncTaloesModalBackdrop.classList.add("show");
+}
+function closeSyncTaloesModal(){els.syncTaloesModalBackdrop.classList.remove("show");}
 
 function snapshotForCompare(data){
   const setores=sortedSectorsObject(data?.preco?.setores||{});
@@ -730,6 +830,13 @@ async function applyBulkAdjustment(){
   }
 }
 
+
+els.syncAllTaloesButton.addEventListener("click",openSyncTaloesModal);
+els.closeSyncTaloesModalButton.addEventListener("click",closeSyncTaloesModal);
+els.syncTaloesModalBackdrop.addEventListener("click",e=>{if(e.target===els.syncTaloesModalBackdrop)closeSyncTaloesModal();});
+els.syncConfirmInput.addEventListener("input",()=>{els.applySyncTaloesButton.disabled=!syncAnalysis?.updates?.length||els.syncConfirmInput.value.trim().toUpperCase()!=="AJUSTAR";});
+els.analyzeSyncTaloesButton.addEventListener("click",async()=>{try{await analyzeAllTaloes();}catch(err){console.error(err);els.syncTaloesPreview.className="message error show";els.syncTaloesPreview.textContent=err.message||String(err);}});
+els.applySyncTaloesButton.addEventListener("click",async()=>{try{await applyAllTaloesSync();}catch(err){console.error(err);els.syncTaloesPreview.className="message error show";els.syncTaloesPreview.textContent=err.message||String(err);els.applySyncTaloesButton.disabled=false;}});
 els.createModelButton.addEventListener("click",openCreateModal);
 els.adjustPricesButton.addEventListener("click",openAdjustModal);
 els.closeAdjustModalButton.addEventListener("click",closeAdjustModal);

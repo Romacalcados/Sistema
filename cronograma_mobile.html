@@ -3740,6 +3740,14 @@
 
     // === FUNÇÕES DO MODAL DE DETALHES DA REMESSA (TABELA) ===
     
+    function factoryReceiptDetail(t,sector) {
+      if(!window.Roma.stageApplicable(t,sector))return '<span class="stage-na">Não se aplica</span>';
+      const field=window.Roma.FACTORY_RECEIPTS[sector].date;
+      return window.Roma.factoryReceived(t,sector)
+        ? `<span class="status-check">✔ ${formatDateAbreviado(t[field])}</span>`
+        : '<span class="stage-pending">Pendente</span>';
+    }
+
     // Define a estrutura HTML padrão para a tabela de detalhes
     function setupModalForDetails() {
         modalBodyContent.innerHTML = `
@@ -3748,7 +3756,7 @@
                     <thead>
                         <tr>
                         <th>Talão</th><th>Linha</th><th>Modelo</th><th>Pares</th><th>Cor</th><th>Data Corte</th><th>Ateliê</th>
-                        <th>Corte</th><th>Entrada Costura</th><th>Saída Costura</th><th>Ateliê Palmilha</th><th>Entrada Palmilha</th><th>Saída Palmilha</th><th>Ateliê Sola</th><th>Entrada Sola</th><th>Saída Sola</th><th>Distribuição</th><th>Talonagem</th><th>Montagem</th><th>Trilho</th>
+                        <th>Corte</th><th>Entrada Costura</th><th>Saída Costura</th><th>Ateliê Palmilha</th><th>Entrada Palmilha</th><th>Saída Palmilha</th><th>Recebimento Palmilha</th><th>Ateliê Sola</th><th>Entrada Sola</th><th>Saída Sola</th><th>Recebimento Sola</th><th>Distribuição</th><th>Talonagem</th><th>Montagem</th><th>Trilho</th>
                         </tr>
                     </thead>
                     <tbody id="modalTableBody"></tbody>
@@ -3767,7 +3775,7 @@
       // É importante usar allFetchedTaloes aqui para mostrar todos os detalhes da remessa, ignorando o filtro de linha
       const list=allFetchedTaloes.filter(t=>t.numeroRemessa===remessa); 
       if(list.length===0){ 
-        modalTableBody.innerHTML = `<tr><td colspan="20" style="text-align:center;">Nenhum detalhe encontrado para esta remessa.</td></tr>`; 
+        modalTableBody.innerHTML = `<tr><td colspan="22" style="text-align:center;">Nenhum detalhe encontrado para esta remessa.</td></tr>`; 
         detailsModal.style.display='block'; 
         return; 
       } 
@@ -3788,9 +3796,11 @@
           <td>${window.RomaProducao.escape(t.idAteliePalmilhaResponsavel||'')}</td>
           <td>${window.RomaProducao.entryDetail(t,'palmilha',formatDateAbreviado)}</td>
           <td>${window.RomaProducao.detail(t,'palmilha',formatDateAbreviado)}</td>
+          <td>${factoryReceiptDetail(t,'palmilha')}</td>
           <td>${window.RomaProducao.escape(t.idAtelieSolaResponsavel||'')}</td>
           <td>${window.RomaProducao.entryDetail(t,'sola',formatDateAbreviado)}</td>
           <td>${window.RomaProducao.detail(t,'sola',formatDateAbreviado)}</td>
+          <td>${factoryReceiptDetail(t,'sola')}</td>
           <td>${t.dataEntradaDistribuicao? `✔ ${formatDateAbreviado(t.dataEntradaDistribuicao)}` : ''}</td>
           <td>${t.dataEntradaTalonagem? `✔ ${formatDateAbreviado(t.dataEntradaTalonagem)}` : ''}</td>
           <td>${t.dataEntradaMontagem? `✔ ${formatDateAbreviado(t.dataEntradaMontagem)}` : ''}</td>
@@ -4014,9 +4024,9 @@
 
     function showResumoGiroFabricaModal(taloes) {
         
-        // 1. Disponível para Montar (Entrou em Dist. ou Tal. E Não entrou em Mont.)
+        // 1. Disponível para Montar: conjunto conferido na Talonagem e ainda não montado.
         const disponivelTaloes = taloes.filter(t => 
-            (hasDate(t.dataEntradaDistribuicao) || hasDate(t.dataEntradaTalonagem)) && 
+            hasDate(t.dataEntradaTalonagem) && 
             !hasDate(t.dataEntradaMontagem)
         );
         
@@ -4044,7 +4054,7 @@
 
         const cardData = [
             {
-                title: 'Na Fabrica por modelo',
+                title: 'Disponível para Montagem por modelo',
                 items: disponivelML,
                 cardColor: '#bdbdbd' // Verde Claro (Pronto/Estoque)
             },
@@ -4054,7 +4064,7 @@
                 cardColor: '#bdbdbd' // Laranja Claro (Em Etapa Chave)
             },
             {
-                title: 'Na Fabrica por Linha',
+                title: 'Disponível para Montagem por linha',
                 items: disponivelL,
                 cardColor: '#bdbdbd' // Azul Claro (Resumo Linha)
             },

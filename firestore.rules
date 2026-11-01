@@ -153,6 +153,8 @@ service cloud.firestore {
         && stageNotStarted(d, 'statusSola', 'solaDataInicio', 'dataSaidaSola')
         && stageNotStarted(d, 'statusPalmilha', 'palmilhaDataInicio', 'dataSaidaPalmilha')
         && d.get('dataEntradaDistribuicao', '') in ['', null]
+        && d.get('dataRecebimentoSola', '') in ['', null]
+        && d.get('dataRecebimentoPalmilha', '') in ['', null]
         && d.get('dataEntradaTalonagem', '') in ['', null]
         && d.get('dataEntradaMontagem', '') in ['', null];
     }
@@ -174,6 +176,37 @@ service cloud.firestore {
         && request.resource.data.get('cliente', '') is string
         && request.resource.data.get('normativa', '') is string
         && request.resource.data.get('fabrica', '') is string;
+    }
+    function assemblyPlanningFields() {
+      return [
+        'trilhoMontagemPlanejado','dataMontagemPlanejada','planejamentoMontagemOrigem',
+        'planejamentoMontagemVersao','planejamentoMontagemAtualizadoEm',
+        'planejamentoMontagemAtualizadoPor','planejamentoMontagemAtualizadoPorNome'
+      ];
+    }
+    function updatesAssemblyPlanning() {
+      let d = request.resource.data;
+      let previousVersion = resource.data.get('planejamentoMontagemVersao', 0);
+      // O plano é uma intenção: não registra recebimento, Talonagem ou Montagem.
+      // A versão continua existindo depois da limpeza para detectar edições antigas.
+      return changesOnly(assemblyPlanningFields())
+        && d.keys().hasAll(assemblyPlanningFields())
+        && !hasFactoryRecord(resource.data.get('dataEntradaMontagem', ''))
+        && resource.data.get('statusGeral', '') != 'Montado'
+        && !(resource.data.get('statusMontagem', '') in ['Finalizado','Montado'])
+        && d.trilhoMontagemPlanejado is int
+        && ((d.trilhoMontagemPlanejado >= 1 && d.trilhoMontagemPlanejado <= 5
+            && validFactoryDate(d.dataMontagemPlanejada)
+            && d.planejamentoMontagemOrigem in ['remessa','talao'])
+          || (d.trilhoMontagemPlanejado == 0 && d.dataMontagemPlanejada == ''
+            && d.planejamentoMontagemOrigem == ''))
+        && previousVersion is int && previousVersion >= 0
+        && d.planejamentoMontagemVersao is int
+        && d.planejamentoMontagemVersao == previousVersion + 1
+        && d.planejamentoMontagemAtualizadoEm is timestamp
+        && d.planejamentoMontagemAtualizadoEm == request.time
+        && d.planejamentoMontagemAtualizadoPor == request.auth.uid
+        && d.planejamentoMontagemAtualizadoPorNome == factoryActor();
     }
     function validCutField(key, prefix) {
       let d = request.resource.data;
@@ -267,16 +300,88 @@ service cloud.firestore {
         && d['dataSaida' + upper] is string && d['dataSaida' + upper].size() > 0
         && (sector != 'costura' || d.statusGeral == 'Costurado');
     }
-    function updatesFactory() {
+    function validFactoryDate(value) {
+      // Data ISO real: respeitar dias de cada mês e fevereiro em ano bissexto.
+      return value is string && (value.matches('[0-9]{4}-((01|03|05|07|08|10|12)-(0[1-9]|[12][0-9]|3[01])|(04|06|09|11)-(0[1-9]|[12][0-9]|30)|02-(0[1-9]|1[0-9]|2[0-8]))')
+        || value.matches('([0-9]{2}(0[48]|[2468][048]|[13579][26])|([02468][048]|[13579][26])00)-02-29'));
+    }
+    function factoryActor() {
+      let name = profile().get('Nome', '');
+      return name is string && name.size() > 0 ? name : request.auth.token.email;
+    }
+    function hasFactoryRecord(value) {
+      // Saídas e recebimentos históricos mantêm a semântica de presença do app.
+      return value != false && value != 0 && hasProductionDate(value);
+    }
+    function beforeTalonagem(d) {
+      return !hasFactoryRecord(d.get('dataEntradaTalonagem', ''))
+        && !hasFactoryRecord(d.get('dataEntradaMontagem', ''));
+    }
+    function receivesFactory(sector, upper) {
+      let d = request.resource.data;
+      let dateField = sector == 'costura' ? 'dataEntradaDistribuicao' : 'dataRecebimento' + upper;
+      let userField = sector == 'costura' ? 'usuarioDistribuicao' : 'usuarioRecebimento' + upper;
+      let fields = sector == 'costura' ? [dateField, userField, 'statusGeral'] : [dateField, userField];
+      return changesOnly(fields) && stageApplicable(resource.data, sector)
+        && beforeTalonagem(resource.data)
+        && !hasFactoryRecord(resource.data.get(dateField, ''))
+        && hasFactoryRecord(resource.data.get('dataSaida' + upper, ''))
+        && validFactoryDate(d.get(dateField, '')) && d.get(userField, '') == factoryActor()
+        && (sector != 'costura' || d.get('statusGeral', '') == 'Distribuído');
+    }
+    function factorySectorReady(d, sector, upper, receiptField) {
+      return !stageApplicable(d, sector)
+        || (hasFactoryRecord(d.get('dataSaida' + upper, ''))
+          && hasFactoryRecord(d.get(receiptField, '')));
+    }
+    function entersTalonagem() {
+      let d = request.resource.data;
+      return changesOnly(['dataEntradaTalonagem','usuarioTalonagem','statusGeral'])
+        && beforeTalonagem(resource.data)
+        && factorySectorReady(resource.data, 'costura', 'Costura', 'dataEntradaDistribuicao')
+        && factorySectorReady(resource.data, 'sola', 'Sola', 'dataRecebimentoSola')
+        && factorySectorReady(resource.data, 'palmilha', 'Palmilha', 'dataRecebimentoPalmilha')
+        && validFactoryDate(d.get('dataEntradaTalonagem', ''))
+        && d.get('usuarioTalonagem', '') == factoryActor()
+        && d.get('statusGeral', '') == 'Talonado';
+    }
+    function validFactoryDetails(d) {
+      return (!changedAny(['trilhoProduzido']) || (d.get('trilhoProduzido', '') is string && d.trilhoProduzido.size() > 0))
+        && (!changedAny(['periodoProducao']) || d.get('periodoProducao', null) is string)
+        && (!changedAny(['dataReferenciaProducao']) || validFactoryDate(d.get('dataReferenciaProducao', '')));
+    }
+    function entersAssembly() {
+      let d = request.resource.data;
       return changesOnly([
-          'statusGeral','statusMontagem','dataEntradaDistribuicao','usuarioDistribuicao',
-          'dataEntradaTalonagem','usuarioTalonagem','dataEntradaMontagem','usuarioMontagem',
+          'statusGeral','statusMontagem','dataEntradaMontagem','usuarioMontagem',
           'trilhoProduzido','dataProducao','dataLeituraMontagem','periodoProducao',
-          'dataReferenciaProducao','periodoProducaoDefinidoPor','periodoProducaoEditadoPor',
-          'periodoProducaoEditadoEm'
+          'dataReferenciaProducao','periodoProducaoDefinidoPor'
         ])
-        && (!changedAny(['statusGeral']) || request.resource.data.statusGeral in ['Distribuído','Talonado','Montado'])
-        && (!changedAny(['statusMontagem']) || request.resource.data.statusMontagem in ['Em Produção','Finalizado','Montado']);
+        // Talões já talonados antes deste fluxo não precisam de novos recebimentos.
+        && hasFactoryRecord(resource.data.get('dataEntradaTalonagem', ''))
+        && !hasFactoryRecord(resource.data.get('dataEntradaMontagem', ''))
+        && validFactoryDate(d.get('dataEntradaMontagem', ''))
+        && d.get('usuarioMontagem', '') == factoryActor()
+        && d.get('statusGeral', '') == 'Montado'
+        && (!changedAny(['statusMontagem']) || d.statusMontagem in ['Em Produção','Finalizado','Montado'])
+        && (!changedAny(['dataProducao']) || d.get('dataProducao', null) is timestamp)
+        && (!changedAny(['dataLeituraMontagem']) || d.get('dataLeituraMontagem', null) is timestamp)
+        && (!changedAny(['periodoProducaoDefinidoPor']) || d.get('periodoProducaoDefinidoPor', null) in ['', factoryActor()])
+        && validFactoryDetails(d);
+    }
+    function editsAssemblyDetails() {
+      let d = request.resource.data;
+      return changesOnly(['trilhoProduzido','periodoProducao','dataReferenciaProducao','periodoProducaoEditadoPor','periodoProducaoEditadoEm'])
+        && hasFactoryRecord(resource.data.get('dataEntradaMontagem', ''))
+        && validFactoryDetails(d)
+        && (!changedAny(['periodoProducao','dataReferenciaProducao','periodoProducaoEditadoPor','periodoProducaoEditadoEm'])
+          || (d.get('periodoProducaoEditadoPor', '') == factoryActor()
+            && d.get('periodoProducaoEditadoEm', null) is timestamp));
+    }
+    function updatesFactory() {
+      return receivesFactory('costura','Costura') || receivesFactory('sola','Sola')
+        || receivesFactory('palmilha','Palmilha') || entersTalonagem()
+        || entersAssembly() || editsAssemblyDetails();
     }
     function resolvesScanError() {
       let d = request.resource.data;
@@ -291,7 +396,7 @@ service cloud.firestore {
         && model == {
           'linha': model.linha, 'modelo': model.modelo, 'chave': modeloId,
           'categoria': '', 'subcategoria': '', 'observacaoModelo': '',
-          'componentes': {'cabedal': true, 'forro': true, 'tiras': true, 'aviamentos': true, 'palmilha': false, 'sola': false},
+          'componentes': {'cabedal': true, 'forro': true, 'tiras': true, 'aviamentos': true, 'palmilha': true, 'sola': true},
           'preco': {'valor': 0, 'setores': {}}, 'totalSetores': 0, 'saldo': 0,
           'ativo': true, 'origem': 'Distribuicao', 'criadoEm': request.time,
           'atualizadoEm': request.time, 'atualizadoPor': request.auth.token.email, 'historico': []
@@ -352,7 +457,11 @@ service cloud.firestore {
       // Validar a sessão uma única vez evita exceder o limite de expressões
       // das regras em lotes e operações com vários responsáveis.
       let level = profile().nivelAcesso;
-      return level == '09'
+      // Os novos campos de planejamento são validados também para Admin.
+      // As demais correções administrativas históricas conservam seu acesso.
+      return changedAny(assemblyPlanningFields())
+        ? (level in ['07','08','09'] && updatesAssemblyPlanning())
+        : (level == '09'
         || (level == '01' && updatesRegistration())
         || (level == '02' && (updatesCutting() || resolvesScanError()))
         || (level == '03' && (entersSector('costura','Costura') || exitsSector('costura','Costura')))
@@ -362,7 +471,7 @@ service cloud.firestore {
         || (level in ['07','08'] && (updatesPlanningMetadata()
           || launchesSector('costura','Costura','idAtelieResponsavel')
           || launchesSector('sola','Sola','idAtelieSolaResponsavel')
-          || launchesSector('palmilha','Palmilha','idAteliePalmilhaResponsavel')));
+          || launchesSector('palmilha','Palmilha','idAteliePalmilhaResponsavel'))));
     }
 
     match /Usuario/{email} {
@@ -378,8 +487,10 @@ service cloud.firestore {
     }
     match /taloes/{talaoId} {
       allow read: if activeUser() && readsTalao();
-      allow create: if activeUser() && (profile().nivelAcesso == '09'
-        || (profile().nivelAcesso in ['01','07','08'] && validInitialTalao()));
+      allow create: if activeUser()
+        && !request.resource.data.keys().hasAny(assemblyPlanningFields())
+        && (profile().nivelAcesso == '09'
+          || (profile().nivelAcesso in ['01','07','08'] && validInitialTalao()));
       allow delete: if hasLevel(['01','09']);
       allow update: if activeUser() && updatesTalao();
     }

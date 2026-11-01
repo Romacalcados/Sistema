@@ -58,7 +58,7 @@
       return {
         ...normalized,
         categoria: '', subcategoria: '', observacaoModelo: '',
-        componentes: {...window.Roma.LEGACY_COMPONENTS},
+        componentes: {...window.Roma.DEFAULT_MODEL_COMPONENTS},
         preco: {valor: 0, setores: {}}, totalSetores: 0, saldo: 0,
         ativo: true, origem: 'Distribuicao', criadoEm: timestamp,
         atualizadoEm: timestamp, atualizadoPor: email, historico: []

@@ -1,0 +1,262 @@
+CALÇADOS ROMA — PLANEJAMENTO DE MONTAGEM
+Atualização: 01/11/2026
+Revisão: um card por trilho, com cinco dias fixos de segunda a sexta
+Página: planejamento.html
+Projeto Firebase: calcadosroma-65ac6
+
+1. COMO APLICAR A ATUALIZAÇÃO
+
+Se o sistema já está na versão mais recente entregue nesta conversa:
+
+1) Extraia Atualizacao_Planejamento_Roma.zip.
+2) Envie todos os arquivos extraídos para a mesma pasta do repositório
+   Romacalcados/Sistema onde estão index.html e cronograma.html. Substitua
+   os arquivos de mesmo nome. Os arquivos não devem ficar dentro de uma
+   nova subpasta. Confirme as alterações no GitHub e aguarde a publicação
+   do GitHub Pages terminar.
+3) Se ainda não publicou as regras da primeira entrega do Planejamento,
+   no console do Firebase selecione o projeto calcadosroma-65ac6.
+   Abra Cloud Firestore > Regras. Substitua todo o conteúdo pelas regras
+   de Regras_Firestore_Roma.txt deste pacote e clique em Publicar.
+   Apenas enviar firestore.rules ao GitHub não publica as regras no banco.
+   Esta revisão usa as mesmas regras da entrega anterior:
+   quem já as publicou não precisa publicá-las novamente.
+4) Atualize o navegador com Ctrl+F5. Entre com um perfil autorizado e abra
+   Menu > Planejamento > Planejamento de Montagem.
+
+Após a publicação dos arquivos, o endereço esperado é:
+https://romacalcados.github.io/Sistema/planejamento.html
+
+Se a instalação ainda está numa versão anterior, use o pacote completo
+Sistema_Calcados_Roma.zip para reunir esta mudança com os recebimentos,
+Talonagem, cores e os demais ajustes já entregues. Preserve a configuração
+de publicação do repositório. Não publique somente planejamento.html:
+ela depende de planejamento.css, roma-planejamento.js,
+roma-planejamento-page.js, roma-producao.js, navegacao.js, roma-core.js e
+firebase-config.js. O helper de produção acompanha a atualização.
+
+Esta entrega não publica arquivos no GitHub nem regras no Firebase.
+Não cria usuários nem modifica registros reais durante a preparação.
+Não exige novas coleções, migração de talões ou índices compostos adicionais.
+Os filtros usam índices simples já habilitados por padrão no Firestore;
+uma instalação que os tenha desativado deve reativar os campos consultados.
+
+2. ABA PLANEJAMENTO
+
+A tabela segue a disposição e as cores do Cronograma. Cada linha reúne
+talões da mesma remessa, linha do modelo, data de corte e data de entrega.
+Mostra Linha, Remessa, Pares, Talões, Dt. Corte e Dt. Entr.; depois apresenta
+as etapas Corte, Cost., Palm., Sola, Dis na Fab, Talon. e Mont.
+Corte, Cost., Palm., Sola, Talon. e Mont. mostram pares e talões pendentes.
+Etapas concluídas mostram uma marca de conferência e data, quando disponível.
+N/A significa componente não aplicável.
+
+Dis na Fab = Disponível na fábrica. Mostra a soma dos pares e a quantidade
+de talões ainda não montados com Costura recebida e, quando o modelo exigir,
+Palmilha e Sola também recebidas. A conferência é feita por talão: receber
+Costura de um talão e Sola de outro não completa nenhum dos dois.
+Componentes não exigidos pelo modelo não impedem a disponibilidade.
+Saída do ateliê, sozinha, não é recebimento na fábrica. Talões talonados
+continuam disponíveis até a montagem. Talões já montados ficam fora dessa
+contagem, mesmo ao marcar Incluir já montados. Essa coluna é uma quantidade
+disponível; não representa o que falta receber.
+
+As duas últimas colunas são Trilho e Prev. Mont. (previsão de montagem).
+Os nomes abreviados têm a descrição completa ao passar o mouse. A cor de
+cada linha continua até Trilho e Prev. Mont., integrando os campos à remessa.
+
+A consulta inicial usa a data de entrega entre 60 dias antes e 90 dias
+depois do dia atual. O período é visível e pode ser alterado; também é
+possível pesquisar pela data de corte. A busca por uma remessa exata
+ignora esse período, permitindo localizar remessas mais antigas.
+
+Os filtros de linha, modelo e tipo de cliente refinam o resultado.
+Modelo e tipo escolhem quais grupos aparecem, mantendo todos os talões
+e pares de cada grupo exibido. Assim, a quantidade visível corresponde
+ao alcance da alteração de trilho/data naquela linha.
+Os estados disponíveis são Sem planejamento, Parcial, Planejado e
+Dividido. Talões já montados ficam ocultos inicialmente; marque a opção
+correspondente para incluí-los na consulta. O resumo compacto de pares
+da aba Planejamento sempre mostra o que ainda falta montar.
+
+Para planejar diretamente na tabela:
+1) Localize a linha da remessa.
+2) Na penúltima coluna, escolha o Trilho: 1, 2, 3, 4 ou 5.
+3) Na última coluna, informe Prev. Mont.
+4) O sistema salva automaticamente após a alteração. A linha indica
+   Aguardando salvamento, Salvando e Salvo. Não há botão Salvar na tabela.
+5) Continue nas outras linhas enquanto as gravações são concluídas.
+
+Na primeira definição, preencha trilho e data. Com os dois campos válidos,
+alterar qualquer um deles salva o novo planejamento automaticamente, após
+uma breve pausa de edição. Se mudar novamente durante uma gravação, a
+última escolha fica na fila e será salva em seguida. O campo e o foco são
+preservados; salvar outra linha não interrompe a digitação.
+
+Um campo vazio deixa a edição incompleta e não apaga o plano no banco.
+Para limpar uma previsão, use a opção explícita dentro do detalhe da remessa.
+Buscar remessas, abrir o detalhe ou acessar Programação aguarda as edições
+completas serem gravadas. Se uma busca ou abertura da mesma remessa exigir
+abandonar uma edição incompleta, a tela pede a confirmação do descarte.
+Antes de fechar a página, confira a indicação Salvo e eventuais mensagens.
+
+O trilho e a data são aplicados aos talões ainda não montados daquele
+grupo de remessa/linha/corte/entrega. Uma remessa que aparece em mais de
+uma linha pode receber programações diferentes em cada uma delas.
+As linhas alteradas são salvas individualmente em sequência, inclusive se
+saírem do filtro. É possível editar a mesma linha ou outra durante a gravação.
+
+Se o grupo já tiver planos diferentes por talão, a linha mostra Dividido
+ou Parcial. Valores iguais em todos os talões aparecem preenchidos;
+valores diferentes não são substituídos automaticamente. Para unificar
+o grupo, informe trilho e data; o salvamento é automático. Para preservar
+a divisão, consulte
+ou ajuste os talões individualmente pelo número da remessa.
+
+Ao clicar no número da remessa, o topo da janela mostra Cliente, Normativas,
+Data de entrega e Data de corte. Valores repetidos aparecem uma vez. Se a
+remessa tiver mais de um cliente, normativa ou data, todos são listados,
+mesmo que parte da remessa esteja fora dos filtros da tabela. Datas aparecem
+com dia, mês e ano. Campos ausentes são identificados como não informados.
+
+Para dividir uma remessa por talão:
+1) Clique no número sublinhado da remessa.
+2) Selecione um talão ou um grupo que será montado no mesmo trilho/data.
+3) Escolha trilho e data e salve.
+4) Repita para os outros grupos. Os talões não selecionados conservam
+   o planejamento anterior.
+
+Na janela de talões, o botão Salvar planejamento continua aplicando a
+previsão ao conjunto selecionado. Também é possível começar com a remessa
+inteira e depois alterar apenas alguns talões. Cada talão tem um único trilho e uma única data planejados.
+O botão Limpar planejamento selecionado remove a previsão apenas dos
+talões marcados, mantendo auditoria e todos os registros de produção.
+
+Se novos talões forem cadastrados depois de planejar a remessa, eles
+aparecem sem planejamento e precisam ser incluídos numa nova seleção.
+Talões já montados podem ser consultados, mas não são replanejados aqui.
+
+3. ABA PROGRAMAÇÃO
+
+A programação aparece em cinco cards, um para cada trilho: 01, 02, 03, 04 e 05.
+Cada card segue o desenho solicitado: Anterior à esquerda, nome do trilho
+no centro e Próxima à direita. O período consultado aparece acima dos cards.
+O cabeçalho do card contém apenas a navegação e o nome do trilho.
+
+Dentro do card, os dias ficam lado a lado, de segunda a sexta-feira.
+Cada dia apresenta:
+- Data e nome do dia da semana;
+- Remessa;
+- Pares programados naquela remessa, naquele trilho e dia;
+- Total de pares do dia, alinhado na parte inferior do card.
+
+As cinco colunas são fixas: Segunda, Terça, Quarta, Quinta e Sexta.
+Um dia sem talões mostra Sem programação e total 0. Os três trilhos
+continuam visíveis mesmo em um período vazio.
+
+Se houver previsões de sábado ou domingo, uma nota informa os talões e pares
+fora do quadro de segunda a sexta. Essas previsões continuam disponíveis
+na aba Planejamento e não são alteradas por esta consulta.
+
+Escolha qualquer dia da semana desejada no campo de data. Os cards cobrem
+segunda-feira a sexta-feira, pela data desejada de montagem. Anterior e Próxima
+mudam a semana de todos os cinco cards juntos. Esta semana volta ao período
+atual; Consultar semana atualiza os dados. Os botões dentro de cada card
+fazem a mesma navegação semanal dos botões superiores.
+
+Os modelos e linhas da mesma remessa são somados em uma única entrada do
+dia/trilho. Uma remessa dividida aparece nos respectivos dias e trilhos,
+com apenas os pares destinados a cada um. Dentro de cada dia e trilho,
+a remessa aparece uma única vez, mesmo quando reúne vários modelos.
+
+Clique em uma remessa para abrir seu detalhamento. A janela informa o
+trilho e a data e mostra somente os talões dessa programação, agrupados em:
+- Linha;
+- Modelo completo no formato linha.modelo, como 8560.417;
+- Quantidade de talões e pares;
+- Pares a montar, prontos e já montados.
+
+Essa janela é de consulta. Para alterar a previsão por remessa ou talão,
+use a aba Planejamento, onde o salvamento automático continua disponível.
+
+Cada talão entra uma única vez no trilho e na data definidos. Talões sem
+planejamento e os de outras semanas não entram nos cards. Os filtros da
+aba Planejamento não restringem a Programação semanal.
+
+Os totais diários e o resumo superior consideram os pares programados de
+segunda a sexta, incluindo aqueles já montados, para comparação com o plano
+original. O resumo mostra pares programados, a montar, prontos e já montados.
+Pares previstos para sábado ou domingo não entram nesses totais.
+Prontos = talões com Talonagem registrada e ainda não montados.
+Já montados = talões planejados para a semana cuja montagem foi realizada.
+A montar = pares programados que ainda não possuem montagem realizada.
+
+No celular, deslize horizontalmente dentro do card para ver os demais dias.
+Imprimir programação imprime o período de segunda a sexta com os cinco
+cards, as remessas, os pares e os totais diários. As listas completas são impressas,
+inclusive quando um card precisa continuar em outra página. Pode ser usado
+o recurso Salvar como PDF da janela de impressão do navegador.
+
+4. ACESSOS
+
+06 — Montagem: consulta as duas abas e os talões; pode imprimir.
+07 — Programação: consulta, define, altera e limpa o planejamento.
+08 — Financeiro: consulta, define, altera e limpa o planejamento.
+09 — Admin: consulta, define, altera e limpa o planejamento.
+
+Os perfis 01–05 não acessam esta página. A nova página não mostra preços,
+valores financeiros ou o cadastro de usuários. Criar Programação, página
+anterior para arquivos de programação, continua disponível separadamente.
+
+5. PLANEJAMENTO E REGISTROS DE PRODUÇÃO
+
+É permitido planejar antes de concluir os recebimentos e a Talonagem.
+Planejar define uma intenção de trilho/data; não efetua bipagem, não
+conclui etapas anteriores e não marca o talão como montado.
+O registro efetivo de Montagem continua sendo feito na página Montagem,
+com as verificações operacionais existentes.
+
+Antes de salvar, o sistema relê os talões e confere se outra pessoa
+alterou o planejamento, o cadastro, as datas de corte/entrega ou a montagem
+desde a consulta. Se isso ocorrer, a operação informa o problema e atualiza os
+dados para que a seleção seja revista, sem sobrescrever silenciosamente.
+
+Remessas grandes são gravadas em grupos de até 200 talões. Se houver falha
+após confirmar alguns grupos, a tela informa quantos foram salvos e quais
+ficaram pendentes. Confira os dados atualizados antes de salvar novamente.
+Na tabela, somente a linha com falha fica bloqueada para revisão; as outras
+linhas da fila continuam salvando. A mensagem conserva o alvo tentado, a
+última edição pendente, quando houver, e as quantidades confirmadas e não
+concluídas. A linha passa a mostrar o plano efetivamente consultado no banco.
+Não há nova tentativa automática com versões atualizadas: clique na remessa
+ou use Buscar remessas, confira os dados e faça a nova edição.
+Na edição por talão, a janela conserva a seleção pendente quando consegue
+atualizar. Se a atualização falhar, feche e abra a remessa novamente.
+Não aparece confirmação integral para falha parcial.
+
+Se o planejamento mudar enquanto uma consulta semanal estiver carregando,
+o relatório é marcado para atualização e a impressão fica bloqueada até
+uma nova consulta. A troca de usuário cancela as edições automáticas que
+ainda não começaram a gravar.
+
+6. CAMPOS E REGRAS
+
+O planejamento fica em cada documento existente da coleção taloes:
+- trilhoMontagemPlanejado: inteiro de 1 a 3 (zero ao limpar);
+- dataMontagemPlanejada: texto AAAA-MM-DD (vazio ao limpar);
+- planejamentoMontagemOrigem: remessa ou talao (vazio ao limpar);
+- planejamentoMontagemVersao: inteiro incrementado a cada alteração;
+- planejamentoMontagemAtualizadoEm: data/hora do servidor;
+- planejamentoMontagemAtualizadoPor: UID do responsável;
+- planejamentoMontagemAtualizadoPorNome: nome do responsável.
+
+Talões antigos sem esses campos são tratados como não planejados.
+As novas regras limitam a alteração desses campos aos perfis 07/08/09,
+validam trilho/data/auditoria/versão e impedem alterar o plano de montados.
+Alterações de planejamento não podem ser misturadas a campos operacionais
+ou financeiros. Mesmo o Admin precisa atender às validações desta função.
+As permissões administrativas anteriores para outros campos permanecem.
+
+Se aparecer erro de permissão ao salvar, confira se as regras publicadas
+são as que acompanham esta atualização e se o perfil está ativo, com UID,
+nivelAcesso em texto de dois dígitos e permissoesVersao numérico igual a 2.
