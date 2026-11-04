@@ -2,8 +2,10 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
+  <script src="firebase-config.js"></script>
+<script src="roma-core.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Programação por Linha - SistemaTaloes</title>
+  <title>Programação por Linha - Calçados Roma</title>
   <script src="navegacao.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -192,8 +194,7 @@
       <div class="filters">
         <div class="form-group date-small">
           <label for="dataCorteInput">Data de Corte</label>
-          <input type="text" id="dataCorteInput" placeholder="Ex.: 22/10/2026 ou 22-10" />
-          <small style="color:#777;font-size:11px">Sem informar o ano, utiliza o ano atual.</small>
+          <input type="text" id="dataCorteInput" placeholder="Ex: 16/07 ou 16/jul" />
         </div>
       </div>
       <div id="status" class="status">Aguardando login e seleção do PDF.</div>
@@ -232,7 +233,7 @@
         <button class="btn" id="closeEditorFooterButton" type="button">Fechar</button>
       </div>
       <div class="modal-body">
-        <div class="editor-title" id="editorDocumentTitle">Planejamento FactorShoes</div>
+        <div class="editor-title" id="editorDocumentTitle">Planejamento Calçados Roma</div>
         <div class="editor-meta" id="editorSummary"></div>
         <div class="page-plan" id="pagePlanSummary"></div>
         <div class="editor-table-wrap" id="editorTableWrap"></div>
@@ -281,14 +282,7 @@
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, collection, query, where, getDocs, writeBatch, setDoc, serverTimestamp, orderBy, limit as firestoreLimit } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCLb8BeZODM8vMynaIXINx4AN_P8snTBk8",
-      authDomain: "sistemataloes.firebaseapp.com",
-      projectId: "sistemataloes",
-      storageBucket: "sistemataloes.appspot.com",
-      messagingSenderId: "684534379685",
-      appId: "1:684534379685:web:..."
-    };
+    const firebaseConfig = window.FIREBASE_CONFIG;
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -347,7 +341,7 @@
     function dmToDisplay(dm){
       const m = String(dm || '').match(/^(\d{1,2})\/(\d{1,2})$/);
       if(!m) return dm || '';
-      return `${pad2(m[1])}/${pad2(m[2])}/${state.currentTarget?.year || new Date().getFullYear()}`;
+      return `${pad2(m[1])}/${pad2(m[2])}/${state.reportYear}`;
     }
 
     function isoToDM(value){
@@ -378,7 +372,7 @@
       if(compact) s = `${compact[1]}/${compact[2]}`;
       let m = s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
       if(m){
-        let y = m[3] ? parseInt(m[3],10) : new Date().getFullYear();
+        let y = m[3] ? parseInt(m[3],10) : state.reportYear;
         if(y < 100) y += 2000;
         const day = parseInt(m[1],10), month = parseInt(m[2],10);
         if(day < 1 || day > 31 || month < 1 || month > 12) return null;
@@ -389,7 +383,7 @@
         const monToken = m[2].normalize('NFD').replace(/[\u0300-\u036f]/g,'');
         const mo = MONTHS.findIndex(mm => mm === monToken);
         if(mo >= 0){
-          let y = m[3] ? parseInt(m[3],10) : new Date().getFullYear();
+          let y = m[3] ? parseInt(m[3],10) : state.reportYear;
           if(y < 100) y += 2000;
           const day = parseInt(m[1],10), month = mo+1;
           return { day, month, year:y, dm:`${pad2(day)}/${pad2(month)}`, iso:`${y}-${pad2(month)}-${pad2(day)}` };
@@ -490,11 +484,11 @@
       state.currentUser = user;
       try{
         const snap = await getDoc(doc(db, 'Usuario', user.email));
-        const userData = snap.exists() ? snap.data() : {};
+        const userData = snap.exists() ? snap.data() : {}; window.Roma.validateProfile(user,userData);
         const nivelAcesso = String(userData.nivelAcesso || '');
         const Nome = userData.Nome || 'Usuário';
-        localStorage.setItem('userNivelAcesso', nivelAcesso);
-        localStorage.setItem('userName', Nome);
+        localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
+        localStorage.setItem('calcadosroma-65ac6:userName', Nome);
         if(window.SistemaNavegacao && typeof window.SistemaNavegacao.init === 'function'){
           window.SistemaNavegacao.init({
             userLevel:nivelAcesso,
@@ -502,8 +496,8 @@
             title:'Programação por Linha',
             onLogout: async () => {
               await signOut(auth);
-              localStorage.removeItem('userNivelAcesso');
-              localStorage.removeItem('userName');
+              localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
+              localStorage.removeItem('calcadosroma-65ac6:userName');
               window.location.href = 'login.html';
             }
           });
@@ -1078,14 +1072,14 @@
       if(!(await ensurePdfReady())) return;
       setBusy('createProgramButton', true, 'Criando...');
       try{
-        setStatus(`Buscando no banco todos os talões do corte <strong>${escapeHtml(target.dm)}/${target.year}</strong>...`);
+        setStatus(`Buscando no banco todos os talões do corte <strong>${escapeHtml(target.dm)}</strong>...`);
         const bancoMap = await fetchBancoResumo(target);
         if(!bancoMap.size){
           state.records = [];
           state.currentTarget = target;
           state.currentProgramId = null;
           renderPreview(); updateSummary(); renderLineSummary();
-          setStatus(`Nenhum talão encontrado no banco para o corte <strong>${escapeHtml(target.dm)}/${target.year}</strong>. Verifique se o ano corresponde ao cadastrado nos talões.`);
+          setStatus(`Nenhum talão encontrado no banco para o corte <strong>${escapeHtml(target.dm)}</strong>.`);
           return;
         }
         const selectedSources = state.pdfSources.map(source => ({...source,map:buildPdfMap(source.records.filter(r => String(r.corte || '') === target.dm))}));
@@ -1099,7 +1093,7 @@
         state.records = records.sort(sortRecordsForPreview);
         renderPreview(); updateSummary(); renderLineSummary();
         const totals = getTotals();
-        let msg = `Programação criada pelo banco para <strong>${escapeHtml(target.dm)}/${target.year}</strong>: <strong>${totals.qtdRemessas}</strong> remessa(s), <strong>${formatNumberBR(totals.total)}</strong> pares e <strong>${formatNumberBR(totals.totalTaloes)}</strong> talões.`;
+        let msg = `Programação criada pelo banco para <strong>${escapeHtml(target.dm)}</strong>: <strong>${totals.qtdRemessas}</strong> remessa(s), <strong>${formatNumberBR(totals.total)}</strong> pares e <strong>${formatNumberBR(totals.totalTaloes)}</strong> talões.`;
         msg += ` Conferência: <strong>${state.comparison.ok}</strong> OK, <strong>${state.comparison.divergentes}</strong> divergente(s), <strong>${state.comparison.somenteBanco}</strong> somente no banco e <strong>${state.comparison.somentePdf}</strong> somente no PDF.`;
         setStatus(msg);
       }catch(err){
@@ -1399,7 +1393,7 @@
       const totals = getTotals();
       const target = state.currentTarget || parseDateInput($('dataCorteInput').value);
       const pages = paginateRecords();
-      $('editorDocumentTitle').textContent = `Planejamento FactorShoes - Corte ${target ? target.dm : ''}`;
+      $('editorDocumentTitle').textContent = `Planejamento Calçados Roma - Corte ${target ? target.dm : ''}`;
       $('editorSummary').innerHTML = `<span>Total: ${formatNumberBR(totals.total)} pares</span><span>Exportação: ${formatNumberBR(totals.totalExp)} pares</span><span>${totals.qtdRemessas} remessa(s) • ${formatNumberBR(totals.totalTaloes)} talões • ${pages.length || 0} página(s) estimada(s)</span>`;
       renderPagePlan(pages);
     }
@@ -1903,7 +1897,7 @@
         if(index > 0) doc.addPage();
         doc.setFont('helvetica','bold');
         doc.setFontSize(12);
-        doc.text(`Planejamento FactorShoes - ${corteTitulo}`, pageW/2, 9, {align:'center'});
+        doc.text(`Planejamento Calçados Roma - ${corteTitulo}`, pageW/2, 9, {align:'center'});
         doc.setFontSize(8);
         doc.text(`${summarizePageLines(pageGroups)}`, margin, 16);
         doc.setFont('helvetica','normal');
@@ -2048,7 +2042,7 @@
         const summary = index === 0 ? `<table class="print-total-box"><tr><td>TOTAL DE EXPORTAÇÃO</td><td>${formatNumberBR(totals.totalExp)}</td></tr><tr><td>TOTAL DE NORMAL</td><td>${formatNumberBR(totals.totalNormal)}</td></tr><tr><td>TOTAL DE PARES</td><td>${formatNumberBR(totals.total)}</td></tr></table>` : '';
         const groupsHtml = pageGroups.map((group, groupIndex) => `${pageGroups.length > 1 ? `<tr class="line-title"><td colspan="14">LINHA ${escapeHtml(group.linha)}${group.parte ? ' - PARTE ' + group.parte : ''}</td></tr>` : ''}${printableColumnHeader()}${printableGroupRows('EXPORTAÇÃO', rowsByType(group.rows,true), true)}${printableGroupRows('NORMAL', rowsByType(group.rows,false), false)}${pageGroups.length > 1 && groupIndex < pageGroups.length - 1 ? '<tr class="line-spacer"><td colspan="14"></td></tr>' : ''}`).join('');
         return `<section class="print-page">
-          <div class="print-title">Planejamento FactorShoes - ${escapeHtml(corteTitulo)}</div>
+          <div class="print-title">Planejamento Calçados Roma - ${escapeHtml(corteTitulo)}</div>
           <div class="print-head"><div><h2>${escapeHtml(summarizePageLines(pageGroups))}</h2></div><div>${pageHeaderText(index, pages.length)}</div></div>
           <table class="print-table"><tbody>${groupsHtml}</tbody></table>
           ${summary}
@@ -2329,7 +2323,7 @@
           nome, dataCorte:target.iso, dataCorteDm:target.dm, ano:target.year,
           arquivoPdf:selectedPdfNames(), arquivosPdf:state.pdfSources.map(source=>({nome:source.file.name,data:source.reportDate})), itens:state.records.map(serializeRecord),
           totalRemessas:totals.qtdRemessas,totalPares:totals.total,totalTaloes:totals.totalTaloes,
-          comparacao:{...state.comparison}, atualizadoEm:serverTimestamp(), atualizadoPor:state.currentUser?.email || localStorage.getItem('userName') || ''
+          comparacao:{...state.comparison}, atualizadoEm:serverTimestamp(), atualizadoPor:state.currentUser?.email || localStorage.getItem('calcadosroma-65ac6:userName') || ''
         };
         if(!state.currentProgramId){ payload.criadoEm = serverTimestamp(); payload.criadoPor = state.currentUser?.email || ''; }
         await setDoc(ref,payload,{merge:true});
@@ -2384,7 +2378,7 @@
       if(!data) return;
       const target = targetFromIso(data.dataCorte,data.dataCorteDm);
       state.currentTarget = target;
-      if(target){ state.reportYear = target.year; $('dataCorteInput').value = `${target.dm}/${target.year}`; }
+      if(target){ state.reportYear = target.year; $('dataCorteInput').value = target.dm; }
       state.currentProgramId = id;
       state.currentProgramName = data.nome || '';
       state.records = Array.isArray(data.itens) ? data.itens.map((r,index)=>({
