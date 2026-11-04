@@ -751,7 +751,38 @@
       }
     }
     @media (min-width: 1280px) {
-      .main-content > .report-search-filters { flex-wrap: nowrap; }
+      .main-content > .report-search-filters {
+        display: grid;
+        grid-template-columns: 0.7fr 0.8fr 1fr 1.55fr 1.25fr 1.15fr 1.25fr 1.55fr;
+        gap: 8px 10px;
+        align-items: end;
+        justify-content: stretch;
+        padding: 12px 14px;
+      }
+      .report-search-filters > .form-group,
+      .report-search-filters > .filter-linha,
+      .report-search-filters > .filter-modelo,
+      .report-search-filters > .filter-remessa,
+      .report-search-filters > .date-range-field,
+      .report-search-filters > .btn {
+        min-width: 0 !important;
+        max-width: none !important;
+        width: 100%;
+        margin: 0;
+      }
+      .report-search-filters > .btn {
+        min-height: 34px;
+      }
+      .report-search-filters > .filter-break {
+        display: none;
+      }
+      #filterPrevMontInicio { display:none; }
+      #filterPrevMontFim { display:none; }
+      #openPrevMontDatePicker { width:100%; }
+      #filterTrilho { width:100%; }
+      #searchButton { grid-column: 3 / 5; }
+      #quickFiltersButton { grid-column: 5 / 7; }
+      #clearFiltersButton { grid-column: 7 / 9; }
     }
 
     /* Roma: colunas de planejamento */
@@ -789,6 +820,8 @@
         <select id="filterAtelie"><option value="">Todos</option></select>
       </div>
       <div class="form-group date-range-field"><label>Data de Entrega:</label><button type="button" class="date-range-button" id="openEntregaDatePicker"><span id="entregaRangeLabel">Selecionar data/período</span></button><input type="hidden" id="filterDataEntregaInicio" /><input type="hidden" id="filterDataEntregaFim" /></div>
+      <div class="form-group date-range-field"><label>Prev. Mont.:</label><button type="button" class="date-range-button" id="openPrevMontDatePicker"><span id="prevMontRangeLabel">Selecionar data/período</span></button><input type="hidden" id="filterPrevMontInicio" /><input type="hidden" id="filterPrevMontFim" /></div>
+      <div class="form-group"><label for="filterTrilho">Trilho:</label><input type="text" id="filterTrilho" placeholder="Ex: 1" /></div>
       <button class="btn btn-primary" id="searchButton">Gerar Relatório</button>
       <button class="btn btn-secondary" id="quickFiltersButton" title="Filtros rápidos">Filtros rápidos</button>
       <button class="btn btn-secondary" id="clearFiltersButton" title="Limpar filtros">Limpar</button>
@@ -803,6 +836,7 @@
           <button class="btn btn-secondary" type="button" id="costuraWhatsButton">Costura Whats</button>
           <button class="btn btn-secondary" type="button" data-roma-whats="palmilha">Palmilha Whats</button>
           <button class="btn btn-secondary" type="button" data-roma-whats="sola">Sola Whats</button>
+          <button class="btn btn-primary" type="button" id="imprimirNormativasButton">Imprimir Normativas</button>
         </div>
       </div>
         <div id="lineFilterContainer" class="filters-container line-filter-container" style="display:none;">
@@ -963,6 +997,9 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+
   <script type="module">
     // === Firebase ===
     const firebaseConfig = window.FIREBASE_CONFIG;
@@ -974,13 +1011,14 @@
     // === DOM ===
     // Navegação padrão carregada pelo arquivo navegacao.js
     const filterSetorAtelie=document.getElementById('filterSetorAtelie');
-    const filterLinha=document.getElementById('filterLinha'), filterModelo=document.getElementById('filterModelo'), filterRemessa=document.getElementById('filterRemessa'), filterDataCorteInicio=document.getElementById('filterDataCorteInicio'), filterDataCorteFim=document.getElementById('filterDataCorteFim'), filterTipoCliente=document.getElementById('filterTipoCliente'), filterAtelie=document.getElementById('filterAtelie'), filterDataEntregaInicio=document.getElementById('filterDataEntregaInicio'), filterDataEntregaFim=document.getElementById('filterDataEntregaFim');
-    const corteRangeLabel=document.getElementById('corteRangeLabel'), entregaRangeLabel=document.getElementById('entregaRangeLabel');
+    const filterLinha=document.getElementById('filterLinha'), filterModelo=document.getElementById('filterModelo'), filterRemessa=document.getElementById('filterRemessa'), filterDataCorteInicio=document.getElementById('filterDataCorteInicio'), filterDataCorteFim=document.getElementById('filterDataCorteFim'), filterTipoCliente=document.getElementById('filterTipoCliente'), filterAtelie=document.getElementById('filterAtelie'), filterDataEntregaInicio=document.getElementById('filterDataEntregaInicio'), filterDataEntregaFim=document.getElementById('filterDataEntregaFim'), filterPrevMontInicio=document.getElementById('filterPrevMontInicio'), filterPrevMontFim=document.getElementById('filterPrevMontFim'), filterTrilho=document.getElementById('filterTrilho');
+    const corteRangeLabel=document.getElementById('corteRangeLabel'), entregaRangeLabel=document.getElementById('entregaRangeLabel'), prevMontRangeLabel=document.getElementById('prevMontRangeLabel');
     const searchButton=document.getElementById('searchButton'), quickFiltersButton=document.getElementById('quickFiltersButton'), clearFiltersButton=document.getElementById('clearFiltersButton');
-    const openCorteDatePicker=document.getElementById('openCorteDatePicker'), openEntregaDatePicker=document.getElementById('openEntregaDatePicker');
+    const openCorteDatePicker=document.getElementById('openCorteDatePicker'), openEntregaDatePicker=document.getElementById('openEntregaDatePicker'), openPrevMontDatePicker=document.getElementById('openPrevMontDatePicker');
     const dateRangePickerModal=document.getElementById('dateRangePickerModal'), datePickerTitle=document.getElementById('datePickerTitle'), datePickerClose=document.getElementById('datePickerClose'), datePickerPrev=document.getElementById('datePickerPrev'), datePickerNext=document.getElementById('datePickerNext'), datePickerMonthTitle=document.getElementById('datePickerMonthTitle'), datePickerGrid=document.getElementById('datePickerGrid'), datePickerApply=document.getElementById('datePickerApply'), datePickerClear=document.getElementById('datePickerClear');
     const quickFiltersModal=document.getElementById('quickFiltersModal'), quickFiltersClose=document.getElementById('quickFiltersClose');
     const naoExibirAmostras=document.getElementById('naoExibirAmostras'), montagemWhatsButton=document.getElementById('montagemWhatsButton'), costuraWhatsButton=document.getElementById('costuraWhatsButton');
+    const imprimirNormativasButton=document.getElementById('imprimirNormativasButton');
     const whatsMessageModal=document.getElementById('whatsMessageModal'), whatsMessageClose=document.getElementById('whatsMessageClose'), whatsMessageTitle=document.getElementById('whatsMessageTitle'), whatsMessageText=document.getElementById('whatsMessageText'), copyWhatsMessageButton=document.getElementById('copyWhatsMessageButton'), openWhatsMessageButton=document.getElementById('openWhatsMessageButton');
     
     // NOVAS REFERÊNCIAS DE BOTÕES (AGORA NO CORPO DO RELATÓRIO)
@@ -1080,7 +1118,7 @@
 
     // MODIFICADO: Limpa também os filtros de linha e remessa
     clearFiltersButton.addEventListener('click',()=>{ 
-        [filterLinha,filterModelo,filterRemessa,filterDataCorteInicio,filterDataCorteFim,filterDataEntregaInicio,filterDataEntregaFim].forEach(i=>i.value=''); updateRangeLabels(); 
+        [filterLinha,filterModelo,filterRemessa,filterDataCorteInicio,filterDataCorteFim,filterDataEntregaInicio,filterDataEntregaFim,filterPrevMontInicio,filterPrevMontFim,filterTrilho].forEach(i=>i.value=''); updateRangeLabels(); 
         filterTipoCliente.value=''; 
         filterAtelie.value=''; 
         if(naoExibirAmostras) naoExibirAmostras.checked = true; 
@@ -1134,8 +1172,15 @@
       }
       if(corteRangeLabel){ corteRangeLabel.textContent = labelFor(filterDataCorteInicio.value, filterDataCorteFim.value, 'Selecionar data/período'); }
       if(entregaRangeLabel){ entregaRangeLabel.textContent = labelFor(filterDataEntregaInicio.value, filterDataEntregaFim.value, 'Selecionar data/período'); }
+      if(prevMontRangeLabel){ prevMontRangeLabel.textContent = labelFor(filterPrevMontInicio.value, filterPrevMontFim.value, 'Selecionar data/período'); }
     }
-    [filterDataCorteInicio,filterDataCorteFim,filterDataEntregaInicio,filterDataEntregaFim].forEach(i=>i.addEventListener('change', updateRangeLabels));
+    [filterDataCorteInicio,filterDataCorteFim,filterDataEntregaInicio,filterDataEntregaFim,filterPrevMontInicio,filterPrevMontFim].forEach(i=>i.addEventListener('change', updateRangeLabels));
+
+    function getDatePickerInputs(target){
+      if(target === 'corte') return { start:filterDataCorteInicio, end:filterDataCorteFim, title:'Selecionar Data de Corte' };
+      if(target === 'prevMont') return { start:filterPrevMontInicio, end:filterPrevMontFim, title:'Selecionar Prev. Mont.' };
+      return { start:filterDataEntregaInicio, end:filterDataEntregaFim, title:'Selecionar Data de Entrega' };
+    }
 
     let datePickerTarget = null;
     let datePickerMonth = new Date();
@@ -1144,10 +1189,10 @@
 
     function openDatePicker(target){
       datePickerTarget = target;
-      const isCorte = target === 'corte';
-      const startInput = isCorte ? filterDataCorteInicio : filterDataEntregaInicio;
-      const endInput = isCorte ? filterDataCorteFim : filterDataEntregaFim;
-      datePickerTitle.textContent = isCorte ? 'Selecionar Data de Corte' : 'Selecionar Data de Entrega';
+      const config = getDatePickerInputs(target);
+      const startInput = config.start;
+      const endInput = config.end;
+      datePickerTitle.textContent = config.title;
       datePickerStart = startInput.value || null;
       datePickerEnd = endInput.value || null;
       const base = parseISODate(datePickerStart || datePickerEnd) || new Date();
@@ -1206,9 +1251,9 @@
 
     function applyDatePicker(){
       if(!datePickerTarget) return;
-      const isCorte = datePickerTarget === 'corte';
-      const startInput = isCorte ? filterDataCorteInicio : filterDataEntregaInicio;
-      const endInput = isCorte ? filterDataCorteFim : filterDataEntregaFim;
+      const config = getDatePickerInputs(datePickerTarget);
+      const startInput = config.start;
+      const endInput = config.end;
       if(datePickerStart && !datePickerEnd) datePickerEnd = datePickerStart;
       startInput.value = datePickerStart || '';
       endInput.value = datePickerEnd || '';
@@ -1223,6 +1268,7 @@
 
     openCorteDatePicker.addEventListener('click', () => openDatePicker('corte'));
     openEntregaDatePicker.addEventListener('click', () => openDatePicker('entrega'));
+    openPrevMontDatePicker.addEventListener('click', () => openDatePicker('prevMont'));
     datePickerClose.addEventListener('click', () => dateRangePickerModal.style.display='none');
     dateRangePickerModal.addEventListener('click', (e) => { if(e.target === dateRangePickerModal) dateRangePickerModal.style.display='none'; });
     datePickerApply.addEventListener('click', applyDatePicker);
@@ -1231,8 +1277,9 @@
     datePickerNext.addEventListener('click', () => { datePickerMonth = new Date(datePickerMonth.getFullYear(), datePickerMonth.getMonth()+1, 1); renderDatePicker(); });
 
     function setDateRange(target, startISO, endISO){
-      const startInput = target === 'corte' ? filterDataCorteInicio : filterDataEntregaInicio;
-      const endInput = target === 'corte' ? filterDataCorteFim : filterDataEntregaFim;
+      const config = getDatePickerInputs(target);
+      const startInput = config.start;
+      const endInput = config.end;
       startInput.value = startISO || '';
       endInput.value = endISO || startISO || '';
       updateRangeLabels();
@@ -1425,6 +1472,175 @@
       const url = `https://wa.me/?text=${encodeURIComponent(whatsMessageText.value)}`;
       window.open(url, '_blank');
     });
+
+    function normalizarTextoPdf(valor){
+      return String(valor ?? '').trim();
+    }
+
+    function valoresUnicosPdf(lista, campo){
+      return [...new Set(lista.map(t => normalizarTextoPdf(t[campo])).filter(Boolean))];
+    }
+
+    function gerarPdfNormativas(){
+      const taloes = getCurrentFilteredTaloes();
+      if(!taloes.length){
+        alert('Nenhum talão carregado ou selecionado. Gere o relatório e selecione as linhas/remessas desejadas.');
+        return;
+      }
+
+      const jspdfNS = window.jspdf;
+      if(!jspdfNS || !jspdfNS.jsPDF){
+        alert('Não foi possível carregar o gerador de PDF. Verifique sua conexão com a internet e tente novamente.');
+        return;
+      }
+
+      const grupos = new Map();
+      taloes.forEach(t => {
+        const linha = normalizarTextoPdf(t.linha) || 'N/A';
+        const remessa = normalizarTextoPdf(t.numeroRemessa) || 'N/A';
+        const dataCorte = normalizarTextoPdf(t.dataCorte);
+        const dataEntrega = normalizarTextoPdf(t.dataEntrega);
+        const chave = JSON.stringify([remessa, linha, dataCorte, dataEntrega]);
+        if(!grupos.has(chave)) grupos.set(chave, []);
+        grupos.get(chave).push(t);
+      });
+
+      const linhasPdf = Array.from(grupos.values()).map(lista => {
+        const primeiro = lista[0] || {};
+        const clientes = valoresUnicosPdf(lista, 'cliente');
+        const normativas = valoresUnicosPdf(lista, 'normativa');
+        const prevMontagens = valoresUnicosPdf(lista, 'dataMontagemPlanejada').sort();
+        const trilhos = valoresUnicosPdf(lista, 'trilhoMontagemPlanejado').sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
+        const pares = lista.reduce((sum,t) => sum + (Number(t.pares) || 0), 0);
+        const taloesQtd = lista.length;
+
+        return {
+          linha: normalizarTextoPdf(primeiro.linha) || 'N/A',
+          remessa: normalizarTextoPdf(primeiro.numeroRemessa) || 'N/A',
+          pares,
+          taloes: taloesQtd,
+          dataCorte: primeiro.dataCorte ? formatDateAbreviado(primeiro.dataCorte) : '-',
+          dataCorteOrdenacao: normalizarTextoPdf(primeiro.dataCorte),
+          dataEntregaLabel: primeiro.dataEntrega ? formatDateAbreviado(primeiro.dataEntrega) : '-',
+          dataEntregaOrdenacao: normalizarTextoPdf(primeiro.dataEntrega),
+          cliente: clientes.join(' / ') || '',
+          normativa: normativas.join(' / ') || '',
+          prevMont: prevMontagens.length ? prevMontagens.map(formatDateAbreviado).join(' / ') : '',
+          prevMontOrdenacao: prevMontagens[0] || '9999-12-31',
+          trilho: trilhos.join(' / ') || '',
+          trilhoOrdenacao: trilhos[0] || 'ZZZZ'
+        };
+      }).sort((a,b) => {
+        // Ordem solicitada: Trilho > Linha > Prev. Mont. > Data de Corte > Data de Entrega
+        const trilhoCmp = a.trilhoOrdenacao.localeCompare(b.trilhoOrdenacao, 'pt-BR', {numeric:true});
+        if(trilhoCmp !== 0) return trilhoCmp;
+
+        const la = parseInt(a.linha.replace(/\D/g,''),10) || 0;
+        const lb = parseInt(b.linha.replace(/\D/g,''),10) || 0;
+        if(la !== lb) return la - lb;
+        const linhaCmp = a.linha.localeCompare(b.linha, 'pt-BR', {numeric:true});
+        if(linhaCmp !== 0) return linhaCmp;
+
+        if(a.prevMontOrdenacao !== b.prevMontOrdenacao) return a.prevMontOrdenacao.localeCompare(b.prevMontOrdenacao);
+        const corteA = a.dataCorteOrdenacao || '9999-12-31';
+        const corteB = b.dataCorteOrdenacao || '9999-12-31';
+        if(corteA !== corteB) return corteA.localeCompare(corteB);
+        const entregaA = a.dataEntregaOrdenacao || '9999-12-31';
+        const entregaB = b.dataEntregaOrdenacao || '9999-12-31';
+        if(entregaA !== entregaB) return entregaA.localeCompare(entregaB);
+
+        return a.remessa.localeCompare(b.remessa, 'pt-BR', {numeric:true});
+      });
+
+      const { jsPDF } = jspdfNS;
+      const docPdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      const totalPares = linhasPdf.reduce((sum,item) => sum + item.pares, 0);
+      const filtros = getAppliedFiltersText().replace(/^ Filtros: /, '').trim();
+      const margemEsquerda = 8;
+      const margemDireita = 8;
+      const larguraUtil = docPdf.internal.pageSize.getWidth() - margemEsquerda - margemDireita;
+
+      docPdf.setFont('helvetica','bold');
+      docPdf.setFontSize(12);
+      docPdf.text('Normativas de Produção - Calçados Roma', margemEsquerda, 11);
+      docPdf.setFont('helvetica','normal');
+      docPdf.setFontSize(7.5);
+      docPdf.text(`Remessas: ${linhasPdf.length}   |   Pares: ${totalPares.toLocaleString('pt-BR')}   |   Talões: ${taloes.length.toLocaleString('pt-BR')}`, margemEsquerda, 16);
+      if(filtros){
+        const filtroLinhas = docPdf.splitTextToSize(`Filtros: ${filtros}`, larguraUtil);
+        docPdf.text(filtroLinhas, margemEsquerda, 20);
+      }
+
+      const startY = filtros ? 20 + (docPdf.splitTextToSize(`Filtros: ${filtros}`, larguraUtil).length * 3.1) + 1.5 : 20;
+
+      docPdf.autoTable({
+        startY,
+        head: [[
+          'Linha', 'Remessa', 'Pares', 'Talões', 'Dt Corte', 'Dt Entrega', 'Cliente', 'Normativa', 'Prev. Mont.', 'Trilho'
+        ]],
+        body: linhasPdf.map(item => [
+          item.linha,
+          item.remessa,
+          item.pares.toLocaleString('pt-BR'),
+          item.taloes.toLocaleString('pt-BR'),
+          item.dataCorte,
+          item.dataEntregaLabel,
+          item.cliente,
+          item.normativa,
+          item.prevMont,
+          item.trilho
+        ]),
+        theme:'grid',
+        styles:{
+          font:'helvetica',
+          fontSize:7,
+          cellPadding:1.2,
+          valign:'middle',
+          overflow:'linebreak',
+          textColor:[25,25,25],
+          lineColor:[120,120,120],
+          lineWidth:0.12
+        },
+        headStyles:{
+          fillColor:[235,235,235],
+          textColor:[0,0,0],
+          fontStyle:'bold',
+          halign:'center',
+          fontSize:7.2,
+          cellPadding:1.4
+        },
+        bodyStyles:{
+          minCellHeight:5.2
+        },
+        columnStyles:{
+          0:{cellWidth:12,halign:'center'},
+          1:{cellWidth:19,halign:'center'},
+          2:{cellWidth:11,halign:'center'},
+          3:{cellWidth:11,halign:'center'},
+          4:{cellWidth:15,halign:'center'},
+          5:{cellWidth:15,halign:'center'},
+          6:{cellWidth:27,halign:'left'},
+          7:{cellWidth:39,halign:'left'},
+          8:{cellWidth:20,halign:'center'},
+          9:{cellWidth:15,halign:'center'}
+        },
+        margin:{left:margemEsquerda,right:margemDireita,bottom:8},
+        didDrawPage: data => {
+          const pagina = docPdf.internal.getNumberOfPages();
+          const altura = docPdf.internal.pageSize.getHeight();
+          docPdf.setFontSize(6.5);
+          docPdf.setTextColor(100);
+          docPdf.text(`Página ${pagina}`, docPdf.internal.pageSize.getWidth()-margemDireita, altura-4, {align:'right'});
+          docPdf.setTextColor(0);
+        }
+      });
+
+      const hoje = new Date();
+      const nomeData = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
+      docPdf.save(`normativas-${nomeData}.pdf`);
+    }
+
+    imprimirNormativasButton?.addEventListener('click', gerarPdfNormativas);
 
     function maxISO(a,b){ if(!a) return b||null; if(!b) return a||null; return (new Date(a)>new Date(b))?a:b; }
     function groupAndSum(taloes, keyFunc) {
@@ -1652,6 +1868,20 @@
         } else if (deF) {
              filters.push(`Entrega (Fim): ${formatDateAbreviado(deF)}`);
         }
+
+        // Data prevista de montagem
+        const pmI = filterPrevMontInicio.value;
+        const pmF = filterPrevMontFim.value;
+        if (pmI && pmF) {
+            filters.push(`Prev. Mont.: ${formatDateAbreviado(pmI)} - ${formatDateAbreviado(pmF)}`);
+        } else if (pmI) {
+            filters.push(`Prev. Mont. (Início): ${formatDateAbreviado(pmI)}`);
+        } else if (pmF) {
+            filters.push(`Prev. Mont. (Fim): ${formatDateAbreviado(pmF)}`);
+        }
+
+        const trilho = filterTrilho.value.trim();
+        if (trilho) filters.push(`Trilho: ${trilho}`);
         
         if (filters.length === 0) {
             return ""; 
@@ -1669,7 +1899,7 @@
       selectRemessasButton.textContent = '0 Selecionadas'; // Reset para o texto padrão
 
 
-      const linha=filterLinha.value.trim(); const modelo=filterModelo.value.trim(); const remessa=filterRemessa.value.trim(); const dataCorteInicio=filterDataCorteInicio.value; const dataCorteFim=filterDataCorteFim.value; const tipoCliente=filterTipoCliente.value; const atelieResponsavel=filterAtelie.value; const dataEntregaInicio=filterDataEntregaInicio.value; const dataEntregaFim=filterDataEntregaFim.value;
+      const linha=filterLinha.value.trim(); const modelo=filterModelo.value.trim(); const remessa=filterRemessa.value.trim(); const dataCorteInicio=filterDataCorteInicio.value; const dataCorteFim=filterDataCorteFim.value; const tipoCliente=filterTipoCliente.value; const atelieResponsavel=filterAtelie.value; const dataEntregaInicio=filterDataEntregaInicio.value; const dataEntregaFim=filterDataEntregaFim.value; const prevMontInicio=filterPrevMontInicio.value; const prevMontFim=filterPrevMontFim.value; const trilhoFiltro=filterTrilho.value.trim().toLowerCase();
       try{
         let qRef=collection(db,'taloes'); let hasFilters=false;
         if(linha){ qRef=query(qRef, where('linha','==',linha)); hasFilters=true; }
@@ -1681,6 +1911,7 @@
         else if(dataCorteInicio){ qRef=query(qRef, where('dataCorte','>=',dataCorteInicio)); hasFilters=true; }
         else if(dataCorteFim){ qRef=query(qRef, where('dataCorte','<=',dataCorteFim)); hasFilters=true; }
         if(dataEntregaInicio || dataEntregaFim){ hasFilters=true; }
+        if(prevMontInicio || prevMontFim || trilhoFiltro){ hasFilters=true; }
         
         currentStageFilter = null;
         if(!hasFilters){ loading.style.display='none'; noData.textContent='Por favor, selecione ao menos um filtro para iniciar a busca.'; noData.style.display='block'; return; }
@@ -1713,6 +1944,20 @@
                 if(dataEntregaFim && t.dataEntrega > dataEntregaFim) return false;
                 return true;
             }); 
+        }
+
+        // Filtros de planejamento aplicados localmente para evitar índices compostos extras no Firestore.
+        if(prevMontInicio || prevMontFim){
+            allFetchedTaloes=allFetchedTaloes.filter(t=> {
+                const prevista=String(t.dataMontagemPlanejada||'').trim();
+                if(!prevista) return false;
+                if(prevMontInicio && prevista < prevMontInicio) return false;
+                if(prevMontFim && prevista > prevMontFim) return false;
+                return true;
+            });
+        }
+        if(trilhoFiltro){
+            allFetchedTaloes=allFetchedTaloes.filter(t=> String(t.trilhoMontagemPlanejado||'').trim().toLowerCase().includes(trilhoFiltro));
         }
         
         loading.style.display='none'; 
