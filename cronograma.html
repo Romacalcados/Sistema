@@ -1513,12 +1513,17 @@
         const trilhos = valoresUnicosPdf(lista, 'trilhoMontagemPlanejado').sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
         const pares = lista.reduce((sum,t) => sum + (Number(t.pares) || 0), 0);
         const taloesQtd = lista.length;
+        const faltandoMontar = lista.filter(t => !hasDate(t.dataEntradaMontagem));
+        const paresFaltaMontar = faltandoMontar.reduce((sum,t) => sum + (Number(t.pares) || 0), 0);
+        const taloesFaltaMontar = faltandoMontar.length;
 
         return {
           linha: normalizarTextoPdf(primeiro.linha) || 'N/A',
           remessa: normalizarTextoPdf(primeiro.numeroRemessa) || 'N/A',
           pares,
           taloes: taloesQtd,
+          paresFaltaMontar,
+          taloesFaltaMontar,
           dataCorte: primeiro.dataCorte ? formatDateAbreviado(primeiro.dataCorte) : '-',
           dataCorteOrdenacao: normalizarTextoPdf(primeiro.dataCorte),
           dataEntregaLabel: primeiro.dataEntrega ? formatDateAbreviado(primeiro.dataEntrega) : '-',
@@ -1576,13 +1581,15 @@
       docPdf.autoTable({
         startY,
         head: [[
-          'Linha', 'Remessa', 'Pares', 'Talões', 'Dt Corte', 'Dt Entrega', 'Cliente', 'Normativa', 'Prev. Mont.', 'Trilho'
+          'Linha', 'Remessa', 'Pares', 'Talões', 'Falta\nPares', 'Falta\nTalões', 'Dt Corte', 'Dt Entrega', 'Cliente', 'Normativa', 'Prev.\nMont.', 'Trilho'
         ]],
         body: linhasPdf.map(item => [
           item.linha,
           item.remessa,
           item.pares.toLocaleString('pt-BR'),
           item.taloes.toLocaleString('pt-BR'),
+          item.paresFaltaMontar.toLocaleString('pt-BR'),
+          item.taloesFaltaMontar.toLocaleString('pt-BR'),
           item.dataCorte,
           item.dataEntregaLabel,
           item.cliente,
@@ -1593,36 +1600,40 @@
         theme:'grid',
         styles:{
           font:'helvetica',
-          fontSize:7,
-          cellPadding:1.2,
+          fontSize:5.6,
+          cellPadding:0.75,
           valign:'middle',
           overflow:'linebreak',
-          textColor:[25,25,25],
-          lineColor:[120,120,120],
-          lineWidth:0.12
+          textColor:[20,20,20],
+          lineColor:[135,135,135],
+          lineWidth:0.10
         },
         headStyles:{
           fillColor:[235,235,235],
           textColor:[0,0,0],
           fontStyle:'bold',
           halign:'center',
-          fontSize:7.2,
-          cellPadding:1.4
+          valign:'middle',
+          fontSize:5.7,
+          cellPadding:0.8,
+          minCellHeight:8
         },
         bodyStyles:{
-          minCellHeight:5.2
+          minCellHeight:5.0
         },
         columnStyles:{
-          0:{cellWidth:12,halign:'center'},
-          1:{cellWidth:19,halign:'center'},
+          0:{cellWidth:10,halign:'center'},
+          1:{cellWidth:18,halign:'center'},
           2:{cellWidth:11,halign:'center'},
-          3:{cellWidth:11,halign:'center'},
-          4:{cellWidth:15,halign:'center'},
-          5:{cellWidth:15,halign:'center'},
-          6:{cellWidth:27,halign:'left'},
-          7:{cellWidth:39,halign:'left'},
-          8:{cellWidth:20,halign:'center'},
-          9:{cellWidth:15,halign:'center'}
+          3:{cellWidth:10,halign:'center'},
+          4:{cellWidth:14,halign:'center'},
+          5:{cellWidth:13,halign:'center'},
+          6:{cellWidth:14,halign:'center'},
+          7:{cellWidth:14,halign:'center'},
+          8:{cellWidth:34,halign:'left'},
+          9:{cellWidth:35,halign:'left'},
+          10:{cellWidth:14,halign:'center'},
+          11:{cellWidth:7,halign:'center'}
         },
         margin:{left:margemEsquerda,right:margemDireita,bottom:8},
         didDrawPage: data => {

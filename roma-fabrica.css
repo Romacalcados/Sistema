@@ -73,3 +73,38 @@ body[data-factory-stage="sola"] {
 @media (max-width:1000px) { .factory-layout { grid-template-columns:1fr; } .factory-column { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:650px) { .factory-main { padding:18px 12px; } .factory-heading h1 { font-size:24px; } .factory-column { grid-template-columns:1fr; } .factory-card { padding:16px; } .factory-history-filter { width:100%; } .factory-totals { gap:25px; } }
 @media (max-width:650px) { .factory-receiving .factory-heading { padding:20px 18px; } .factory-receiving .factory-heading h1 { font-size:26px; } }
+.factory-bulk-card{border-top:6px solid var(--factory-accent)}
+.factory-bulk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:15px 0}
+.factory-bulk-grid label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+.factory-bulk-grid input,.factory-bulk-grid select{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--factory-border,#b8c2cd);border-radius:6px;background:#fff;font:inherit;min-height:42px}
+.factory-bulk-card>.factory-button{width:100%;margin-top:4px}
+@media(max-width:650px){.factory-bulk-grid{grid-template-columns:1fr}}
+
+/* Fluxo separado de Saída / Entrada para Sola e Palmilha */
+.factory-movement-column{grid-template-columns:1fr!important}
+.factory-movement-card{border-top:6px solid var(--factory-accent);}
+.factory-send-card{border-top-color:#2563eb}
+.factory-receive-card{border-top-color:#16a34a}
+.factory-span-2{grid-column:1/-1}
+.factory-movement-card .factory-message{margin-top:12px}
+.factory-movement-card .factory-button{width:100%;margin-top:4px}
+@media(max-width:650px){.factory-span-2{grid-column:auto}}
+
+/* Fluxo final: talão individual + lote nos cards de Saída e Entrada */
+.factory-operation-block{margin-top:16px}
+.factory-operation-block h3{margin:0 0 10px;font-size:14px;color:var(--factory-ink);text-transform:uppercase;letter-spacing:.035em}
+.factory-operation-divider{display:flex;align-items:center;gap:10px;margin:18px 0 4px;color:#728091;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.factory-operation-divider::before,.factory-operation-divider::after{content:"";height:1px;flex:1;background:#e3e8ee}
+.factory-operation-divider span{white-space:nowrap}
+.factory-movement-card .secondary-action{background:var(--factory-tint);color:var(--factory-ink);border:1px solid var(--factory-border)}
+.factory-movement-card .secondary-action:hover{background:var(--factory-border)}
+
+/* Abas de movimentação - Sola/Palmilha */
+.factory-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px 0;padding:6px;background:#fff;border:1px solid var(--factory-border);border-radius:14px;box-shadow:0 3px 12px rgba(15,23,42,.05)}
+.factory-tab{border:1px solid transparent;background:transparent;color:var(--factory-muted);font-weight:800;padding:11px 18px;border-radius:10px;cursor:pointer}
+.factory-tab:hover{background:var(--factory-tint);color:var(--factory-ink)}
+.factory-tab.is-active{background:var(--factory-accent);color:#fff}
+.factory-tab-panel[hidden]{display:none!important}
+.factory-relocate-card{border-top-color:#d97706}
+@media (min-width:1001px){.factory-receiving .factory-tabs{max-width:370px}.factory-receiving .factory-movement-column{display:block}.factory-receiving .factory-tab-panel{width:100%}}
+@media (max-width:640px){.factory-tabs{display:grid;grid-template-columns:repeat(3,1fr)}.factory-tab{padding:10px 6px;font-size:13px}}

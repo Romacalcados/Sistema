@@ -1,0 +1,14 @@
+CALCADOS ROMA - AJUSTES V4 - 05/11/2026
+
+RECEBIMENTO SOLA E PALMILHA
+- Paginas reorganizadas em 3 abas: Saida, Entrada e Relocar Atelie.
+- Saida: talao individual, Data de Corte + Linha ou Remessa inteira; exige atelie de destino.
+- Entrada: talao individual, Data de Corte + Linha ou Remessa inteira; nao exige atelie e exige saida anterior.
+- Relocar Atelie: talao individual, Data de Corte + Linha ou Remessa inteira; exige novo atelie.
+- Relocacao somente enquanto o item estiver no atelie, antes do recebimento na fabrica/Talonagem/Montagem.
+- Historico de relocacoes salvo no proprio talao com data, usuario, atelie anterior e novo atelie.
+- Em lote, a operacao e bloqueada caso algum talao esteja fora das condicoes, evitando alteracao parcial inesperada.
+
+FIRESTORE
+- firestore.rules e Regras_Firestore_Roma.txt atualizados para permitir os campos de historico de relocacao.
+- Publicar as regras atualizadas junto com esta versao.

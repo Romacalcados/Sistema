@@ -45,7 +45,7 @@
       weekRequest: 0, modal: null, modalRequest: 0, authRequest: 0,
       scheduleGroups: new Map(), drafts: new Map(), saveStates: new Map(), blockedKeys: new Set(),
       inlineSaving: false, navigating: false, savingKey: '', autoTimer: null, autoRunner: null,
-      editRevision: 0, commitRevision: 0, dayTaloesView: null
+      editRevision: 0, commitRevision: 0, dayTaloesView: null, holidays: new Set()
     };
     const planningControls = ['filterRemessa','filterLinha','filterModelo','filterTipoCliente','filterTrilho','filterShowProgrammed','filterShowUnprogrammed','filterShowCompleteMounted','filterShowNotCompleteMounted','openPlanningCorteDatePicker','openPlanningEntregaDatePicker','openPlanningProgramadaDatePicker','searchPlanningButton','clearPlanningFilters'];
     const weekControls = ['weekDate','previousWeekButton','currentWeekButton','nextWeekButton','loadWeekButton','printSpecificDate'];
@@ -602,8 +602,8 @@
         const totalPairs = Number(track.pairs || 0);
         const mountedPairs = Number(track.mountedPairs || 0);
         const remainingPairs = Number(track.remainingPairs || 0);
-        const programmedDays = (track.days || []).filter(day => Number(day.pairs || 0) > 0).length;
-        const averagePairs = programmedDays ? Math.round(totalPairs / programmedDays) : 0;
+        const workDays = Math.max(1, (board.days || []).filter(day => !state.holidays.has(day.date)).length);
+        const averagePairs = Math.round(totalPairs / workDays);
         return `<article class="week-board-track" data-track="${track.track}" aria-label="Programação do ${escape(trackName)}">
           <header class="week-board-head">
             <button type="button" class="week-board-nav" data-week-offset="-7" aria-label="Semana anterior, todos os trilhos" title="Consultar a semana anterior em todos os trilhos">‹ Anterior</button>
@@ -613,7 +613,7 @@
                 <span><small>Total de pares</small><strong>${number(totalPairs)}</strong></span>
                 <span><small>Já montado</small><strong>${number(mountedPairs)}</strong></span>
                 <span><small>Falta montar</small><strong>${number(remainingPairs)}</strong></span>
-                <span class="metric-average"><small>Média por dia</small><strong>${number(averagePairs)}</strong><em>${number(programmedDays)} ${programmedDays === 1 ? 'dia' : 'dias'}</em></span>
+                <span class="metric-average"><small>Média por dia</small><strong>${number(averagePairs)}</strong><em>${number(workDays)} ${workDays === 1 ? 'dia útil' : 'dias úteis'}</em></span>
               </div>
             </div>
             <div class="week-board-head-actions">
@@ -626,7 +626,7 @@
             ${track.days.map((day, index) => {
               const descriptor = board.days[index];
               return `<section class="week-day${descriptor.weekend ? ' week-day-weekend' : ''}" data-date="${day.date}" aria-label="${escape(descriptor.label)}, ${dateLabel(day.date)}">
-                <header class="week-day-head"><div class="week-day-head-copy"><time datetime="${day.date}" title="${dateLabel(day.date)}">${weekDateLabel(day.date)}</time><h4>${escape(descriptor.label)}</h4></div><button type="button" class="week-day-taloes-button" data-day-taloes-track="${track.track}" data-day-taloes-date="${day.date}" title="Ver os talões ainda não montados de ${escape(descriptor.label)}">Talões</button></header>
+                <header class="week-day-head"><div class="week-day-head-copy"><time datetime="${day.date}" title="${dateLabel(day.date)}">${weekDateLabel(day.date)}</time><h4>${escape(descriptor.label)}</h4><label class="holiday-check"><input type="checkbox" data-holiday-date="${day.date}" ${state.holidays.has(day.date)?'checked':''} ${state.canEdit?'':'disabled'}><span>Feriado</span></label></div><button type="button" class="week-day-taloes-button" data-day-taloes-track="${track.track}" data-day-taloes-date="${day.date}" title="Ver os talões ainda não montados de ${escape(descriptor.label)}">Talões</button></header>
                 <div class="week-day-columns"><span>Remessa</span><span>Pares</span><span>Falta mont.</span></div>
                 <ul class="week-day-list">${day.remessas.length ? day.remessas.map(remessa => `<li><button type="button" class="week-remessa-link" data-week-remessa="${escape(remessa.remessa)}" data-track="${track.track}" data-date="${day.date}" aria-label="Detalhar remessa ${escape(remessa.remessa || 'sem número')}, ${number(remessa.pairs)} pares, ${number(remessa.remainingPairs)} faltando montar, ${escape(trackName)}, ${escape(descriptor.label)}, ${dateLabel(day.date)}">${escape(remessa.remessa || 'Sem remessa')}</button><span>${number(remessa.pairs)}</span><span class="remessa-remaining">${number(remessa.remainingPairs)}</span></li>`).join('') : '<li class="week-day-empty">Sem programação</li>'}</ul>
                 <footer class="week-day-totals"><div class="week-day-total"><span>Total de pares</span><strong>${number(day.pairs)}</strong></div><div class="week-day-total secondary"><span>Falta montar</span><strong>${number(day.remainingPairs)}</strong></div></footer>
@@ -961,6 +961,9 @@
         const result = await service.loadWeek(selectedDate);
         if (request !== state.weekRequest || !state.authenticated) return;
         state.week = result;
+        const bounds = helper.weekBounds(selectedDate);
+        const holidaySnap = await sdk.getDocs(sdk.collection(db,'feriadosFabrica'));
+        state.holidays = new Set(holidaySnap.docs.map(d=>d.id).filter(id=>id>=bounds.start && id<=bounds.end));
         state.weekDirty = commitRevision !== state.commitRevision || state.inlineSaving;
         renderWeek(result);
         message('weekMessage', state.weekDirty ? 'O planejamento mudou durante esta consulta. Consulte a semana novamente para atualizar o relatório e liberar a impressão.' : state.drafts.size ? 'Este relatório considera o planejamento salvo. Há linhas com trilho ou data incompletos na tabela.' : state.weekBoard.totals.talaoCount ? '' : 'Ainda não há talões programados de segunda a sexta neste período. Defina o trilho e a data na aba Planejamento.', state.weekDirty || state.drafts.size ? 'warning' : 'info');
@@ -1196,6 +1199,24 @@
     $('loadWeekButton').addEventListener('click', loadWeek);
     $('weekDate').addEventListener('change', loadWeek);
     [['previousWeekButton',-7],['nextWeekButton',7],['currentWeekButton',0]].forEach(([id, increment]) => $(id).addEventListener('click', () => navigateWeek(increment)));
+    $('trackCards').addEventListener('change', async event => {
+      const checkbox = event.target.closest('input[data-holiday-date]');
+      if(!checkbox || !state.canEdit) return;
+      const date=checkbox.dataset.holidayDate;
+      try {
+        if(checkbox.checked) {
+          await sdk.setDoc(sdk.doc(db,'feriadosFabrica',date),{data:date,feriado:true,atualizadoPor:root.Roma.session.name,atualizadoEm:sdk.serverTimestamp()});
+          state.holidays.add(date);
+        } else {
+          await sdk.deleteDoc(sdk.doc(db,'feriadosFabrica',date));
+          state.holidays.delete(date);
+        }
+        renderWeek(state.week);
+      } catch(error) {
+        checkbox.checked=!checkbox.checked;
+        message('weekMessage',errorText(error),'error');
+      }
+    });
     $('trackCards').addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button || button.disabled) return;

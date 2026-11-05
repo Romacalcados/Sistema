@@ -1221,3 +1221,4 @@ body.planning-page:has(#panelPlanejamento:not([hidden])) > .planning-main > .pla
 /* Ateliês no modal de talões */
 .day-talao-table td:nth-child(5){min-width:180px;white-space:normal;}
 @media print{body.planning-custom-print .day-talao-table td:nth-child(5){min-width:0;font-size:7pt;}}
+.holiday-check{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:11px;font-weight:700;color:#9b1c1c;cursor:pointer}.holiday-check input{accent-color:#b91c1c}.holiday-check:has(input:checked){background:#fee2e2;border-radius:5px;padding:2px 5px}

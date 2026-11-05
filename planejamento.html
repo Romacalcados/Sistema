@@ -323,17 +323,17 @@
   </dialog>
 
   <noscript><p class="planning-message error">Ative o JavaScript do navegador para abrir o planejamento de montagem.</p></noscript>
-  <script src="roma-planejamento-page.js?v=20261101-montagem-incompletos"></script>
+  <script src="roma-planejamento-page.js?v=20261105-feriados"></script>
   <script type="module">
     import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
     import {getAuth,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';
-    import {getFirestore,doc,getDoc,collection,query,where,getDocs,getDocsFromServer,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js';
+    import {getFirestore,doc,getDoc,setDoc,deleteDoc,collection,query,where,getDocs,getDocsFromServer,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js';
     try {
       if (!window.Roma || !window.RomaProducao || !window.RomaPlanejamento || !window.RomaPlanejamentoPage || !window.SistemaNavegacao) {
         throw new Error('Atualize os arquivos de planejamento junto com esta página.');
       }
       const app = initializeApp(window.FIREBASE_CONFIG);
-      await window.RomaPlanejamentoPage.start({auth:getAuth(app),db:getFirestore(app),sdk:{onAuthStateChanged,signOut,doc,getDoc,collection,query,where,getDocs,getDocsFromServer,runTransaction,serverTimestamp}});
+      await window.RomaPlanejamentoPage.start({auth:getAuth(app),db:getFirestore(app),sdk:{onAuthStateChanged,signOut,doc,getDoc,setDoc,deleteDoc,collection,query,where,getDocs,getDocsFromServer,runTransaction,serverTimestamp}});
     } catch (error) {
       window.showPlanningStartupError('Não foi possível iniciar o planejamento. ' + (error && error.message ? error.message : 'Confira a conexão e recarregue a página.'));
     }

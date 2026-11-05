@@ -72,6 +72,31 @@
     if(!factoryDate(date)) throw new Error('Data de leitura inválida.');
     if(typeof operatorName!=='string' || !operatorName.trim()) throw new Error('Operador da leitura não identificado. Entre novamente.');
   }
+  function closeCutPatch(data,date,operatorName) {
+    const patch={statusCorte:'Cortado'};
+    CUT_COMPONENTS.forEach(key=>{
+      if(!requiresComponent(data,key)) return;
+      const field=CUT_FIELDS[key];
+      patch[field+'Concluido']=true;
+      if(!hasDate(data?.[field+'Data'])) patch[field+'Data']=date;
+      if(!String(data?.[field+'Usuario']||'').trim()) patch[field+'Usuario']=operatorName;
+    });
+    return patch;
+  }
+  function closeSectorPatch(data,sector,date,operatorName,{receive=true}={}) {
+    const stage=SECTORS[sector], receipt=FACTORY_RECEIPTS[sector];
+    if(!stage || !stageApplicable(data,sector)) return {};
+    const patch={};
+    if(!hasDate(data?.[stage.start])) patch[stage.start]=date;
+    if(!String(data?.[stage.user]||'').trim()) patch[stage.user]=operatorName;
+    if(!hasDate(data?.[stage.end])) patch[stage.end]=date;
+    patch[stage.status]='Finalizado';
+    if(receive && receipt){
+      if(!hasDate(data?.[receipt.date])) patch[receipt.date]=date;
+      if(!String(data?.[receipt.user]||'').trim()) patch[receipt.user]=operatorName;
+    }
+    return patch;
+  }
   function factoryReceiptPatch(data,sector,date=localISODate(),operatorName='') {
     const receipt=FACTORY_RECEIPTS[sector], stage=SECTORS[sector];
     if(!receipt || !stage) throw new Error('Setor de recebimento inválido.');
@@ -79,16 +104,29 @@
     if(!stageApplicable(data,sector)) throw new Error(`Este modelo não contém ${stage.name.toLowerCase()}.`);
     if(hasDate(data?.[receipt.date])) throw new Error(`${stage.name} já recebida na fábrica.`);
     if(hasDate(data?.dataEntradaTalonagem) || hasDate(data?.dataEntradaMontagem)) throw new Error('Este talão já passou pela Talonagem ou Montagem. Confira os registros antes de receber novamente.');
-    if(!hasDate(data?.[stage.end])) throw new Error(`Registre a saída do ateliê de ${stage.name} antes do recebimento na fábrica.`);
-    return {[receipt.date]:date,[receipt.user]:operatorName,...(sector==='costura'?{statusGeral:'Distribuído'}:{})};
+    return {...closeSectorPatch(data,sector,date,operatorName,{receive:true}),...(sector==='costura'?{statusGeral:'Distribuído'}:{})};
   }
   function talonagemPatch(data,date=localISODate(),operatorName='') {
     validateFactoryStamp(date,operatorName);
     if(hasDate(data?.dataEntradaTalonagem)) throw new Error('Este talão já foi lido na Talonagem.');
     if(hasDate(data?.dataEntradaMontagem)) throw new Error('Este talão já passou pela Montagem.');
-    const pending=factoryPending(data);
-    if(pending.length) throw new Error(`Talonagem pendente: ${pending.join('; ')}.`);
-    return {dataEntradaTalonagem:date,usuarioTalonagem:operatorName,statusGeral:'Talonado'};
+    return {
+      ...closeCutPatch(data,date,operatorName),
+      ...closeSectorPatch(data,'costura',date,operatorName,{receive:true}),
+      ...closeSectorPatch(data,'sola',date,operatorName,{receive:true}),
+      ...closeSectorPatch(data,'palmilha',date,operatorName,{receive:true}),
+      dataEntradaTalonagem:date,usuarioTalonagem:operatorName,statusGeral:'Talonado'
+    };
+  }
+  function assemblyClosurePatch(data,date=localISODate(),operatorName='') {
+    validateFactoryStamp(date,operatorName);
+    return {
+      ...closeCutPatch(data,date,operatorName),
+      ...closeSectorPatch(data,'costura',date,operatorName,{receive:true}),
+      ...closeSectorPatch(data,'sola',date,operatorName,{receive:true}),
+      ...closeSectorPatch(data,'palmilha',date,operatorName,{receive:true}),
+      ...(!hasDate(data?.dataEntradaTalonagem)?{dataEntradaTalonagem:date,usuarioTalonagem:operatorName}:{}),
+    };
   }
   function modelKey(linha,modelo) {
     const l=String(linha??'').trim().replace(/\D/g,''),m=String(modelo??'').trim();
@@ -132,5 +170,5 @@
   function setReadOnly(elements,message) {
     elements.forEach(el=>{if(el){el.disabled=true;el.title=message||'Operação reservada ao setor responsável e ao Admin.';}});
   }
-  root.Roma=Object.freeze({ROLES,SECTORS,COMPONENTS,CUT_COMPONENTS,CUT_FIELDS,FACTORY_RECEIPTS,LEGACY_COMPONENTS,DEFAULT_MODEL_COMPONENTS,normalizeComponents,requiresComponent,cutItemComplete,cutComplete,cutStarted,productionStarted,cutCompletionDate,stageApplicable,stageComplete,localISODate,factoryReceived,factoryChecks,factoryReady,factoryPending,factoryReceiptPatch,talonagemPatch,modelKey,modelKeys,assignmentPatch,validateProfile,canWrite,requireWrite,setReadOnly,get session(){return session;}});
+  root.Roma=Object.freeze({ROLES,SECTORS,COMPONENTS,CUT_COMPONENTS,CUT_FIELDS,FACTORY_RECEIPTS,LEGACY_COMPONENTS,DEFAULT_MODEL_COMPONENTS,normalizeComponents,requiresComponent,cutItemComplete,cutComplete,cutStarted,productionStarted,cutCompletionDate,stageApplicable,stageComplete,localISODate,factoryReceived,factoryChecks,factoryReady,factoryPending,factoryReceiptPatch,talonagemPatch,assemblyClosurePatch,modelKey,modelKeys,assignmentPatch,validateProfile,canWrite,requireWrite,setReadOnly,get session(){return session;}});
 })(typeof window!=='undefined'?window:globalThis);

@@ -858,6 +858,13 @@
     }
 
     .modelos-table-wrap { overflow-x: auto; }
+    .schedule-modal-box { max-height: calc(100vh - 24px); }
+    .schedule-modal-body { min-height:0; overflow-y:auto; padding:16px; flex:1 1 auto; }
+    .schedule-rows { display:grid; gap:10px; }
+    .schedule-modal-footer { flex:0 0 auto; display:flex; gap:10px; justify-content:space-between; align-items:center; padding:12px 16px 16px; border-top:1px solid var(--border-soft); background:#fff; flex-wrap:wrap; }
+    .schedule-modal-actions { display:flex; gap:10px; margin-left:auto; }
+    @media (max-width:650px) { .schedule-modal-footer,.schedule-modal-actions{width:100%}.schedule-modal-footer>button,.schedule-modal-actions button{flex:1} }
+
 
     .modelos-table {
       width: 100%;
@@ -936,12 +943,12 @@
       <div class="summary-card">
         <div class="summary-label">Total manhã</div>
         <div class="summary-value click-detail" id="totalManhaCard" data-detail-type="turno" data-turno="manha" title="Clique para ver os modelos da manhã">0</div>
-        <div class="summary-sub">08:00 até 11:18</div>
+        <div class="summary-sub">Conforme horários configurados</div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Total tarde</div>
         <div class="summary-value click-detail" id="totalTardeCard" data-detail-type="turno" data-turno="tarde" title="Clique para ver os modelos da tarde">0</div>
-        <div class="summary-sub">14:00 até 16:00</div>
+        <div class="summary-sub">Conforme horários configurados</div>
       </div>
       <div class="summary-card">
         <div class="summary-label">Talões lidos</div>
@@ -954,8 +961,9 @@
       <div class="section-head">
         <div>
           <h2>Produção por horário</h2>
-          <small>Cada horário aparece em formato de tabela: Trilho, Meta e Produção. Exemplo: 08:00 soma os talões baixados das 08:00 às 09:00.</small>
+          <small>A meta de cada card é proporcional à carga em minutos configurada para aquele horário.</small>
         </div>
+        <button class="secondary" id="editScheduleButton">Editar horários</button>
       </div>
       <div class="hour-grid" id="hourGrid"></div>
     </section>
@@ -1027,6 +1035,14 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="scheduleModal" hidden>
+    <div class="modelos-modal schedule-modal-box" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
+      <div class="modelos-modal-head"><div><h3 id="scheduleModalTitle">Horários de produção</h3><small>Informe o horário exibido no card e a carga correspondente em minutos.</small></div><button class="close-modal" id="closeScheduleModal" type="button">×</button></div>
+      <div class="schedule-modal-body"><div id="scheduleRows" class="schedule-rows"></div></div>
+      <div class="schedule-modal-footer"><button class="secondary" id="addScheduleRow" type="button">+ Adicionar horário</button><div class="schedule-modal-actions"><button class="light" id="cancelSchedule" type="button">Cancelar</button><button class="success" id="saveSchedule" type="button">Salvar horários</button></div></div>
+    </div>
+  </div>
+
 
   <script src="navegacao.js"></script>
   <script type="module">
@@ -1039,6 +1055,7 @@
       doc,
       getDoc,
       getDocs,
+      setDoc,
       addDoc,
       collection,
       onSnapshot,
@@ -1057,6 +1074,9 @@
     const saveConfigButton = document.getElementById('saveConfigButton');
     const syncStatus = document.getElementById('syncStatus');
     const hourGrid = document.getElementById('hourGrid');
+    const editScheduleButton = document.getElementById('editScheduleButton');
+    const scheduleModal = document.getElementById('scheduleModal');
+    const scheduleRows = document.getElementById('scheduleRows');
     const dailyTable = document.getElementById('dailyTable');
     const configGrid = document.getElementById('configGrid');
     const configHint = document.getElementById('configHint');
@@ -1089,17 +1109,17 @@
       { key: 'trilho03', id: 'Trilho - 03', codigo: '03', supervisor: 'Nelson', metaDia: 2000, pessoas: 0, necessidade: 31 },
     ];
 
-    // Regra pedida: cada cartão soma os talões baixados na hora seguinte.
-    // Ex.: cartão 08:00 = produção das 07:00 às 08:00, mas baixada das 08:00 às 09:00.
-    const PERIODOS = [
-      { label: '08:00', producaoRef: '07:00 às 08:00', leituraInicio: '08:00', leituraFim: '09:00', fator: 1, turno: 'manha' },
-      { label: '09:00', producaoRef: '08:00 às 09:00', leituraInicio: '09:00', leituraFim: '10:00', fator: 1, turno: 'manha' },
-      { label: '10:00', producaoRef: '09:00 às 10:00', leituraInicio: '10:00', leituraFim: '11:00', fator: 1, turno: 'manha' },
-      { label: '11:18', producaoRef: '10:00 às 11:00', leituraInicio: '11:00', leituraFim: '13:00', fator: 1, turno: 'manha' },
-      { label: '14:00', producaoRef: '13:00 às 14:00', leituraInicio: '14:00', leituraFim: '15:00', fator: 1, turno: 'tarde' },
-      { label: '15:00', producaoRef: '14:00 às 15:00', leituraInicio: '15:00', leituraFim: '16:00', fator: 1, turno: 'tarde' },
-      { label: '16:00', producaoRef: '15:00 às 16:00', leituraInicio: '16:00', leituraFim: '17:00', fator: 2.8, turno: 'tarde' }
+    const DEFAULT_PERIODOS = [
+      { label:'08:00', cargaMin:60, leituraInicio:'08:00', leituraFim:'09:00', turno:'manha' },
+      { label:'09:00', cargaMin:60, leituraInicio:'09:00', leituraFim:'10:00', turno:'manha' },
+      { label:'10:00', cargaMin:60, leituraInicio:'10:00', leituraFim:'11:00', turno:'manha' },
+      { label:'11:18', cargaMin:78, leituraInicio:'11:00', leituraFim:'13:00', turno:'manha' },
+      { label:'14:00', cargaMin:60, leituraInicio:'14:00', leituraFim:'15:00', turno:'tarde' },
+      { label:'15:00', cargaMin:60, leituraInicio:'15:00', leituraFim:'16:00', turno:'tarde' },
+      { label:'16:00', cargaMin:150, leituraInicio:'16:00', leituraFim:'18:30', turno:'tarde' }
     ];
+    let PERIODOS = clone(DEFAULT_PERIODOS);
+
 
     const METAS_COLLECTION = 'metas';
     let currentUserEmail = '';
@@ -1181,8 +1201,9 @@
       return `trilho0${match[1]}`;
     }
 
-    function metaHorario(metaDia, fator = 1) {
-      return Math.round((cleanNumber(metaDia) / 8.8) * cleanNumber(fator));
+    function totalCargaMin() { return Math.max(1, PERIODOS.reduce((sum,p)=>sum+cleanNumber(p.cargaMin),0)); }
+    function metaHorario(metaDia, cargaMin = 0) {
+      return Math.round(cleanNumber(metaDia) * cleanNumber(cargaMin) / totalCargaMin());
     }
 
     function minutesOf(time) {
@@ -1197,23 +1218,17 @@
       return 'today';
     }
 
-    function fatorEsperadoAteAgora(dateISO) {
+    function cargaEsperadaAteAgora(dateISO) {
       const status = dateStatus(dateISO);
-      const totalFator = PERIODOS.reduce((sum, p) => sum + cleanNumber(p.fator), 0);
-      if (status === 'past') return totalFator;
-      if (status === 'future') return totalFator;
-
+      const total = totalCargaMin();
+      if (status === 'past' || status === 'future') return total;
       const now = new Date();
       const minNow = now.getHours() * 60 + now.getMinutes();
-      const fator = PERIODOS.reduce((sum, p) => {
-        return minNow >= minutesOf(p.leituraFim) ? sum + cleanNumber(p.fator) : sum;
-      }, 0);
-      return Math.min(totalFator, fator);
+      return Math.min(total, PERIODOS.reduce((sum,p)=>minNow >= minutesOf(p.leituraFim) ? sum + cleanNumber(p.cargaMin) : sum,0));
     }
 
     function metaEsperadaAteAgora(metaDia, dateISO) {
-      const fator = fatorEsperadoAteAgora(dateISO);
-      return Math.round((cleanNumber(metaDia) / 8.8) * fator);
+      return Math.round(cleanNumber(metaDia) * cargaEsperadaAteAgora(dateISO) / totalCargaMin());
     }
 
     function metaTotalDiaConfig(configList = trilhosConfig) {
@@ -1373,6 +1388,34 @@
       }
     }
 
+    function normalizePeriodos(list) {
+      const raw=(Array.isArray(list)?list:[]).map(p=>({label:String(p.label||'').trim(),cargaMin:Math.max(1,Math.round(cleanNumber(p.cargaMin)))})).filter(p=>/^([01]\d|2[0-3]):[0-5]\d$/.test(p.label));
+      const unique=[...new Map(raw.map(p=>[p.label,p])).values()].sort((a,b)=>minutesOf(a.label)-minutesOf(b.label));
+      return unique.map((p,i)=>{
+        const def=DEFAULT_PERIODOS.find(d=>d.label===p.label);
+        const next=unique[i+1];
+        const end=next?.label || (()=>{const m=minutesOf(p.label)+p.cargaMin;return `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;})();
+        return {...p,leituraInicio:def?.leituraInicio||p.label,leituraFim:def?.leituraFim||end,turno:minutesOf(p.label)<12*60+30?'manha':'tarde',producaoRef:`${p.cargaMin} min`};
+      });
+    }
+    async function loadScheduleConfig(){
+      try{const snap=await getDoc(doc(db,'configuracaoProducao','horarios')); if(snap.exists()&&Array.isArray(snap.data().periodos)) PERIODOS=normalizePeriodos(snap.data().periodos); else PERIODOS=normalizePeriodos(DEFAULT_PERIODOS);}
+      catch(error){console.warn('Horários padrão mantidos:',error);PERIODOS=normalizePeriodos(DEFAULT_PERIODOS);}
+    }
+    function renderScheduleEditor(){
+      scheduleRows.innerHTML=PERIODOS.map((p,i)=>`<div class="schedule-edit-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end"><div class="field"><label>Horário do card</label><input type="time" data-schedule-time value="${p.label}"></div><div class="field"><label>Carga (minutos)</label><input type="number" min="1" step="1" data-schedule-load value="${p.cargaMin}"></div><button class="light" type="button" data-remove-schedule="${i}">Excluir</button></div>`).join('');
+    }
+    function openScheduleEditor(){renderScheduleEditor();scheduleModal.hidden=false;}
+    function closeScheduleEditor(){scheduleModal.hidden=true;}
+    async function saveScheduleConfig(){
+      const rows=[...scheduleRows.querySelectorAll('.schedule-edit-row')].map(row=>({label:row.querySelector('[data-schedule-time]').value,cargaMin:Number(row.querySelector('[data-schedule-load]').value)}));
+      const normalized=normalizePeriodos(rows);
+      if(!normalized.length){alert('Cadastre pelo menos um horário válido.');return;}
+      if(normalized.length!==rows.length){alert('Existem horários vazios, duplicados ou inválidos. Corrija antes de salvar.');return;}
+      await setDoc(doc(db,'configuracaoProducao','horarios'),{periodos:normalized.map(p=>({label:p.label,cargaMin:p.cargaMin})),atualizadoEm:serverTimestamp(),atualizadoPor:currentUserName||currentUserEmail},{merge:true});
+      PERIODOS=normalized;closeScheduleEditor();renderDashboard(); renderMonthlyFromMonthTaloes();
+    }
+
     function emptyResumo(dateISO, configList = trilhosConfig) {
       const resumo = {
         data: dateISO,
@@ -1401,12 +1444,12 @@
         PERIODOS.forEach(p => {
           resumo.trilhos[t.key].periodos[p.label] = {
             producao: 0,
-            meta: metaHorario(t.metaDia, p.fator),
+            meta: metaHorario(t.metaDia, p.cargaMin),
             turno: p.turno,
-            fator: p.fator,
+            cargaMin: p.cargaMin,
             leituraInicio: p.leituraInicio,
             leituraFim: p.leituraFim,
-            producaoRef: p.producaoRef
+            producaoRef: p.producaoRef || `${p.cargaMin} min`
           };
         });
       });
@@ -1414,10 +1457,10 @@
       PERIODOS.forEach(p => {
         resumo.periodos[p.label] = {
           label: p.label,
-          producaoRef: p.producaoRef,
+          producaoRef: p.producaoRef || `${p.cargaMin} min`,
           leituraInicio: p.leituraInicio,
           leituraFim: p.leituraFim,
-          fator: p.fator,
+          cargaMin: p.cargaMin,
           turno: p.turno,
           total: 0
         };
@@ -1722,7 +1765,7 @@
         return `
           <div class="hour-card">
             <div class="hour-title">${p.label}</div>
-            <div class="hour-subtitle">Prod. ${p.producaoRef} • baixados ${p.leituraInicio} às ${p.leituraFim}</div>
+            <div class="hour-subtitle">Prod. ${p.producaoRef || (p.cargaMin + ' min')} • baixados ${p.leituraInicio} às ${p.leituraFim}</div>
             <table class="hour-table">
               <thead>
                 <tr>
@@ -1739,8 +1782,8 @@
 
       const manha = PERIODOS.filter(p => p.turno === 'manha').map(renderPeriodo).join('');
       const tarde = PERIODOS.filter(p => p.turno === 'tarde').map(renderPeriodo).join('');
-      const metaManha = trilhosConfig.reduce((sum, t) => sum + PERIODOS.filter(p => p.turno === 'manha').reduce((s, p) => s + metaHorario(t.metaDia, p.fator), 0), 0);
-      const metaTarde = trilhosConfig.reduce((sum, t) => sum + PERIODOS.filter(p => p.turno === 'tarde').reduce((s, p) => s + metaHorario(t.metaDia, p.fator), 0), 0);
+      const metaManha = trilhosConfig.reduce((sum, t) => sum + PERIODOS.filter(p => p.turno === 'manha').reduce((s, p) => s + metaHorario(t.metaDia, p.cargaMin), 0), 0);
+      const metaTarde = trilhosConfig.reduce((sum, t) => sum + PERIODOS.filter(p => p.turno === 'tarde').reduce((s, p) => s + metaHorario(t.metaDia, p.cargaMin), 0), 0);
       const manhaCls = resumo.totalManha >= metaManha && metaManha > 0 ? 'prod-ok' : 'prod-bad';
       const tardeCls = resumo.totalTarde >= metaTarde && metaTarde > 0 ? 'prod-ok' : 'prod-bad';
 
@@ -2043,6 +2086,7 @@
       selectedDateInput.value = todayISO();
       defaultReportDates();
       renderConfig();
+      await loadScheduleConfig();
       await loadConfigOnce();
       listenTaloesDia();
       listenTaloesMes();
@@ -2081,6 +2125,12 @@
     todayButton.addEventListener('click', () => changeDate(todayISO()));
     reloadButton.addEventListener('click', () => changeDate(selectedDateInput.value || todayISO()));
     saveConfigButton.addEventListener('click', saveConfig);
+    editScheduleButton.addEventListener('click', openScheduleEditor);
+    document.getElementById('closeScheduleModal').addEventListener('click', closeScheduleEditor);
+    document.getElementById('cancelSchedule').addEventListener('click', closeScheduleEditor);
+    document.getElementById('addScheduleRow').addEventListener('click',()=>{scheduleRows.insertAdjacentHTML('beforeend','<div class="schedule-edit-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end"><div class="field"><label>Horário do card</label><input type="time" data-schedule-time></div><div class="field"><label>Carga (minutos)</label><input type="number" min="1" step="1" data-schedule-load value="60"></div><button class="light" type="button" data-remove-schedule>Excluir</button></div>');});
+    scheduleRows.addEventListener('click',e=>{const b=e.target.closest('[data-remove-schedule]');if(b)b.closest('.schedule-edit-row').remove();});
+    document.getElementById('saveSchedule').addEventListener('click',()=>saveScheduleConfig().catch(error=>{console.error(error);alert('Não foi possível salvar os horários.');}));
     loadReportButton.addEventListener('click', listenReport);
     exportCsvButton.addEventListener('click', exportReportCSV);
   </script>

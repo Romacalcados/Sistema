@@ -5,31 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recebimento Sola - Calçados Roma</title>
   <script src="firebase-config.js"></script>
-  <script src="roma-core.js"></script>
+  <script src="roma-core.js?v=20261105-fluxo"></script>
   <script src="navegacao.js"></script>
-  <link rel="stylesheet" href="roma-fabrica.css">
+  <link rel="stylesheet" href="roma-fabrica.css?v=20261105-tabs-relocacao">
 </head>
 <body class="factory-receiving" data-factory-stage="sola">
   <main class="factory-main">
     <div class="factory-heading"><span class="factory-eyebrow">Recebimento na fábrica · Sola</span><h1>Recebimento Sola</h1><p>Registre a chegada das solas produzidas pelo ateliê.</p></div>
     <p id="factoryStartupError" class="factory-message error" role="alert" hidden></p>
+    <div class="factory-tabs" role="tablist" aria-label="Movimentação de Sola">
+      <button class="factory-tab is-active" type="button" role="tab" aria-selected="true" data-factory-tab="send">Saída</button>
+      <button class="factory-tab" type="button" role="tab" aria-selected="false" data-factory-tab="receive">Entrada</button>
+      <button class="factory-tab" type="button" role="tab" aria-selected="false" data-factory-tab="relocate">Relocar Ateliê</button>
+    </div>
     <div class="factory-layout">
-      <div class="factory-column">
-        <section class="factory-card" aria-labelledby="scanTitle">
-          <h2 id="scanTitle">Leitura do talão — Sola</h2>
-          <div class="factory-status"><strong id="engineStatus">Validando acesso</strong></div>
-          <form id="scanForm" class="factory-form">
-            <label for="barcodeInputRecebimentoSola">Código de barras</label>
-            <input id="barcodeInputRecebimentoSola" type="text" placeholder="Leia ou digite o código" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="150" disabled>
-            <button id="registerButton" class="factory-button" type="submit" disabled>Registrar Sola</button>
-          </form>
-          <p class="factory-help">Leia o talão após conferir as solas recebidas. A saída do ateliê de Sola deve estar registrada, e o modelo deve conter Sola.</p>
-          <div id="recebimentoSolaMessage" class="factory-message info" role="status" aria-live="polite">Validando acesso...</div>
+      <div class="factory-column factory-movement-column">
+        <section class="factory-card factory-movement-card factory-send-card factory-tab-panel is-active" data-factory-panel="send" aria-labelledby="sendTitle">
+          <h2 id="sendTitle">Saída para Ateliê — Sola</h2>
+          <p class="factory-help">Registre o envio para o ateliê. A saída já conta como entrada/início no ateliê.</p>
+          <div class="factory-operation-block"><h3>Talão individual</h3><div class="factory-bulk-grid">
+            <div class="factory-span-2"><label for="sendAtelier">Ateliê de destino</label><select id="sendAtelier"><option value="">Carregando ateliês...</option></select></div>
+            <div class="factory-span-2"><label for="sendBarcode">Código de barras</label><input id="sendBarcode" type="text" placeholder="Leia ou digite o código" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+          </div><button id="sendIndividualButton" class="factory-button" type="button">Lançar saída do talão</button></div>
+          <div class="factory-operation-divider"><span>ou saída em lote</span></div>
+          <div class="factory-operation-block"><div class="factory-bulk-grid">
+            <div><label for="sendScope">Selecionar por</label><select id="sendScope"><option value="corte">Data de Corte + Linha</option><option value="remessa">Remessa inteira</option></select></div>
+            <div id="sendCorteWrap"><label for="sendCorte">Data de corte</label><input id="sendCorte" type="date"></div>
+            <div id="sendLinhaWrap"><label for="sendLinha">Linha</label><select id="sendLinha"><option value="">Selecione a data de corte</option></select></div>
+            <div id="sendRemessaWrap" hidden><label for="sendRemessa">Remessa</label><input id="sendRemessa" type="text" inputmode="numeric" placeholder="Número da remessa"></div>
+          </div><button id="sendBulkButton" class="factory-button secondary-action" type="button">Lançar saída em lote</button></div>
+          <div id="sendMessage" class="factory-message info" role="status" aria-live="polite">Selecione o ateliê e leia um talão, ou escolha uma saída em lote.</div>
         </section>
+
+        <section class="factory-card factory-movement-card factory-receive-card factory-tab-panel" data-factory-panel="receive" aria-labelledby="receiveTitle" hidden>
+          <h2 id="receiveTitle">Entrada / Recebimento — Sola</h2>
+          <p class="factory-help">Registre a chegada à fábrica. Não é necessário escolher ateliê. A entrada só é aceita quando houver saída anterior.</p>
+          <div class="factory-operation-block"><h3>Talão individual</h3><div class="factory-bulk-grid">
+            <div class="factory-span-2"><label for="receiveBarcode">Código de barras</label><input id="receiveBarcode" type="text" placeholder="Leia ou digite o código" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+          </div><button id="receiveIndividualButton" class="factory-button" type="button">Registrar entrada do talão</button></div>
+          <div class="factory-operation-divider"><span>ou entrada em lote</span></div>
+          <div class="factory-operation-block"><div class="factory-bulk-grid">
+            <div><label for="receiveScope">Selecionar por</label><select id="receiveScope"><option value="corte">Data de Corte + Linha</option><option value="remessa">Remessa inteira</option></select></div>
+            <div id="receiveCorteWrap"><label for="receiveCorte">Data de corte</label><input id="receiveCorte" type="date"></div>
+            <div id="receiveLinhaWrap"><label for="receiveLinha">Linha</label><select id="receiveLinha"><option value="">Selecione a data de corte</option></select></div>
+            <div id="receiveRemessaWrap" hidden><label for="receiveRemessa">Remessa</label><input id="receiveRemessa" type="text" inputmode="numeric" placeholder="Número da remessa"></div>
+          </div><button id="receiveBulkButton" class="factory-button secondary-action" type="button">Registrar entrada em lote</button></div>
+          <div id="receiveMessage" class="factory-message info" role="status" aria-live="polite">Leia um talão recebido, ou escolha uma entrada em lote.</div>
+        </section>
+
+        <section class="factory-card factory-movement-card factory-relocate-card factory-tab-panel" data-factory-panel="relocate" aria-labelledby="relocateTitle" hidden>
+          <h2 id="relocateTitle">Relocar Ateliê — Sola</h2>
+          <p class="factory-help">Troque o ateliê responsável somente para talões que já tiveram saída e ainda não foram recebidos na fábrica.</p>
+          <div class="factory-operation-block"><h3>Talão individual</h3><div class="factory-bulk-grid">
+            <div class="factory-span-2"><label for="relocateAtelier">Novo ateliê de destino</label><select id="relocateAtelier"><option value="">Carregando ateliês...</option></select></div>
+            <div class="factory-span-2"><label for="relocateBarcode">Código de barras</label><input id="relocateBarcode" type="text" placeholder="Leia ou digite o código" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+          </div><button id="relocateIndividualButton" class="factory-button" type="button">Relocar talão</button></div>
+          <div class="factory-operation-divider"><span>ou relocação em lote</span></div>
+          <div class="factory-operation-block"><div class="factory-bulk-grid">
+            <div><label for="relocateScope">Selecionar por</label><select id="relocateScope"><option value="corte">Data de Corte + Linha</option><option value="remessa">Remessa inteira</option></select></div>
+            <div id="relocateCorteWrap"><label for="relocateCorte">Data de corte</label><input id="relocateCorte" type="date"></div>
+            <div id="relocateLinhaWrap"><label for="relocateLinha">Linha</label><select id="relocateLinha"><option value="">Selecione a data de corte</option></select></div>
+            <div id="relocateRemessaWrap" hidden><label for="relocateRemessa">Remessa</label><input id="relocateRemessa" type="text" inputmode="numeric" placeholder="Número da remessa"></div>
+          </div><button id="relocateBulkButton" class="factory-button secondary-action" type="button">Relocar em lote</button></div>
+          <div id="relocateMessage" class="factory-message info" role="status" aria-live="polite">Selecione o novo ateliê e informe o talão ou lote.</div>
+        </section>
+
         <section id="factoryCheckCard" class="factory-card" aria-labelledby="checkTitle" hidden>
-          <h2 id="checkTitle">Conferência do conjunto</h2>
-          <p id="checkTalao" class="factory-check-title"></p>
-          <ul id="factoryChecks" class="factory-checks"></ul>
+          <h2 id="checkTitle">Conferência do conjunto</h2><p id="checkTalao" class="factory-check-title"></p><ul id="factoryChecks" class="factory-checks"></ul>
         </section>
       </div>
       <section class="factory-card" aria-labelledby="historyTitle">
@@ -53,6 +95,11 @@
       </section>
     </div>
   </main>
+
+  <div hidden aria-hidden="true">
+    <form id="scanForm"><input id="barcodeInputRecebimentoSola"><button id="registerButton" type="submit"></button></form>
+    <strong id="engineStatus"></strong><div id="recebimentoSolaMessage"></div>
+  </div>
   <script>
     window.addEventListener('error',function(event){
       if(event.target && event.target.tagName==='SCRIPT'){
@@ -62,7 +109,7 @@
       }
     },true);
   </script>
-  <script src="roma-fabrica.js"></script>
+  <script src="roma-fabrica.js?v=20261105-tabs-relocacao"></script>
   <script type="module">
     import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
     import {getAuth,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';

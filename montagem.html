@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
   <script src="firebase-config.js"></script>
-<script src="roma-core.js"></script>
+<script src="roma-core.js?v=20261105-fluxo"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Montagem - Calçados Roma</title>
     <style>
@@ -276,13 +276,6 @@
                     <label for="periodoProducaoSelect">Horário em que a produção será contabilizada</label>
                     <select id="periodoProducaoSelect">
                         <option value="">Automático pelo horário da leitura</option>
-                        <option value="08:00">08:00</option>
-                        <option value="09:00">09:00</option>
-                        <option value="10:00">10:00</option>
-                        <option value="11:18">11:18</option>
-                        <option value="14:00">14:00</option>
-                        <option value="15:00">15:00</option>
-                        <option value="16:00">16:00</option>
                     </select>
                     <small>Quando uma baixa atrasar, selecione o horário correto antes de ler o lote. Exemplo: às 10:05, selecione 09:00 para lançar os talões no cartão das 09:00. Volte para Automático ao terminar.</small>
                     <div id="periodoProducaoStatus" class="periodo-status">Modo automático ativo</div>
@@ -453,7 +446,19 @@
             }
         }
 
-        const PERIODOS_PRODUCAO_VALIDOS = ['08:00', '09:00', '10:00', '11:18', '14:00', '15:00', '16:00'];
+        let PERIODOS_PRODUCAO_VALIDOS = ['08:00','09:00','10:00','11:18','14:00','15:00','16:00'];
+
+        async function carregarHorariosProducao(){
+            try{
+                const snap=await getDoc(doc(db,'configuracaoProducao','horarios'));
+                if(snap.exists() && Array.isArray(snap.data().periodos)){
+                    const vals=snap.data().periodos.map(p=>String(p.label||'').trim()).filter(v=>/^([01]\d|2[0-3]):[0-5]\d$/.test(v));
+                    if(vals.length) PERIODOS_PRODUCAO_VALIDOS=[...new Set(vals)].sort();
+                }
+            }catch(error){console.warn('Mantendo horários padrão:',error);}
+            periodoProducaoSelect.innerHTML='<option value="">Automático pelo horário da leitura</option>'+PERIODOS_PRODUCAO_VALIDOS.map(v=>`<option value="${v}">${v}</option>`).join('');
+            atualizarStatusPeriodo();
+        }
 
         function atualizarStatusPeriodo() {
             const periodo = periodoProducaoSelect.value;
@@ -535,6 +540,7 @@
                     }
 
                     iniciarNavegacaoPadrao(nivelAcesso, currentUserName);
+                    await carregarHorariosProducao();
                     listenToTaloes();
                     renderScannedList(); // Renderiza a lista do localStorage ao iniciar
                 } else {
@@ -573,11 +579,10 @@ function listenToTaloes() {
                     if (current.dataEntradaMontagem && !['N/A', 'Não se aplica'].includes(current.dataEntradaMontagem)) {
                         throw new Error(`Talão já lido em Montagem. Data: ${formatDateToDDMMYYYY(String(current.dataEntradaMontagem))}`);
                     }
-                    if (!current.dataEntradaTalonagem || ['N/A', 'Não se aplica'].includes(current.dataEntradaTalonagem)) {
-                        throw new Error('Registre a Talonagem antes da Montagem. A Talonagem reúne Costura, Sola e Palmilha.');
-                    }
-                    transaction.update(talaoRef, updates);
-                    return { ...current, ...updates, id: talaoId };
+                    const closure = window.Roma.assemblyClosurePatch(current, window.Roma.localISODate(), currentUserName);
+                    const finalUpdates = { ...closure, ...updates };
+                    transaction.update(talaoRef, finalUpdates);
+                    return { ...current, ...finalUpdates, id: talaoId };
                 });
 
                 lastScannedTaloes.unshift(saved);
@@ -651,6 +656,7 @@ function listenToTaloes() {
                 const dataMontagemISO = window.Roma.localISODate();
                 const periodoSelecionado = periodoProducaoSelect.value;
                 const updates = {
+                    ...window.Roma.assemblyClosurePatch(talao, dataMontagemISO, currentUserName),
                     statusGeral: 'Montado',
                     dataEntradaMontagem: dataMontagemISO,
                     trilhoProduzido: selectedTrilho.value,

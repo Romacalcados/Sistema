@@ -1,0 +1,39 @@
+CALCADOS ROMA - AJUSTES 05/11/2026
+
+1. RECEBIMENTO SOLA / PALMILHA
+- Nova movimentacao em lote por remessa ou Data de Corte + Linha.
+- Saida para Atelie permite escolher o destino e ja registra a entrada/inicio do atelie no dia.
+- Recebimento encerra automaticamente o setor correspondente.
+- Leitura individual continua disponivel.
+
+2. PLANEJAMENTO DE MONTAGEM
+- Checkbox Feriado em cada dia da programacao.
+- Feriado e unico para a fabrica; marcado em um trilho aparece nos demais.
+- Media semanal = total / (5 - quantidade de feriados da semana).
+
+3. CRONOGRAMA / IMPRIMIR NORMATIVAS
+- Novas colunas: Falta Mont. Pares e Falta Mont. Taloes, logo apos Taloes.
+
+4. FECHAMENTO AUTOMATICO
+- Recebimento de cada setor fecha o proprio atelie.
+- Talonagem fecha Corte + Costura + Palmilha + Sola pendentes.
+- Montagem garante o fechamento das etapas anteriores, inclusive Talonagem.
+
+5. CONTROLE DE PRODUCAO
+- Botao Editar horarios.
+- Adicionar, editar e excluir cards de horario.
+- Cada horario possui carga em minutos.
+- Meta do card e proporcional a carga / carga total do dia.
+- Padrao mantido em 528 minutos (8h48), incluindo 11:18 = 78 min.
+- Montagem carrega os horarios configurados para selecao manual.
+
+IMPORTANTE
+- Publicar firestore.rules junto com os arquivos do sistema.
+- Novas colecoes usadas: feriadosFabrica e configuracaoProducao.
+
+REVISAO 2:
+- Normativa: 12 colunas dimensionadas para A4 retrato sem esmagar Prev. Mont./Trilho.
+- Recebimento Sola/Palmilha: cards separados de Saida e Entrada, com talão, remessa ou Data de Corte + Linha.
+- Entrada bloqueada quando não existe saída anterior para o ateliê.
+- Corrigido erro config is not defined.
+- Modal de horários: corpo rolável e rodapé/botões sempre visíveis.

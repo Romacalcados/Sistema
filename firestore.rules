@@ -379,9 +379,54 @@ service cloud.firestore {
             && d.get('periodoProducaoEditadoEm', null) is timestamp));
     }
     function updatesFactory() {
-      return receivesFactory('costura','Costura') || receivesFactory('sola','Sola')
-        || receivesFactory('palmilha','Palmilha') || entersTalonagem()
-        || entersAssembly() || editsAssemblyDetails();
+      let d = request.resource.data;
+      // Montagem/Admin podem avançar o fluxo e encerrar automaticamente etapas anteriores.
+      // Isso cobre recebimentos em lote de Sola/Palmilha, Talonagem e Montagem.
+      return changesOnly([
+          'statusGeral','statusCorte','statusCostura','statusSola','statusPalmilha','statusMontagem',
+          'cabedalConcluido','cabedalData','cabedalUsuario','forroConcluido','forroData','forroUsuario',
+          'tirasConcluido','tirasData','tirasUsuario','aviamentoConcluido','aviamentoData','aviamentoUsuario',
+          'atelieCosturaId','idAtelieResponsavel','origemAtelieCostura','distribuicaoCosturaId',
+          'atelieSolaId','idAtelieSolaResponsavel','origemAtelieSola','distribuicaoSolaId',
+          'ateliePalmilhaId','idAteliePalmilhaResponsavel','origemAteliePalmilha','distribuicaoPalmilhaId',
+          'historicoRelocacoesSola','historicoRelocacoesPalmilha',
+          'costuraDataInicio','costuraUsuario','dataSaidaCostura','dataEntradaDistribuicao','usuarioDistribuicao',
+          'solaDataInicio','solaUsuario','dataSaidaSola','dataRecebimentoSola','usuarioRecebimentoSola',
+          'palmilhaDataInicio','palmilhaUsuario','dataSaidaPalmilha','dataRecebimentoPalmilha','usuarioRecebimentoPalmilha',
+          'dataEntradaTalonagem','usuarioTalonagem','dataEntradaMontagem','usuarioMontagem',
+          'trilhoProduzido','dataProducao','dataLeituraMontagem','periodoProducao','dataReferenciaProducao',
+          'periodoProducaoDefinidoPor','periodoProducaoEditadoPor','periodoProducaoEditadoEm'
+        ])
+        && (!changedAny(['cabedalData']) || validFactoryDate(d.get('cabedalData','')))
+        && (!changedAny(['forroData']) || validFactoryDate(d.get('forroData','')))
+        && (!changedAny(['tirasData']) || validFactoryDate(d.get('tirasData','')))
+        && (!changedAny(['aviamentoData']) || validFactoryDate(d.get('aviamentoData','')))
+        && (!changedAny(['costuraDataInicio']) || validFactoryDate(d.get('costuraDataInicio','')))
+        && (!changedAny(['dataSaidaCostura']) || validFactoryDate(d.get('dataSaidaCostura','')))
+        && (!changedAny(['dataEntradaDistribuicao']) || validFactoryDate(d.get('dataEntradaDistribuicao','')))
+        && (!changedAny(['solaDataInicio']) || validFactoryDate(d.get('solaDataInicio','')))
+        && (!changedAny(['dataSaidaSola']) || validFactoryDate(d.get('dataSaidaSola','')))
+        && (!changedAny(['dataRecebimentoSola']) || validFactoryDate(d.get('dataRecebimentoSola','')))
+        && (!changedAny(['palmilhaDataInicio']) || validFactoryDate(d.get('palmilhaDataInicio','')))
+        && (!changedAny(['dataSaidaPalmilha']) || validFactoryDate(d.get('dataSaidaPalmilha','')))
+        && (!changedAny(['dataRecebimentoPalmilha']) || validFactoryDate(d.get('dataRecebimentoPalmilha','')))
+        && (!changedAny(['dataEntradaTalonagem']) || validFactoryDate(d.get('dataEntradaTalonagem','')))
+        && (!changedAny(['dataEntradaMontagem']) || validFactoryDate(d.get('dataEntradaMontagem','')))
+        && (!changedAny(['dataReferenciaProducao']) || validFactoryDate(d.get('dataReferenciaProducao','')))
+        && (!changedAny(['costuraUsuario']) || d.get('costuraUsuario','') == factoryActor())
+        && (!changedAny(['solaUsuario']) || d.get('solaUsuario','') == factoryActor())
+        && (!changedAny(['palmilhaUsuario']) || d.get('palmilhaUsuario','') == factoryActor())
+        && (!changedAny(['usuarioDistribuicao']) || d.get('usuarioDistribuicao','') == factoryActor())
+        && (!changedAny(['usuarioRecebimentoSola']) || d.get('usuarioRecebimentoSola','') == factoryActor())
+        && (!changedAny(['usuarioRecebimentoPalmilha']) || d.get('usuarioRecebimentoPalmilha','') == factoryActor())
+        && (!changedAny(['usuarioTalonagem']) || d.get('usuarioTalonagem','') == factoryActor())
+        && (!changedAny(['usuarioMontagem']) || d.get('usuarioMontagem','') == factoryActor())
+        && (!changedAny(['origemAtelieSola']) || d.get('origemAtelieSola','') == 'recebimento')
+        && (!changedAny(['origemAteliePalmilha']) || d.get('origemAteliePalmilha','') == 'recebimento')
+        && (!changedAny(['historicoRelocacoesSola']) || d.get('historicoRelocacoesSola',[]) is list)
+        && (!changedAny(['historicoRelocacoesPalmilha']) || d.get('historicoRelocacoesPalmilha',[]) is list)
+        && (!changedAny(['atelieSolaId','idAtelieSolaResponsavel']) || validAtelier(d.get('atelieSolaId',''),d.get('idAtelieSolaResponsavel',''),'sola'))
+        && (!changedAny(['ateliePalmilhaId','idAteliePalmilhaResponsavel']) || validAtelier(d.get('ateliePalmilhaId',''),d.get('idAteliePalmilhaResponsavel',''),'palmilha'));
     }
     function resolvesScanError() {
       let d = request.resource.data;
@@ -514,6 +559,15 @@ service cloud.firestore {
       allow delete: if hasLevel(['08','09']);
     }
     match /metas/{metaId} {
+      allow read: if hasLevel(['06','07','08','09']);
+      allow create, update: if hasLevel(['07','08','09']);
+      allow delete: if isAdmin();
+    }
+    match /feriadosFabrica/{dataISO} {
+      allow read: if hasLevel(['06','07','08','09']);
+      allow create, update, delete: if hasLevel(['07','08','09']);
+    }
+    match /configuracaoProducao/{configId} {
       allow read: if hasLevel(['06','07','08','09']);
       allow create, update: if hasLevel(['07','08','09']);
       allow delete: if isAdmin();
