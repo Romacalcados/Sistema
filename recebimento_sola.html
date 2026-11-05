@@ -7,19 +7,19 @@
   <script src="firebase-config.js"></script>
   <script src="roma-core.js?v=20261105-fluxo"></script>
   <script src="navegacao.js"></script>
-  <link rel="stylesheet" href="roma-fabrica.css?v=20261105-tabs-relocacao">
+  <link rel="stylesheet" href="roma-fabrica.css?v=20261105-tabs-layout-fix">
 </head>
 <body class="factory-receiving" data-factory-stage="sola">
   <main class="factory-main">
     <div class="factory-heading"><span class="factory-eyebrow">Recebimento na fábrica · Sola</span><h1>Recebimento Sola</h1><p>Registre a chegada das solas produzidas pelo ateliê.</p></div>
     <p id="factoryStartupError" class="factory-message error" role="alert" hidden></p>
-    <div class="factory-tabs" role="tablist" aria-label="Movimentação de Sola">
+    <div class="factory-layout">
+      <div class="factory-column factory-movement-column">
+        <div class="factory-tabs" role="tablist" aria-label="Movimentação de Sola">
       <button class="factory-tab is-active" type="button" role="tab" aria-selected="true" data-factory-tab="send">Saída</button>
       <button class="factory-tab" type="button" role="tab" aria-selected="false" data-factory-tab="receive">Entrada</button>
       <button class="factory-tab" type="button" role="tab" aria-selected="false" data-factory-tab="relocate">Relocar Ateliê</button>
     </div>
-    <div class="factory-layout">
-      <div class="factory-column factory-movement-column">
         <section class="factory-card factory-movement-card factory-send-card factory-tab-panel is-active" data-factory-panel="send" aria-labelledby="sendTitle">
           <h2 id="sendTitle">Saída para Ateliê — Sola</h2>
           <p class="factory-help">Registre o envio para o ateliê. A saída já conta como entrada/início no ateliê.</p>
