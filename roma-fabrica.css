@@ -100,11 +100,50 @@ body[data-factory-stage="sola"] {
 .factory-movement-card .secondary-action:hover{background:var(--factory-border)}
 
 /* Abas de movimentação - Sola/Palmilha */
-.factory-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px 0;padding:6px;background:#fff;border:1px solid var(--factory-border);border-radius:14px;box-shadow:0 3px 12px rgba(15,23,42,.05)}
+.factory-tabs{display:flex;gap:8px;flex-wrap:wrap;width:100%;box-sizing:border-box;margin:0 0 18px 0;padding:6px;background:#fff;border:1px solid var(--factory-border);border-radius:14px;box-shadow:0 3px 12px rgba(15,23,42,.05);position:relative;z-index:1}
 .factory-tab{border:1px solid transparent;background:transparent;color:var(--factory-muted);font-weight:800;padding:11px 18px;border-radius:10px;cursor:pointer}
 .factory-tab:hover{background:var(--factory-tint);color:var(--factory-ink)}
 .factory-tab.is-active{background:var(--factory-accent);color:#fff}
 .factory-tab-panel[hidden]{display:none!important}
 .factory-relocate-card{border-top-color:#d97706}
-@media (min-width:1001px){.factory-receiving .factory-tabs{max-width:370px}.factory-receiving .factory-movement-column{display:block}.factory-receiving .factory-tab-panel{width:100%}}
+@media (min-width:1001px){.factory-receiving .factory-movement-column{display:block}.factory-receiving .factory-tab-panel{width:100%}}
 @media (max-width:640px){.factory-tabs{display:grid;grid-template-columns:repeat(3,1fr)}.factory-tab{padding:10px 6px;font-size:13px}}
+
+/* v4.2 - abas ocupam toda a largura; formulario e historico iniciam na mesma linha */
+@media (min-width:1001px){
+  .factory-receiving .factory-layout{
+    grid-template-columns:minmax(360px,440px) minmax(0,1fr);
+    align-items:start;
+  }
+  .factory-receiving .factory-movement-column{
+    display:contents !important;
+  }
+  .factory-receiving .factory-tabs{
+    grid-column:1 / -1;
+    grid-row:1;
+    margin:0 0 2px 0;
+    width:max-content;
+    max-width:100%;
+  }
+  .factory-receiving .factory-tab-panel,
+  .factory-receiving #factoryCheckCard{
+    grid-column:1;
+    grid-row:2;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .factory-receiving .factory-layout > .factory-card{
+    grid-column:2;
+    grid-row:2;
+    width:100%;
+    box-sizing:border-box;
+  }
+}
+
+@media (max-width:1000px){
+  .factory-receiving .factory-layout{grid-template-columns:1fr;}
+  .factory-receiving .factory-movement-column{display:block!important;}
+  .factory-receiving .factory-tabs{width:100%;margin-bottom:18px;}
+  .factory-receiving .factory-tab-panel{width:100%;box-sizing:border-box;}
+  .factory-receiving .factory-layout > .factory-card{margin-top:18px;}
+}
