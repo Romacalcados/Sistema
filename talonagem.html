@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Talonagem - Calçados Roma</title>
   <script src="firebase-config.js"></script>
-  <script src="roma-core.js?v=20261105-fluxo"></script>
+  <script src="roma-core.js?v=20261106-talonagem-regulariza-pendencias"></script>
   <script src="navegacao.js"></script>
   <link rel="stylesheet" href="roma-fabrica.css">
 </head>
@@ -23,7 +23,7 @@
             <input id="barcodeInputTalonagem" type="text" placeholder="Leia ou digite o código" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="150" disabled>
             <button id="registerButton" class="factory-button" type="submit" disabled>Conferir e talonar</button>
           </form>
-          <p class="factory-help">Reúna os componentes e leia o talão uma única vez. A conferência exige as saídas e os recebimentos de cada componente do modelo. Componentes não utilizados são dispensados.</p>
+          <p class="factory-help">Leia o talão para conferir o conjunto. Se houver setores anteriores ainda em aberto, a Talonagem regulariza somente as pendências aplicáveis do modelo e preserva registros já concluídos.</p>
           <div id="talonagemMessage" class="factory-message info" role="status" aria-live="polite">Validando acesso...</div>
         </section>
         <section id="factoryCheckCard" class="factory-card" aria-labelledby="checkTitle" hidden>
