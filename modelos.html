@@ -251,7 +251,7 @@ tbody tr.model-row.no-price td{border-color:#f3a8b5}
 const firebaseConfig = window.FIREBASE_CONFIG;
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
 import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-import{getFirestore,doc,getDoc,setDoc,collection,getDocs,serverTimestamp,writeBatch,arrayUnion}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+import{getFirestore,doc,getDoc,setDoc,collection,getDocs,serverTimestamp,writeBatch,arrayUnion,query,limit,orderBy,documentId,startAfter}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 const FULL_ACCESS_LEVELS=new Set(["08","09"]);
@@ -497,30 +497,85 @@ function renderModelsTable(){
 
 
 function sameComponents(a,b){return window.Roma.COMPONENTS.every(key=>a[key]===b[key]);}
+function hasSyncRecord(value){return !!value && value!=="N/A" && value!=="Não se aplica";}
+function sectorStatusAfterSync(talao,sector,enabled){
+  if(!enabled)return "Não se aplica";
+  const upper=sector==="palmilha"?"Palmilha":"Sola";
+  const startField=sector+"DataInicio";
+  const endField="dataSaida"+upper;
+  const receiptField="dataRecebimento"+upper;
+  if(hasSyncRecord(talao[receiptField])||hasSyncRecord(talao[endField]))return "Finalizado";
+  if(hasSyncRecord(talao[startField]))return "Em Produção";
+  return "Aguardando Material";
+}
 function syncPatchForTalao(talao,model){
   const desired=window.Roma.normalizeComponents(model);
   const current=window.Roma.normalizeComponents(talao);
-  if(sameComponents(current,desired)&&String(talao.modeloId||"")===String(model.id||model.chave||""))return null;
-  if(window.Roma.productionStarted(talao))return {review:true,reason:"Produção iniciada"};
-  const cutActive=window.Roma.CUT_COMPONENTS.some(key=>desired[key]);
-  return {patch:{
+  const targetModelId=String(model.id||model.chave||window.Roma.modelKey(model.linha,model.modelo)||"");
+  if(sameComponents(current,desired)&&String(talao.modeloId||"")===targetModelId)return null;
+
+  // Talões já montados/finalizados são históricos: não reabre componentes automaticamente.
+  if(hasSyncRecord(talao.dataEntradaMontagem)||["Montado","Finalizado"].includes(String(talao.statusGeral||""))){
+    return {review:true,reason:"Talão já montado/finalizado"};
+  }
+
+  // Se um componente está sendo removido do modelo mas já possui movimentação no talão,
+  // preserva para revisão em vez de apagar um histórico real.
+  const removingPalmilha=current.palmilha&&!desired.palmilha;
+  const removingSola=current.sola&&!desired.sola;
+  const palmilhaHasFlow=hasSyncRecord(talao.palmilhaDataInicio)||hasSyncRecord(talao.dataSaidaPalmilha)||hasSyncRecord(talao.dataRecebimentoPalmilha);
+  const solaHasFlow=hasSyncRecord(talao.solaDataInicio)||hasSyncRecord(talao.dataSaidaSola)||hasSyncRecord(talao.dataRecebimentoSola);
+  if((removingPalmilha&&palmilhaHasFlow)||(removingSola&&solaHasFlow)){
+    return {review:true,reason:"Componente removido do modelo possui movimentação registrada"};
+  }
+
+  const patch={
     componentes:desired,
-    modeloId:String(model.id||model.chave||window.Roma.modelKey(model.linha,model.modelo)||""),
-    statusCorte:cutActive?"Aguardando Material":"Cortado",
-    statusPalmilha:desired.palmilha?"Aguardando Material":"Não se aplica",
-    statusSola:desired.sola?"Aguardando Material":"Não se aplica"
-  }};
+    modeloId:targetModelId,
+    statusPalmilha:sectorStatusAfterSync(talao,"palmilha",desired.palmilha),
+    statusSola:sectorStatusAfterSync(talao,"sola",desired.sola)
+  };
+
+  // Não reinicia Corte já concluído/em produção. Só corrige o status quando ainda está pendente.
+  const cutActive=window.Roma.CUT_COMPONENTS.some(key=>desired[key]);
+  const cutStatus=String(talao.statusCorte||"");
+  if(!cutStatus||["Pendente","Aguardando Material","Não se aplica"].includes(cutStatus)){
+    patch.statusCorte=cutActive?"Aguardando Material":"Cortado";
+  }
+  return {patch};
+}
+async function loadAllTaloesPaged(){
+  const out=[];
+  const pageSize=300;
+  let last=null;
+  let page=0;
+  while(true){
+    page++;
+    let qRef=query(collection(db,"taloes"),orderBy(documentId()),limit(pageSize));
+    if(last)qRef=query(collection(db,"taloes"),orderBy(documentId()),startAfter(last),limit(pageSize));
+    const snap=await getDocs(qRef);
+    snap.docs.forEach(d=>out.push(d));
+    els.syncTotalTaloes.textContent=String(out.length);
+    els.syncTaloesPreview.className="message info show";
+    els.syncTaloesPreview.textContent=`Lendo talões... ${out.length} carregado(s).`;
+    if(snap.empty||snap.size<pageSize)break;
+    last=snap.docs[snap.docs.length-1];
+    if(page>200)throw new Error("A leitura excedeu o limite de segurança. Verifique a coleção taloes.");
+  }
+  return out;
 }
 async function analyzeAllTaloes(){
   if(currentUserLevel!=="09")throw new Error("Somente o Admin pode ajustar todos os talões.");
   els.analyzeSyncTaloesButton.disabled=true;els.applySyncTaloesButton.disabled=true;
-  els.syncTaloesPreview.className="message info show";els.syncTaloesPreview.textContent="Lendo modelos e talões...";
+  els.syncTaloesPreview.className="message info show";els.syncTaloesPreview.textContent="Lendo modelos...";
   try{
-    const [modelSnap,talaoSnap]=await Promise.all([getDocs(collection(db,"modelos")),getDocs(collection(db,"taloes"))]);
+    const modelSnap=await getDocs(collection(db,"modelos"));
     const modelMap=new Map();
     modelSnap.docs.forEach(d=>{const m={id:d.id,...d.data()};window.Roma.modelKeys(m.linha,m.modelo).concat([d.id]).forEach(k=>modelMap.set(String(k),m));});
+    els.syncTaloesPreview.textContent=`${modelSnap.size} modelo(s) carregados. Lendo talões...`;
+    const talaoDocs=await loadAllTaloesPaged();
     const updates=[],reviews=[],missing=[],correct=[];
-    talaoSnap.docs.forEach(d=>{
+    talaoDocs.forEach(d=>{
       const t={id:d.id,...d.data()};
       const keys=[String(t.modeloId||""),...window.Roma.modelKeys(t.linha,t.modelo)];
       const model=keys.map(k=>modelMap.get(k)).find(Boolean);
@@ -530,13 +585,17 @@ async function analyzeAllTaloes(){
       if(result.review){reviews.push({...t,reason:result.reason});return;}
       updates.push({id:d.id,patch:result.patch});
     });
-    syncAnalysis={updates,reviews,missing,correct,total:talaoSnap.size};
-    els.syncTotalTaloes.textContent=String(talaoSnap.size);
+    syncAnalysis={updates,reviews,missing,correct,total:talaoDocs.length};
+    els.syncTotalTaloes.textContent=String(talaoDocs.length);
     els.syncCanUpdate.textContent=String(updates.length);
     els.syncNeedReview.textContent=String(reviews.length+missing.length);
     els.syncTaloesPreview.className=`message ${reviews.length||missing.length?"warning":"success"} show`;
-    els.syncTaloesPreview.textContent=`${updates.length} talão(ões) podem ser ajustados; ${correct.length} já estão corretos; ${reviews.length} preservados porque a produção já iniciou; ${missing.length} sem modelo correspondente. Digite AJUSTAR para aplicar somente os ${updates.length} ajustes seguros.`;
+    els.syncTaloesPreview.textContent=`${updates.length} talão(ões) podem ser ajustados; ${correct.length} já estão corretos; ${reviews.length} preservados para revisão por já estarem montados/finalizados ou terem histórico incompatível; ${missing.length} sem modelo correspondente. Digite AJUSTAR para aplicar somente os ${updates.length} ajustes seguros.`;
     els.applySyncTaloesButton.disabled=!updates.length||els.syncConfirmInput.value.trim().toUpperCase()!=="AJUSTAR";
+  }catch(err){
+    console.error("Erro ao analisar talões",err);
+    const code=err&&err.code?` (${err.code})`:"";
+    throw new Error(`Não foi possível ler os modelos/talões${code}: ${err&&err.message?err.message:err}`);
   }finally{els.analyzeSyncTaloesButton.disabled=false;}
 }
 async function applyAllTaloesSync(){
