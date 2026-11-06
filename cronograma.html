@@ -1613,9 +1613,10 @@
           const stageHighlight = !!etapa && etapa.aplicaveis > 0 && etapa.allDone;
           row.push(...stagePdfCells(etapa, stageHighlight));
         });
+        const remessaMontada = !!grp.montagem && grp.montagem.aplicaveis > 0 && grp.montagem.allDone;
         row.push(
-          createPdfCell(planningPdfValue(grp,'date'), {halign:'center'}),
-          createPdfCell(planningPdfValue(grp,'track'), {halign:'center'})
+          createPdfCell(planningPdfValue(grp,'date'), {halign:'center'}, remessaMontada),
+          createPdfCell(planningPdfValue(grp,'track'), {halign:'center'}, remessaMontada)
         );
         return row;
       });
