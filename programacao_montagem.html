@@ -372,7 +372,9 @@
       if(compact) s = `${compact[1]}/${compact[2]}`;
       let m = s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
       if(m){
-        let y = m[3] ? parseInt(m[3],10) : state.reportYear;
+        // Quando o usuário informa apenas dia/mês, usar o ano atual do sistema.
+        // O ano extraído dos PDFs não deve alterar a consulta dos talões no banco.
+        let y = m[3] ? parseInt(m[3],10) : new Date().getFullYear();
         if(y < 100) y += 2000;
         const day = parseInt(m[1],10), month = parseInt(m[2],10);
         if(day < 1 || day > 31 || month < 1 || month > 12) return null;
@@ -383,7 +385,7 @@
         const monToken = m[2].normalize('NFD').replace(/[\u0300-\u036f]/g,'');
         const mo = MONTHS.findIndex(mm => mm === monToken);
         if(mo >= 0){
-          let y = m[3] ? parseInt(m[3],10) : state.reportYear;
+          let y = m[3] ? parseInt(m[3],10) : new Date().getFullYear();
           if(y < 100) y += 2000;
           const day = parseInt(m[1],10), month = mo+1;
           return { day, month, year:y, dm:`${pad2(day)}/${pad2(month)}`, iso:`${y}-${pad2(month)}-${pad2(day)}` };
