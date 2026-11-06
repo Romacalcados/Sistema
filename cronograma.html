@@ -1494,154 +1494,246 @@
         return;
       }
 
-      const grupos = new Map();
+      // Consolida exatamente como a tabela do Cronograma: Remessa + Linha + Corte + Entrega.
+      const grouped = {};
       taloes.forEach(t => {
         const linha = normalizarTextoPdf(t.linha) || 'N/A';
         const remessa = normalizarTextoPdf(t.numeroRemessa) || 'N/A';
-        const dataCorte = normalizarTextoPdf(t.dataCorte);
-        const dataEntrega = normalizarTextoPdf(t.dataEntrega);
-        const chave = JSON.stringify([remessa, linha, dataCorte, dataEntrega]);
-        if(!grupos.has(chave)) grupos.set(chave, []);
-        grupos.get(chave).push(t);
+        const dataCorte = normalizarTextoPdf(t.dataCorte) || 'N/A';
+        const dataEntrega = normalizarTextoPdf(t.dataEntrega) || 'N/A';
+        const key = JSON.stringify([remessa, linha, dataCorte, dataEntrega]);
+        if(!grouped[key]){
+          grouped[key] = {
+            remessa,
+            linha,
+            paresTotal:0,
+            taloesTotal:0,
+            dataCorte,
+            dataEntrega,
+            tiposCliente:new Set(),
+            clientes:new Set(),
+            normativas:new Set(),
+            planTracks:new Set(),
+            planDates:new Set(),
+            planCount:0,
+            ...Object.fromEntries(window.RomaProducao.STAGES.map(stage => [stage, window.RomaProducao.emptyStage()]))
+          };
+        }
+        const g = grouped[key];
+        g.paresTotal += Number(t.pares) || 0;
+        g.taloesTotal++;
+        const tipoCliente = normalizarTextoPdf(t.tipoCliente);
+        const cliente = normalizarTextoPdf(t.cliente);
+        const normativa = normalizarTextoPdf(t.normativa);
+        if(tipoCliente) g.tiposCliente.add(tipoCliente);
+        if(cliente) g.clientes.add(cliente);
+        if(normativa) g.normativas.add(normativa);
+        const planTrack = normalizarTextoPdf(t.trilhoMontagemPlanejado);
+        const planDate = normalizarTextoPdf(t.dataMontagemPlanejada);
+        if(planTrack || planDate){
+          g.planCount++;
+          if(planTrack) g.planTracks.add(planTrack);
+          if(planDate) g.planDates.add(planDate);
+        }
+        window.RomaProducao.STAGES.forEach(stage => window.RomaProducao.addToStage(g[stage], t, stage));
       });
 
-      const linhasPdf = Array.from(grupos.values()).map(lista => {
-        const primeiro = lista[0] || {};
-        const clientes = valoresUnicosPdf(lista, 'cliente');
-        const normativas = valoresUnicosPdf(lista, 'normativa');
-        const prevMontagens = valoresUnicosPdf(lista, 'dataMontagemPlanejada').sort();
-        const trilhos = valoresUnicosPdf(lista, 'trilhoMontagemPlanejado').sort((a,b)=>a.localeCompare(b,'pt-BR',{numeric:true}));
-        const pares = lista.reduce((sum,t) => sum + (Number(t.pares) || 0), 0);
-        const taloesQtd = lista.length;
-        const faltandoMontar = lista.filter(t => !hasDate(t.dataEntradaMontagem));
-        const paresFaltaMontar = faltandoMontar.reduce((sum,t) => sum + (Number(t.pares) || 0), 0);
-        const taloesFaltaMontar = faltandoMontar.length;
-
-        return {
-          linha: normalizarTextoPdf(primeiro.linha) || 'N/A',
-          remessa: normalizarTextoPdf(primeiro.numeroRemessa) || 'N/A',
-          pares,
-          taloes: taloesQtd,
-          paresFaltaMontar,
-          taloesFaltaMontar,
-          dataCorte: primeiro.dataCorte ? formatDateAbreviado(primeiro.dataCorte) : '-',
-          dataCorteOrdenacao: normalizarTextoPdf(primeiro.dataCorte),
-          dataEntregaLabel: primeiro.dataEntrega ? formatDateAbreviado(primeiro.dataEntrega) : '-',
-          dataEntregaOrdenacao: normalizarTextoPdf(primeiro.dataEntrega),
-          cliente: clientes.join(' / ') || '',
-          normativa: normativas.join(' / ') || '',
-          prevMont: prevMontagens.length ? prevMontagens.map(formatDateAbreviado).join(' / ') : '',
-          prevMontOrdenacao: prevMontagens[0] || '9999-12-31',
-          trilho: trilhos.join(' / ') || '',
-          trilhoOrdenacao: trilhos[0] || 'ZZZZ'
-        };
-      }).sort((a,b) => {
-        // Ordem solicitada: Trilho > Linha > Prev. Mont. > Data de Corte > Data de Entrega
-        const trilhoCmp = a.trilhoOrdenacao.localeCompare(b.trilhoOrdenacao, 'pt-BR', {numeric:true});
-        if(trilhoCmp !== 0) return trilhoCmp;
-
-        const la = parseInt(a.linha.replace(/\D/g,''),10) || 0;
-        const lb = parseInt(b.linha.replace(/\D/g,''),10) || 0;
+      const gruposOrdenados = Object.values(grouped).sort((a,b) => {
+        const da = a.dataCorte || '9999-12-31';
+        const db = b.dataCorte || '9999-12-31';
+        if(da !== db) return da.localeCompare(db);
+        const la = parseInt(String(a.linha).replace(/\D/g,''),10) || 0;
+        const lb = parseInt(String(b.linha).replace(/\D/g,''),10) || 0;
         if(la !== lb) return la - lb;
-        const linhaCmp = a.linha.localeCompare(b.linha, 'pt-BR', {numeric:true});
-        if(linhaCmp !== 0) return linhaCmp;
+        const ra = parseInt(String(a.remessa).replace(/\D/g,''),10) || 0;
+        const rb = parseInt(String(b.remessa).replace(/\D/g,''),10) || 0;
+        return ra - rb;
+      });
 
-        if(a.prevMontOrdenacao !== b.prevMontOrdenacao) return a.prevMontOrdenacao.localeCompare(b.prevMontOrdenacao);
-        const corteA = a.dataCorteOrdenacao || '9999-12-31';
-        const corteB = b.dataCorteOrdenacao || '9999-12-31';
-        if(corteA !== corteB) return corteA.localeCompare(corteB);
-        const entregaA = a.dataEntregaOrdenacao || '9999-12-31';
-        const entregaB = b.dataEntregaOrdenacao || '9999-12-31';
-        if(entregaA !== entregaB) return entregaA.localeCompare(entregaB);
+      function planningPdfValue(grp, type){
+        const values = type === 'track' ? grp.planTracks : grp.planDates;
+        if(!grp.planCount || !values || values.size === 0) return '';
+        if(values.size > 1) return 'Dividido';
+        const raw = Array.from(values)[0];
+        const value = type === 'date' ? formatDateAbreviado(raw) : raw;
+        return grp.planCount < grp.taloesTotal ? `${value} (parcial)` : value;
+      }
 
-        return a.remessa.localeCompare(b.remessa, 'pt-BR', {numeric:true});
+      const PDF_STAGE_ORDER = ['corte','costura','palmilha','sola','distribuicao','talonagem','montagem'];
+      const PDF_HIGHLIGHT_FILL = [218,242,220];
+
+      function createPdfCell(content, extraStyles = {}, highlight = false){
+        const cell = { content: content == null ? '' : String(content) };
+        const styles = { ...extraStyles };
+        if(highlight) styles.fillColor = PDF_HIGHLIGHT_FILL;
+        if(Object.keys(styles).length) cell.styles = styles;
+        return cell;
+      }
+
+      function stagePdfCells(etapa, highlight = false){
+        // Mantém sempre DUAS células físicas por etapa (Pares / Talões).
+        // Evita que jsPDF-AutoTable alargue incorretamente um grupo quando
+        // uma etapa concluída ou não aplicável usa colspan no corpo.
+        if(etapa.aplicaveis === 0){
+          return [
+            createPdfCell('Não se aplica', {halign:'center', textColor:[105,105,105], fontSize:4.4}, highlight),
+            createPdfCell('', {halign:'center', textColor:[105,105,105]}, highlight)
+          ];
+        }
+        if(etapa.allDone){
+          const data = etapa.maxDate ? formatDateAbreviado(etapa.maxDate) : '';
+          return [
+            (() => { const c = createPdfCell('', {halign:'center', fontStyle:'bold'}, highlight); c._drawCheck = true; return c; })(),
+            createPdfCell(data, {halign:'center', fontStyle:'bold'}, highlight)
+          ];
+        }
+        return [
+          createPdfCell(Number(etapa.paresFaltando || 0).toLocaleString('pt-BR'), {halign:'center'}, highlight),
+          createPdfCell(Number(etapa.taloesFaltando || 0).toLocaleString('pt-BR'), {halign:'center'}, highlight)
+        ];
+      }
+
+      const body = gruposOrdenados.map(grp => {
+        // Linha até Normativa permanecem sempre sem preenchimento.
+        // A partir de Corte, cada setor concluído recebe o destaque verde
+        // independentemente dos demais setores estarem concluídos ou pendentes.
+        const row = [
+          createPdfCell(grp.linha, {halign:'center'}),
+          createPdfCell(grp.remessa, {halign:'center'}),
+          createPdfCell(grp.paresTotal.toLocaleString('pt-BR'), {halign:'center'}),
+          createPdfCell(grp.taloesTotal.toLocaleString('pt-BR'), {halign:'center'}),
+          createPdfCell(grp.dataCorte && grp.dataCorte !== 'N/A' ? formatDateAbreviado(grp.dataCorte) : '', {halign:'center'}),
+          createPdfCell(grp.dataEntrega && grp.dataEntrega !== 'N/A' ? formatDateAbreviado(grp.dataEntrega) : '', {halign:'center'}),
+          createPdfCell(Array.from(grp.tiposCliente).join(' / '), {halign:'center'}),
+          createPdfCell(Array.from(grp.clientes).join(' / '), {halign:'left'}),
+          createPdfCell(Array.from(grp.normativas).join(' / '), {halign:'left'})
+        ];
+        PDF_STAGE_ORDER.forEach((stage) => {
+          const etapa = grp[stage];
+          const stageHighlight = !!etapa && etapa.aplicaveis > 0 && etapa.allDone;
+          row.push(...stagePdfCells(etapa, stageHighlight));
+        });
+        row.push(
+          createPdfCell(planningPdfValue(grp,'date'), {halign:'center'}),
+          createPdfCell(planningPdfValue(grp,'track'), {halign:'center'})
+        );
+        return row;
       });
 
       const { jsPDF } = jspdfNS;
-      const docPdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-      const totalPares = linhasPdf.reduce((sum,item) => sum + item.pares, 0);
+      const docPdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+      const totalPares = gruposOrdenados.reduce((sum,item) => sum + item.paresTotal, 0);
       const filtros = getAppliedFiltersText().replace(/^ Filtros: /, '').trim();
-      const margemEsquerda = 8;
-      const margemDireita = 8;
+      const margemEsquerda = 4;
+      const margemDireita = 4;
       const larguraUtil = docPdf.internal.pageSize.getWidth() - margemEsquerda - margemDireita;
 
       docPdf.setFont('helvetica','bold');
-      docPdf.setFontSize(12);
-      docPdf.text('Normativas de Produção - Calçados Roma', margemEsquerda, 11);
+      docPdf.setFontSize(12.5);
+      docPdf.text('Normativas de Produção - Calçados Roma', margemEsquerda, 9);
       docPdf.setFont('helvetica','normal');
       docPdf.setFontSize(7.5);
-      docPdf.text(`Remessas: ${linhasPdf.length}   |   Pares: ${totalPares.toLocaleString('pt-BR')}   |   Talões: ${taloes.length.toLocaleString('pt-BR')}`, margemEsquerda, 16);
+      docPdf.text(`Remessas: ${gruposOrdenados.length}   |   Pares: ${totalPares.toLocaleString('pt-BR')}   |   Talões: ${taloes.length.toLocaleString('pt-BR')}`, margemEsquerda, 13.5);
+      let startY = 17;
       if(filtros){
         const filtroLinhas = docPdf.splitTextToSize(`Filtros: ${filtros}`, larguraUtil);
-        docPdf.text(filtroLinhas, margemEsquerda, 20);
+        docPdf.text(filtroLinhas, margemEsquerda, 17);
+        startY = 17 + (filtroLinhas.length * 2.8) + 1.5;
       }
 
-      const startY = filtros ? 20 + (docPdf.splitTextToSize(`Filtros: ${filtros}`, larguraUtil).length * 3.1) + 1.5 : 20;
+      const head1 = [
+        {content:'Linha', rowSpan:2},
+        {content:'Rem', rowSpan:2},
+        {content:'Pares', rowSpan:2},
+        {content:'Talões', rowSpan:2},
+        {content:'Dt Corte', rowSpan:2},
+        {content:'Dt Entreg', rowSpan:2},
+        {content:'T. Cliente', rowSpan:2},
+        {content:'Cliente', rowSpan:2},
+        {content:'Normativa', rowSpan:2},
+        {content:'Cortar', colSpan:2},
+        {content:'Costurar', colSpan:2},
+        {content:'Palmilha', colSpan:2},
+        {content:'Sola', colSpan:2},
+        {content:'Distribuir', colSpan:2},
+        {content:'Talonar', colSpan:2},
+        {content:'Montar', colSpan:2},
+        {content:'Prev.\nMont.', rowSpan:2},
+        {content:'Fab', rowSpan:2}
+      ];
+      const head2 = [];
+      for(let i=0;i<7;i++) head2.push('Pares','Talões');
 
       docPdf.autoTable({
         startY,
-        head: [[
-          'Linha', 'Remessa', 'Pares', 'Talões', 'Falta\nPares', 'Falta\nTalões', 'Dt Corte', 'Dt Entrega', 'Cliente', 'Normativa', 'Prev.\nMont.', 'Trilho'
-        ]],
-        body: linhasPdf.map(item => [
-          item.linha,
-          item.remessa,
-          item.pares.toLocaleString('pt-BR'),
-          item.taloes.toLocaleString('pt-BR'),
-          item.paresFaltaMontar.toLocaleString('pt-BR'),
-          item.taloesFaltaMontar.toLocaleString('pt-BR'),
-          item.dataCorte,
-          item.dataEntregaLabel,
-          item.cliente,
-          item.normativa,
-          item.prevMont,
-          item.trilho
-        ]),
+        head:[head1,head2],
+        body,
         theme:'grid',
         styles:{
           font:'helvetica',
-          fontSize:5.6,
-          cellPadding:0.75,
+          fontSize:5.9,
+          cellPadding:0.72,
           valign:'middle',
           overflow:'linebreak',
           textColor:[20,20,20],
-          lineColor:[135,135,135],
-          lineWidth:0.10
+          lineColor:[155,155,155],
+          lineWidth:0.08
         },
         headStyles:{
-          fillColor:[235,235,235],
-          textColor:[0,0,0],
+          fillColor:[230,238,252],
+          textColor:[12,58,130],
           fontStyle:'bold',
           halign:'center',
           valign:'middle',
-          fontSize:5.7,
-          cellPadding:0.8,
-          minCellHeight:8
+          fontSize:5.6,
+          cellPadding:0.72,
+          minCellHeight:6.6
         },
-        bodyStyles:{
-          minCellHeight:5.0
-        },
+        bodyStyles:{minCellHeight:5.4},
         columnStyles:{
+          // Larguras somam 289 mm: ocupam toda a largura útil do A4 paisagem
+          // com margens de 4 mm em cada lado.
           0:{cellWidth:10,halign:'center'},
-          1:{cellWidth:18,halign:'center'},
+          1:{cellWidth:14,halign:'center'},
           2:{cellWidth:11,halign:'center'},
-          3:{cellWidth:10,halign:'center'},
-          4:{cellWidth:14,halign:'center'},
-          5:{cellWidth:13,halign:'center'},
+          3:{cellWidth:9,halign:'center'},
+          4:{cellWidth:12,halign:'center'},
+          5:{cellWidth:12,halign:'center'},
           6:{cellWidth:14,halign:'center'},
-          7:{cellWidth:14,halign:'center'},
-          8:{cellWidth:34,halign:'left'},
-          9:{cellWidth:35,halign:'left'},
-          10:{cellWidth:14,halign:'center'},
-          11:{cellWidth:7,halign:'center'}
+          7:{cellWidth:27,halign:'left'},
+          8:{cellWidth:32,halign:'left'},
+          9:{cellWidth:10}, 10:{cellWidth:8},
+          11:{cellWidth:10},12:{cellWidth:8},
+          13:{cellWidth:10},14:{cellWidth:8},
+          15:{cellWidth:10},16:{cellWidth:8},
+          17:{cellWidth:10},18:{cellWidth:8},
+          19:{cellWidth:10},20:{cellWidth:8},
+          21:{cellWidth:10},22:{cellWidth:8},
+          23:{cellWidth:14,halign:'center'},
+          24:{cellWidth:8,halign:'center'}
         },
-        margin:{left:margemEsquerda,right:margemDireita,bottom:8},
-        didDrawPage: data => {
+        margin:{left:margemEsquerda,right:margemDireita,bottom:7},
+        didDrawCell: (data) => {
+          if(data.section !== 'body' || !data.cell?.raw?._drawCheck) return;
+          const x = data.cell.x;
+          const y = data.cell.y;
+          const w = data.cell.width;
+          const h = data.cell.height;
+          const cx = x + (w * 0.50);
+          const cy = y + (h * 0.53);
+          docPdf.setDrawColor(22, 120, 55);
+          docPdf.setLineWidth(0.55);
+          docPdf.line(cx - 1.8, cy, cx - 0.45, cy + 1.35);
+          docPdf.line(cx - 0.45, cy + 1.35, cx + 2.2, cy - 1.65);
+          docPdf.setDrawColor(155,155,155);
+          docPdf.setLineWidth(0.08);
+        },
+        didDrawPage: () => {
           const pagina = docPdf.internal.getNumberOfPages();
           const altura = docPdf.internal.pageSize.getHeight();
-          docPdf.setFontSize(6.5);
+          docPdf.setFontSize(6);
           docPdf.setTextColor(100);
-          docPdf.text(`Página ${pagina}`, docPdf.internal.pageSize.getWidth()-margemDireita, altura-4, {align:'right'});
+          docPdf.text(`Página ${pagina}`, docPdf.internal.pageSize.getWidth()-margemDireita, altura-3.5, {align:'right'});
           docPdf.setTextColor(0);
         }
       });
