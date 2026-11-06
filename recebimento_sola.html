@@ -109,7 +109,7 @@
       }
     },true);
   </script>
-  <script src="roma-fabrica.js?v=20261105-tabs-relocacao"></script>
+  <script src="roma-fabrica.js?v=20261106-recebimento-auto-saida"></script>
   <script type="module">
     import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
     import {getAuth,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';
@@ -117,7 +117,130 @@
     try {
       if(!window.RomaFabrica) throw new Error('Atualize roma-fabrica.js e roma-fabrica.css junto com esta página.');
       const app=initializeApp(window.FIREBASE_CONFIG);
-      window.RomaFabrica.start({auth:getAuth(app),db:getFirestore(app),mode:'sola',sdk:{onAuthStateChanged,signOut,doc,getDoc,collection,query,where,limit,getDocs,runTransaction}});
+      const auth=getAuth(app),db=getFirestore(app);
+      window.RomaFabrica.start({auth,db,mode:'sola',sdk:{onAuthStateChanged,signOut,doc,getDoc,collection,query,where,limit,getDocs,runTransaction}});
+
+      // v4.2.1 - lote tolerante a movimentações já existentes.
+      // O lote ignora talões já processados e reaproveita a rotina individual
+      // para os pendentes, preservando as mesmas validações e gravações do sistema.
+      const sector='sola';
+      const upper=sector.charAt(0).toUpperCase()+sector.slice(1);
+      const startField=sector+'DataInicio';
+      const exitField='dataSaida'+upper;
+      const receiptField='dataRecebimento'+upper;
+
+      function hasRecord(value){
+        if(value===null||value===undefined||value===false||value===0)return false;
+        return String(value).trim()!=='';
+      }
+      function stageApplicable(data){
+        try{return !window.Roma?.stageApplicable || window.Roma.stageApplicable(data,sector);}
+        catch(_){return true;}
+      }
+      function setMessage(kind,type,text){
+        const el=document.getElementById(kind+'Message');
+        if(!el)return;
+        el.textContent=text;
+        el.className='factory-message '+type;
+      }
+      function talonBarcode(docSnap){
+        const d=docSnap.data();
+        return String(d.codigoBarrasIdentificador||d.codigoBarras||d.codigo||docSnap.id||'').trim();
+      }
+      async function fetchBatch(kind){
+        const scope=document.getElementById(kind+'Scope')?.value||'corte';
+        if(scope==='remessa'){
+          const remessa=String(document.getElementById(kind+'Remessa')?.value||'').trim();
+          if(!remessa)throw new Error('Informe a remessa.');
+          const snap=await getDocs(query(collection(db,'taloes'),where('numeroRemessa','==',remessa)));
+          return snap.docs;
+        }
+        const corte=String(document.getElementById(kind+'Corte')?.value||'').trim();
+        const linha=String(document.getElementById(kind+'Linha')?.value||'').trim();
+        if(!corte)throw new Error('Informe a data de corte.');
+        if(!linha)throw new Error('Selecione a linha.');
+        const snap=await getDocs(query(collection(db,'taloes'),where('dataCorte','==',corte)));
+        return snap.docs.filter(x=>String(x.data().linha||'').trim()===linha);
+      }
+      function waitIndividual(kind,before){
+        const button=document.getElementById(kind+'IndividualButton');
+        const msg=document.getElementById(kind+'Message');
+        return new Promise(resolve=>{
+          const started=Date.now();
+          const timer=setInterval(()=>{
+            const changed=(msg?.textContent||'')!==before;
+            const ready=!button?.disabled;
+            if((changed&&ready)||Date.now()-started>7000){clearInterval(timer);resolve();}
+          },80);
+        });
+      }
+      async function runThroughIndividual(kind,docs){
+        const input=document.getElementById(kind+'Barcode');
+        const button=document.getElementById(kind+'IndividualButton');
+        const msg=document.getElementById(kind+'Message');
+        let ok=0,errors=0;
+        for(const d of docs){
+          const code=talonBarcode(d);
+          if(!code){errors++;continue;}
+          const before=msg?.textContent||'';
+          input.value=code;
+          input.dispatchEvent(new Event('input',{bubbles:true}));
+          button.click();
+          await waitIndividual(kind,before);
+          const cls=msg?.className||'';
+          if(/error|warning/.test(cls))errors++;else ok++;
+        }
+        return {ok,errors};
+      }
+      async function selectiveBulk(kind){
+        const bulkButton=document.getElementById(kind+'BulkButton');
+        if(bulkButton.disabled)return;
+        bulkButton.disabled=true;
+        try{
+          if(kind==='send' && !String(document.getElementById('sendAtelier')?.value||'').trim())
+            throw new Error('Selecione o ateliê de destino.');
+          setMessage(kind,'info','Buscando talões do lote...');
+          const docs=(await fetchBatch(kind)).filter(x=>stageApplicable(x.data()));
+          if(!docs.length){setMessage(kind,'warning','Nenhum talão aplicável foi encontrado para este lote.');return;}
+
+          let pending=[],ignored=0,withoutExit=0;
+          for(const snap of docs){
+            const d=snap.data();
+            if(kind==='send'){
+              const moved=hasRecord(d[startField])||hasRecord(d[exitField])||hasRecord(d[receiptField])||['Em Produção','Em produção','Finalizado'].includes(String(d['status'+upper]||''));
+              if(moved)ignored++;else pending.push(snap);
+            }else{
+              if(hasRecord(d[receiptField])){ignored++;continue;}
+              // Mesmo sem saída do ateliê, a entrada deve regularizar o setor.
+              // O roma-fabrica.js fecha início/saída/status e registra o recebimento na mesma operação.
+              pending.push(snap);
+            }
+          }
+
+          if(!pending.length){
+            setMessage(kind,'info',`Nenhum talão pendente para lançar. ${ignored} já estavam processados e foram ignorados.`);
+            return;
+          }
+
+          setMessage(kind,'info',`Processando ${pending.length} talão(ões) pendente(s). ${ignored} já processado(s) serão ignorados.`);
+          const result=await runThroughIndividual(kind,pending);
+          const type=result.errors?'warning':'success';
+          setMessage(kind,type,`${result.ok} talão(ões) lançado(s). ${ignored} já processado(s) ignorado(s).${result.errors?` ${result.errors} não puderam ser lançados e devem ser revisados.`:''}`);
+          document.getElementById('loadHistoryButton')?.click();
+        }catch(error){
+          console.error('Erro no lote seletivo',error);
+          setMessage(kind,'error',error?.message||String(error));
+        }finally{bulkButton.disabled=false;}
+      }
+
+      ['send','receive'].forEach(kind=>{
+        const button=document.getElementById(kind+'BulkButton');
+        button?.addEventListener('click',event=>{
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          selectiveBulk(kind);
+        },true);
+      });
     } catch(error) {
       const message=document.getElementById('factoryStartupError');message.textContent=error.message;message.hidden=false;
     }
