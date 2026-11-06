@@ -1610,7 +1610,7 @@
         ];
         PDF_STAGE_ORDER.forEach((stage) => {
           const etapa = grp[stage];
-          const stageHighlight = !!etapa && etapa.aplicaveis > 0 && etapa.allDone;
+          const stageHighlight = !!etapa && (etapa.aplicaveis === 0 || etapa.allDone);
           row.push(...stagePdfCells(etapa, stageHighlight));
         });
         const remessaMontada = !!grp.montagem && grp.montagem.aplicaveis > 0 && grp.montagem.allDone;
