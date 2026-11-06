@@ -390,6 +390,12 @@
     .action-buttons-group .btn-costura {
       background-color: #9c27b0;
     }
+    .action-buttons-group .btn-palmilha {
+      background-color: #2563eb;
+    }
+    .action-buttons-group .btn-sola {
+      background-color: #7c3aed;
+    }
     .action-buttons-group .btn-distribuicao {
       background-color: #607d8b;
     }
@@ -475,6 +481,8 @@
     <div class="action-buttons-group">
       <button class="btn-corte" id="btnFecharCorte">Fechar Corte</button>
       <button class="btn-costura" id="btnFecharCostura">Fechar Costura</button>
+      <button class="btn-palmilha" id="btnFecharPalmilha">Fechar Palmilha</button>
+      <button class="btn-sola" id="btnFecharSola">Fechar Sola</button>
       <button class="btn-distribuicao" id="btnFecharDistribuicao">Distribuição</button>
       <button class="btn-talonagem" id="btnFecharTalonagem">Talonagem</button>
       <button class="btn-montagem" id="btnFecharMontagem">Montagem</button>
@@ -620,6 +628,8 @@
     // Botões de ação em massa
     const btnFecharCorte = document.getElementById('btnFecharCorte');
     const btnFecharCostura = document.getElementById('btnFecharCostura');
+    const btnFecharPalmilha = document.getElementById('btnFecharPalmilha');
+    const btnFecharSola = document.getElementById('btnFecharSola');
     const btnFecharDistribuicao = document.getElementById('btnFecharDistribuicao');
     const btnFecharTalonagem = document.getElementById('btnFecharTalonagem');
     const btnFecharMontagem = document.getElementById('btnFecharMontagem');
@@ -1100,6 +1110,90 @@ addSafeListener(btnFecharCostura, 'click', () => {
     }
   });
 }, 'btnFecharCostura');
+
+// Botão Fechar Palmilha
+addSafeListener(btnFecharPalmilha, 'click', () => {
+  if (filteredTaloes.length === 0) {
+    showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
+    return;
+  }
+  const confirmationMessage = `Tem certeza que deseja fechar a Palmilha para ${filteredTaloes.length} talões filtrados? Somente campos pendentes serão preenchidos.`;
+
+  showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
+    let successCount = 0;
+    let ignoredCount = 0;
+    const today = getTodayDate();
+    try {
+      for (const talao of filteredTaloes) {
+        const componentes = talao.componentes || {};
+        const aplicaPalmilha = componentes.palmilha !== false && talao.statusPalmilha !== 'Não se aplica';
+        if (!aplicaPalmilha) {
+          ignoredCount++;
+          continue;
+        }
+
+        const updateData = {};
+        if (!talao.palmilhaDataInicio) updateData.palmilhaDataInicio = today;
+        if (!talao.dataSaidaPalmilha) updateData.dataSaidaPalmilha = today;
+        if (!talao.dataRecebimentoPalmilha) updateData.dataRecebimentoPalmilha = today;
+        if (talao.statusPalmilha !== 'Finalizado') updateData.statusPalmilha = 'Finalizado';
+
+        if (Object.keys(updateData).length) {
+          await db.collection('taloes').doc(talao.id).update(updateData);
+          successCount++;
+        } else {
+          ignoredCount++;
+        }
+      }
+      showMessageModal('Sucesso', `${successCount} talões atualizados na Palmilha. ${ignoredCount} já estavam concluídos ou não utilizam Palmilha.`, 'success');
+    } catch (error) {
+      console.error('Erro na atualização em massa da Palmilha:', error);
+      showMessageModal('Erro', `Erro ao fechar Palmilha: ${error.message}`, 'error');
+    }
+  });
+}, 'btnFecharPalmilha');
+
+// Botão Fechar Sola
+addSafeListener(btnFecharSola, 'click', () => {
+  if (filteredTaloes.length === 0) {
+    showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
+    return;
+  }
+  const confirmationMessage = `Tem certeza que deseja fechar a Sola para ${filteredTaloes.length} talões filtrados? Somente campos pendentes serão preenchidos.`;
+
+  showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
+    let successCount = 0;
+    let ignoredCount = 0;
+    const today = getTodayDate();
+    try {
+      for (const talao of filteredTaloes) {
+        const componentes = talao.componentes || {};
+        const aplicaSola = componentes.sola !== false && talao.statusSola !== 'Não se aplica';
+        if (!aplicaSola) {
+          ignoredCount++;
+          continue;
+        }
+
+        const updateData = {};
+        if (!talao.solaDataInicio) updateData.solaDataInicio = today;
+        if (!talao.dataSaidaSola) updateData.dataSaidaSola = today;
+        if (!talao.dataRecebimentoSola) updateData.dataRecebimentoSola = today;
+        if (talao.statusSola !== 'Finalizado') updateData.statusSola = 'Finalizado';
+
+        if (Object.keys(updateData).length) {
+          await db.collection('taloes').doc(talao.id).update(updateData);
+          successCount++;
+        } else {
+          ignoredCount++;
+        }
+      }
+      showMessageModal('Sucesso', `${successCount} talões atualizados na Sola. ${ignoredCount} já estavam concluídos ou não utilizam Sola.`, 'success');
+    } catch (error) {
+      console.error('Erro na atualização em massa da Sola:', error);
+      showMessageModal('Erro', `Erro ao fechar Sola: ${error.message}`, 'error');
+    }
+  });
+}, 'btnFecharSola');
 
 // Botão Distribuição
 addSafeListener(btnFecharDistribuicao, 'click', () => {
