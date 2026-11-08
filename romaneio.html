@@ -1,434 +1,156 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-  <script src="firebase-config.js"></script>
+<meta charset="UTF-8">
+<script src="firebase-config.js"></script>
 <script src="roma-core.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Romaneio - Calçados Roma</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .main-content {
-            flex-grow: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .filters-container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 900px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: flex-end;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .filters-container label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: bold;
-        }
-        .filters-container input,
-        .filters-container select {
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 1em;
-        }
-        .search-btn {
-            padding: 12px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
-        .search-btn:hover {
-            background-color: #0056b3;
-        }
-        .table-container {
-            width: 90%;
-            max-width: 900px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9em;
-        }
-        table th, table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-        .summary-card {
-            background-color: #e9f5ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 900px;
-        }
-        .summary-card p {
-            margin: 5px 0;
-        }
-        .summary-card .total {
-            font-weight: bold;
-            font-size: 1.2em;
-            color: #004085;
-        }
-        .summary-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            background-color: #fff;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #cce5ff;
-        }
-        /* Novo estilo para a linha pendente */
-        .pending-row {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-    </style>
-    <script src="navegacao.js"></script>
-    <script>
-        // Inicializa a barra imediatamente usando os dados salvos localmente.
-        // Depois que o Firebase confirmar o usuário, a barra é atualizada com os dados reais.
-        document.addEventListener('DOMContentLoaded', function () {
-            if (window.SistemaNavegacao && !document.querySelector('.sistema-topbar')) {
-                window.SistemaNavegacao.init({
-                    userLevel: localStorage.getItem('calcadosroma-65ac6:userNivelAcesso') || '05',
-                    userName: localStorage.getItem('calcadosroma-65ac6:userName') || 'Usuário',
-                    title: 'Controle de produção Calçados Roma',
-                    onLogout: function () {
-                        localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
-                        localStorage.removeItem('calcadosroma-65ac6:userName');
-                        window.location.href = 'login.html';
-                    }
-                });
-            }
-        });
-    </script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Romaneio - Calçados Roma</title>
+<style>
+:root{--bg:#f4f4f4;--card:#fff;--ink:#111827;--muted:#667085;--bd:#d9dde5;--primary:#0d6efd;--success:#198754;--danger:#dc3545;--warning:#ffc107;--shadow:0 4px 14px rgba(0,0,0,.08)}
+*{box-sizing:border-box}html,body{max-width:100%;overflow-x:hidden}body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;color:var(--ink)}body.auth-loading main{display:none!important}main{width:100%;padding:14px 0 30px;display:flex;flex-direction:column;align-items:center;gap:12px}.card{width:min(94%,1600px);background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:16px 18px}.page-head,.section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.page-title{margin:0 0 5px;font-size:1.45rem}.page-subtitle{margin:0;color:var(--muted);font-size:.92rem;line-height:1.4}.filter-bar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:14px}.form-group{display:flex;flex-direction:column;gap:5px;min-width:260px}.form-group label{font-weight:700;color:#374151;font-size:.82rem}.date-range-button{width:100%;padding:10px 12px;border:1px solid #cfd4dc;border-radius:8px;background:#fff;cursor:pointer;font-size:.94rem;text-align:left}.date-range-button:hover{background:#f7f7f7}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{padding:9px 14px;border:0;border-radius:8px;cursor:pointer;font-size:.92rem;white-space:nowrap}.btn-primary{background:var(--primary);color:#fff}.btn-secondary{background:#e9ecef;color:#222}.btn-success{background:var(--success);color:#fff}.btn-danger{background:var(--danger);color:#fff}.btn:disabled{opacity:.55;cursor:not-allowed}.message{margin-top:10px;padding:10px;border-radius:8px;font-size:.9rem;display:none}.message.show{display:block}.message.info{background:#d1ecf1;color:#0c5460}.message.success{background:#d4edda;color:#155724}.message.warning{background:#fff3cd;color:#664d03}.message.error{background:#f8d7da;color:#721c24}.hidden{display:none!important}.section-title{margin:0;font-size:1.08rem}.mini-help{font-size:.82rem;color:var(--muted)}.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}.summary-box{border:1px solid var(--bd);border-radius:10px;background:#f8fafc;padding:10px;text-align:center}.summary-box strong{display:block;font-size:1.08rem;margin-bottom:4px}.summary-box small{font-size:.68rem;text-transform:uppercase;font-weight:800;color:#374151}.summary-box.ok{background:#edf8f1;border-color:#cfead8}.summary-box.warn{background:#fff7dc;border-color:#ffe69c}.summary-box.danger{background:#ffe7eb;border-color:#f3a8b5}.sector-block{margin-top:16px}.sector-title{display:flex;align-items:center;gap:8px;margin:0 0 9px;font-size:1rem}.sector-pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:.7rem;font-weight:800}.sector-costura{background:#e7f1ff;color:#084298}.sector-palmilha{background:#f3e8ff;color:#6f42c1}.sector-sola{background:#fff0e5;color:#a34300}.atelier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}.atelier-card{border:1px solid var(--bd);border-left:7px solid var(--accent,#0d6efd);border-radius:12px;background:#fff;padding:13px;cursor:pointer;transition:.14s}.atelier-card:hover{transform:translateY(-2px);box-shadow:0 9px 24px rgba(0,0,0,.11)}.atelier-card.costura{--accent:#0d6efd}.atelier-card.palmilha{--accent:#6f42c1}.atelier-card.sola{--accent:#fd7e14}.atelier-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:10px}.atelier-head h3{margin:0;font-size:1.08rem}.atelier-card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.atelier-stat{border:1px solid #dfe3e8;border-radius:9px;background:#f8fafc;padding:7px;text-align:center}.atelier-stat strong{display:block;font-size:.96rem}.atelier-stat small{display:block;font-size:.63rem;text-transform:uppercase;font-weight:800;color:#4b5563}.click-hint{display:block;margin-top:9px;font-size:.72rem;color:var(--muted)}.tag{display:inline-block;border-radius:999px;padding:3px 7px;font-size:.69rem;font-weight:800;border:1px solid #d8d8d8;background:#fff}.tag.good{background:#edf8f1;color:#14532d}.tag.bad{background:#ffe3e8;color:#842029}.tag.warn{background:#fff3cd;color:#664d03}.empty-state{padding:20px;text-align:center;color:#666}
+.modal{display:none;position:fixed;z-index:3000;inset:0;background:rgba(0,0,0,.52);padding:18px;overflow:auto}.modal.show{display:flex;align-items:flex-start;justify-content:center}.modal-content{position:relative;width:min(96vw,1380px);background:#fff;border-radius:14px;box-shadow:0 20px 55px rgba(0,0,0,.28);padding:18px;margin:auto}.modal-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border-bottom:1px solid var(--bd);padding-bottom:10px}.modal-title{margin:0;font-size:1.25rem}.modal-subtitle{margin:4px 0 0;color:var(--muted);font-size:.86rem}.modal-close{border:0;background:transparent;font-size:28px;line-height:1;cursor:pointer;font-weight:700}.detail-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:12px 0}.detail-summary-box{border:1px solid var(--bd);border-radius:9px;background:#f8fafc;padding:8px;text-align:center}.detail-summary-box.clickable{cursor:pointer;transition:.14s}.detail-summary-box.clickable:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(0,0,0,.09);border-color:#aab4c3}.detail-summary-box.active-filter{outline:2px solid #0d6efd;background:#eef5ff}.detail-summary-box strong{display:block}.detail-summary-box small{display:block;font-size:.66rem;text-transform:uppercase;font-weight:800;color:#4b5563;margin-top:3px}.table-section{margin-top:15px}.table-section h4{margin:0 0 7px}.table-wrap{width:100%;overflow:auto;border:1px solid var(--bd);border-radius:10px;background:#fff;max-height:48vh}table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:980px}th,td{border:1px solid var(--bd);padding:7px 8px;text-align:center;white-space:nowrap}thead th{background:#f2f2f2;position:sticky;top:0;z-index:2}tbody tr:nth-child(even){background:#fafafa}.money{text-align:right}.missing-row{background:#ffe3e8!important}.total-row{font-weight:800;background:#eef6ff!important}.price-select,.price-input{width:100%;min-width:145px;border:1px solid #cfd4dc;border-radius:7px;padding:7px;background:#fff}.price-input{text-align:right}.modal-top-actions{display:flex;justify-content:flex-end;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 6px}.modal-top-actions .btn{min-width:160px}.modal-actions{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)}.persist-check{display:flex;gap:7px;align-items:center;font-size:.82rem;color:#374151}
+.date-picker-content{max-width:650px;padding:14px 16px}.date-picker-header{display:flex;align-items:center;justify-content:space-between;margin:6px 0 8px}.date-picker-header button{border:none;background:#fff;font-size:30px;cursor:pointer;color:#444;padding:2px 10px}.date-picker-month-title{font-size:1.05em;font-weight:700;color:#444}.date-picker-weekdays,.date-picker-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0}.date-picker-weekdays div{text-align:center;font-weight:700;color:#555;padding:5px 0;font-size:.85em}.date-picker-day{min-height:44px;border:0;background:#fff;cursor:pointer;font-size:.92em;color:#555;display:flex;align-items:center;justify-content:center;position:relative}.date-picker-day:hover{background:#eef7e9}.date-picker-day.out-month{color:#aaa;background:#fff}.date-picker-day.in-range{background:#e6f3df}.date-picker-day.range-start,.date-picker-day.range-end{background:#35a80d;color:#fff;border-radius:50%;font-weight:700}.date-picker-actions{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:12px}.date-picker-hint{color:var(--muted);font-size:.84em;line-height:1.25}
+.btn-quick{background:#eef4ff;color:#184ea6;border:1px solid #cbdcff}.quinzena-content{max-width:920px;max-height:92vh;overflow:auto}.quinzena-toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:12px 0}.quinzena-toolbar label{display:flex;flex-direction:column;gap:4px;font-size:.75rem;font-weight:700;color:#5a6575}.quinzena-toolbar input{border:1px solid #cfd4dc;border-radius:7px;padding:8px 10px;background:#fff;font-size:.9rem;width:110px}.quinzena-list{display:grid;gap:10px;margin-top:14px}.quinzena-month{margin-top:14px;border-top:1px solid #d9e1ec;padding-top:10px}.quinzena-month-title{font-size:.9rem;font-weight:800;color:#1f3f68;margin:0 0 8px}.quinzena-item{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:120px 1fr auto;align-items:end;gap:10px;background:#fafcff}.quinzena-item strong{display:block;align-self:center}.quinzena-dates{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));gap:8px}.quinzena-date{display:flex;flex-direction:column;gap:4px}.quinzena-date label{font-size:.72rem;font-weight:700;color:#5a6575}.quinzena-date input{border:1px solid #cfd4dc;border-radius:7px;padding:8px;background:#fff;font-size:.86rem}.quinzena-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.print-area{display:none}
+@media(max-width:760px){.quinzena-item{grid-template-columns:1fr}.quinzena-dates{grid-template-columns:1fr}.quinzena-item .btn{width:100%}.card{width:96%;padding:14px}.form-group{min-width:0;width:100%}.actions{width:100%}.actions .btn{flex:1}.atelier-grid{grid-template-columns:1fr}.summary-grid,.detail-summary{grid-template-columns:repeat(2,1fr)}.date-picker-content{max-width:96vw}.date-picker-day{min-height:38px}.date-picker-actions{align-items:flex-end}.modal-content{padding:12px}}
+@media print{@page{size:A4 portrait;margin:12mm}body>*{display:none!important}#printArea{display:block!important;position:static;width:100%;background:#fff;color:#000}.print-area{display:block;font-family:Arial,Helvetica,sans-serif}.print-doc{width:100%;color:#111}.print-cover{min-height:auto;display:flex;flex-direction:column;background:#f8fbff;border:1px solid #d7e2ef;border-radius:6px;padding:8mm}.print-headline{border-bottom:1.5px solid #5f7791;padding-bottom:5px;margin-bottom:8px}.print-headline h1{font-size:15pt;margin:0 0 2px;color:#18324d}.print-headline .meta{font-size:8.5pt;color:#5b6775}.print-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 10px}.print-summary-box{border:1px solid #c9d8e8;border-radius:6px;padding:7px;text-align:center;background:#fff}.print-summary-box strong{display:block;font-size:11.5pt;margin-bottom:2px;color:#17324d}.print-summary-box span{font-size:6.8pt;text-transform:uppercase;font-weight:700;color:#596776}.print-total{border:1.5px solid #7f9bb7;border-radius:6px;padding:7px 10px;text-align:right;margin:0 0 10px;background:#eaf3fb;display:flex;justify-content:space-between;align-items:center}.print-total small{display:block;font-size:7.5pt;text-transform:uppercase;font-weight:700;color:#405c77}.print-total strong{display:block;font-size:14pt;margin-top:0;color:#102f4c}.print-section-title{font-size:10pt;margin:8px 0 5px;color:#18324d}.print-area table{width:100%;border-collapse:collapse;min-width:0!important;font-size:7.8pt;background:#fff}.print-area th,.print-area td{border:1px solid #cfd4dc;padding:5px 6px;white-space:normal}.print-area th{background:#f1f3f5}.print-area .money{text-align:right;white-space:nowrap}.print-area .table-wrap{max-height:none;overflow:visible;border:0}.print-model-table td:first-child,.print-model-table th:first-child{text-align:left}.print-detail-page{break-before:page;page-break-before:always}.print-detail-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:7px;margin-bottom:10px}.print-detail-head h2{font-size:15pt;margin:0}.print-detail-head span{font-size:9pt;color:#555}.print-talao-table{font-size:8pt}.print-talao-table th,.print-talao-table td{padding:4px}.print-talao-table td:nth-child(1),.print-talao-table td:nth-child(2),.print-talao-table td:nth-child(3){white-space:nowrap}.print-group-break{break-before:page;page-break-before:always}}
+
+@media print{.print-area th{background:#dceaf6!important;color:#17324d}.print-area tbody tr:nth-child(even){background:#f4f8fc!important}.print-area .total-row{background:#d9e8f5!important}.print-detail-head{border-bottom-color:#5f7791}.print-detail-head h2{font-size:12.5pt;color:#18324d}.print-talao-table{font-size:7.6pt}}
+</style>
+<script src="navegacao.js"></script>
 </head>
-<body>
+<body class="auth-loading">
+<main>
+<section class="card filter-card">
+  <div class="page-head"><div><h2 class="page-title">Romaneio dos Ateliês</h2><p class="page-subtitle">Selecione o período em um único calendário. O sistema reúne as saídas de <strong>Costura, Palmilha e Sola</strong> e calcula os valores por modelo.</p></div></div>
+  <div class="filter-bar">
+    <div class="form-group"><label>Período</label><button type="button" class="date-range-button" id="periodButton">Selecionar data/período</button><input type="hidden" id="filterDataInicio"><input type="hidden" id="filterDataFim"></div>
+    <div class="actions"><button class="btn btn-primary" id="searchButton">Gerar Romaneio</button><button class="btn btn-secondary" id="quinzenasButton">Criar quinzenas</button><button class="btn btn-quick hidden" id="currentFortnightButton">Quinzena atual</button><button class="btn btn-quick hidden" id="pastFortnightButton">Quinzena passada</button><button class="btn btn-success" id="generalButton" disabled>Relatório Geral</button><button class="btn btn-secondary" id="refreshButton">Atualizar</button></div>
+  </div>
+  <div id="messageBox" class="message"></div>
+</section>
+<section class="card hidden" id="summaryCard"><div class="section-head"><h3 class="section-title">Resumo do período</h3><span class="mini-help" id="summaryInfo"></span></div><div class="summary-grid" id="summaryGrid"></div></section>
+<section class="card hidden" id="atelierCardsSection"><div class="section-head"><h3 class="section-title">Ateliês com produção no período</h3><span class="mini-help">Clique no card para abrir o relatório e ajustar/vincular os valores.</span></div><div id="sectorCards"></div></section>
+</main>
 
-    <div class="main-content">
-        <div class="filters-container">
-            <div class="form-group">
-                <label for="filterDataInicio">Data Início:</label>
-                <input type="date" id="filterDataInicio">
-            </div>
-            <div class="form-group">
-                <label for="filterDataFim">Data Fim:</label>
-                <input type="date" id="filterDataFim">
-            </div>
-            <div class="form-group">
-                <label for="filterAtelie">Ateliê Responsável:</label>
-                <select id="filterAtelie">
-                    <option value="">Selecione um Ateliê</option>
-                </select>
-            </div>
-            <button class="search-btn" id="searchButton">Gerar Relatório</button>
-        </div>
+<div id="dateRangePickerModal" class="modal">
+  <div class="modal-content date-picker-content">
+    <button type="button" class="modal-close" id="datePickerClose" style="position:absolute;right:14px;top:10px">&times;</button>
+    <div class="modal-head" style="border:0"><h3 id="datePickerTitle" class="modal-title">Selecionar Período</h3></div>
+    <div class="date-picker-header"><button type="button" id="datePickerPrev">‹</button><div id="datePickerMonthTitle" class="date-picker-month-title"></div><button type="button" id="datePickerNext">›</button></div>
+    <div class="date-picker-weekdays"><div>DOM.</div><div>SEG.</div><div>TER.</div><div>QUA.</div><div>QUI.</div><div>SEX.</div><div>SÁB.</div></div>
+    <div id="datePickerGrid" class="date-picker-grid"></div>
+    <div class="date-picker-actions"><span class="date-picker-hint">Clique em uma data para selecionar somente aquele dia, ou clique em duas datas para selecionar um período.</span><div style="display:flex;gap:8px"><button class="btn btn-secondary" id="datePickerClear">Limpar</button><button class="btn btn-primary" id="datePickerApply">Aplicar</button></div></div>
+  </div>
+</div>
 
-        <div id="summaryCard" class="summary-card" style="display: none;">
-            </div>
-        
-        <div id="pendingSummaryCard" class="summary-card" style="display: none;">
-            </div>
+<div id="detailModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-head"><div><h3 class="modal-title" id="detailTitle"></h3><p class="modal-subtitle" id="detailSubtitle"></p></div><button type="button" class="modal-close" id="detailClose">&times;</button></div>
+    <div class="modal-top-actions"><button class="btn btn-secondary" id="printIndividualButton">Imprimir este ateliê</button><button class="btn btn-primary" id="applyValuesButton">Aplicar valores</button></div>
+    <div class="detail-summary" id="detailSummary"></div>
+    <div class="table-section"><h4>Resumo por modelo e vínculo de valor</h4><div class="mini-help" style="margin-bottom:8px">Escolha um dos valores cadastrados no modelo ou selecione <strong>Valor manual</strong>. O valor escolhido será aplicado a todos os talões deste modelo dentro do card.</div><div class="table-wrap"><table><thead><tr><th>Linha.Modelo</th><th>Talões</th><th>Pares</th><th>Fonte do valor</th><th>Valor unit.</th><th>Valor total</th><th>Status</th></tr></thead><tbody id="modelsTableBody"></tbody></table></div></div>
+    <div class="table-section"><h4>Talões produzidos</h4><div class="table-wrap"><table><thead><tr><th>Remessa</th><th>Talão</th><th>Linha.Modelo</th><th>Pares</th><th>Data saída</th><th>Recebimento fábrica</th><th>Valor unit.</th><th>Valor talão</th></tr></thead><tbody id="taloesTableBody"></tbody></table></div></div>
+    <div class="modal-actions"><label class="persist-check"><input type="checkbox" id="persistLinks" checked> Salvar vínculo no cadastro do modelo para os próximos romaneios</label></div>
+  </div>
+</div>
 
-        <div class="table-container" style="display: none;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Remessa</th>
-                        <th>Talão</th>
-                        <th>Linha.Modelo</th>
-                        <th>Pares</th>
-                        <th>Data Saída Costura</th>
-                        <th>Data Entrada Distribuição</th>
-                    </tr>
-                </thead>
-                <tbody id="taloesTableBody">
-                    </tbody>
-            </table>
-        </div>
-    </div>
+<div class="modal" id="quinzenasModal"><div class="modal-content quinzena-content"><div class="modal-head"><div><h3 class="modal-title">Criar quinzenas do ano</h3><p class="modal-subtitle" id="quinzenasSubtitle"></p></div><button class="modal-close" id="quinzenasClose">×</button></div><div class="quinzena-toolbar"><label>Ano<input type="number" id="quinzenasAno" min="2020" max="2100" step="1"></label><button class="btn btn-secondary" id="carregarAnoQuinzenas">Carregar ano</button><button class="btn btn-secondary" id="padronizarAnoQuinzenas">Preencher padrão 1-15 / 16-fim</button></div><div class="quinzena-list" id="quinzenasList"></div><div class="quinzena-footer"><button class="btn btn-primary" id="salvarQuinzenasButton">Salvar quinzenas do ano</button></div></div></div>
 
-    <script type="module">
-        const firebaseConfig = window.FIREBASE_CONFIG;
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+<div id="printArea" class="print-area"></div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+<script type="module">
+const firebaseConfig=window.FIREBASE_CONFIG;
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,collection,getDocs,updateDoc,setDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
+const els={inicio:$('filterDataInicio'),fim:$('filterDataFim'),period:$('periodButton'),search:$('searchButton'),refresh:$('refreshButton'),general:$('generalButton'),quinzenas:$('quinzenasButton'),currentFortnight:$('currentFortnightButton'),pastFortnight:$('pastFortnightButton'),msg:$('messageBox'),summaryCard:$('summaryCard'),summaryInfo:$('summaryInfo'),summaryGrid:$('summaryGrid'),cardsSection:$('atelierCardsSection'),sectorCards:$('sectorCards'),dateModal:$('dateRangePickerModal'),dateGrid:$('datePickerGrid'),dateMonth:$('datePickerMonthTitle'),datePrev:$('datePickerPrev'),dateNext:$('datePickerNext'),dateApply:$('datePickerApply'),dateClear:$('datePickerClear'),dateClose:$('datePickerClose'),detailModal:$('detailModal'),detailTitle:$('detailTitle'),detailSubtitle:$('detailSubtitle'),detailSummary:$('detailSummary'),modelsBody:$('modelsTableBody'),taloesBody:$('taloesTableBody'),detailClose:$('detailClose'),applyValues:$('applyValuesButton'),persist:$('persistLinks'),printIndividual:$('printIndividualButton'),printArea:$('printArea'),quinzenasModal:$('quinzenasModal'),quinzenasClose:$('quinzenasClose'),quinzenasSubtitle:$('quinzenasSubtitle'),quinzenasList:$('quinzenasList'),quinzenasAno:$('quinzenasAno'),carregarAnoQuinzenas:$('carregarAnoQuinzenas'),padronizarAnoQuinzenas:$('padronizarAnoQuinzenas'),salvarQuinzenas:$('salvarQuinzenasButton')};
+const SECTORS={costura:{label:'Costura',date:'dataSaidaCostura',atelier:['idAtelieResponsavel','idAtelierResponsavel','atelieCosturaId'],receipt:'dataEntradaDistribuicao'},palmilha:{label:'Palmilha',date:'dataSaidaPalmilha',atelier:['idAteliePalmilhaResponsavel','ateliePalmilhaId'],receipt:'dataRecebimentoPalmilha'},sola:{label:'Sola',date:'dataSaidaSola',atelier:['idAtelieSolaResponsavel','atelieSolaId'],receipt:'dataRecebimentoSola'}};
+let modelsMap=new Map(),lastReport=null,currentGroup=null,currentUserName='',detailFilter='all',pickerMonth=new Date(),pickerStart=null,pickerEnd=null;
 
-        // Elementos da Página
-        const filterDataInicio = document.getElementById('filterDataInicio');
-        const filterDataFim = document.getElementById('filterDataFim');
-        const filterAtelie = document.getElementById('filterAtelie');
-        const searchButton = document.getElementById('searchButton');
-        const taloesTableBody = document.getElementById('taloesTableBody');
-        const summaryCard = document.getElementById('summaryCard');
-        const pendingSummaryCard = document.getElementById('pendingSummaryCard');
-        const tableContainer = document.querySelector('.table-container');
+onAuthStateChanged(auth,async user=>{if(!user){location.href='login.html';return}try{const snap=await getDoc(doc(db,'Usuario',user.email));if(!snap.exists())throw new Error('Usuário não encontrado');const data=snap.data();window.Roma.validateProfile(user,data);const nivel=String(data.nivelAcesso||'');currentUserName=data.Nome||user.email||'Usuário';localStorage.setItem('calcadosroma-65ac6:userNivelAcesso',nivel);localStorage.setItem('calcadosroma-65ac6:userName',currentUserName);if(window.SistemaNavegacao)window.SistemaNavegacao.init({userLevel:nivel,userName:currentUserName,title:'Romaneio dos Ateliês',onLogout:async()=>{await signOut(auth);location.href='login.html'}});document.body.classList.remove('auth-loading');setDefaults()}catch(e){console.error(e);alert('Erro ao validar usuário: '+e.message);location.replace('index.html')}});
 
-        let currentUserName = '';
-        // --- Controle de Autenticação e Carregamento de Dados ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const userDocRef = doc(db, 'Usuario', user.email);
-                const userDocSnap = await getDoc(userDocRef);
+function show(type,text){els.msg.className=text?`message show ${type}`:'message';els.msg.textContent=text||''}
+function esc(v){return String(v??'').replace(/[&<>\'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
+function safeKey(v){return norm(v).replace(/[^a-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'')||'sem_atelie'}
+function num(v){if(typeof v==='number')return Number.isFinite(v)?v:0;let s=String(v??'').replace(/R\$|\s/g,'');if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(',','.');const n=parseFloat(s.replace(/[^0-9.\-]/g,''));return Number.isFinite(n)?n:0}
+function money(v){return num(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function moneyInput(v){return num(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:3})}
+function nfmt(v){return num(v).toLocaleString('pt-BR',{maximumFractionDigits:0})}
+function isoBR(s){if(!s)return'';const p=String(s).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s}
+function today(){const d=new Date();return isoFromDate(d)}
+function isoFromDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function parseISO(s){if(!s)return null;const [y,m,d]=s.split('-').map(Number);return y&&m&&d?new Date(y,m-1,d):null}
+function normDate(v){if(!v)return'';try{if(v.toDate)return isoFromDate(v.toDate())}catch{}const s=String(v).trim();if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);const m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return m?`${m[3]}-${m[2]}-${m[1]}`:''}
+function first(d,arr){for(const k of arr){const v=d?.[k];if(v!==undefined&&v!==null&&String(v).trim()!=='')return v}return''}
+function only(v){return String(v||'').replace(/\D/g,'')}
+function modelKey(l,m){return `${only(l)}.${only(m)}`}
+function getLinha(t){return String(first(t,['linha','Linha','codLinha']))}
+function getModelo(t){return String(first(t,['modelo','Modelo','codModelo']))}
+function getPares(t){return num(first(t,['pares','Pares','quantidadePares','qtdPares']))}
+function inRange(d,a,b){const x=normDate(d);return !!x&&x>=a&&x<=b}
+function updatePeriodLabel(){if(!els.inicio.value&&!els.fim.value){els.period.textContent='Selecionar data/período';return}els.period.textContent=els.inicio.value===els.fim.value?isoBR(els.inicio.value):`${isoBR(els.inicio.value)} até ${isoBR(els.fim.value)}`}
+function setDefaults(){const t=today();els.inicio.value=t;els.fim.value=t;updatePeriodLabel()}
 
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data(); window.Roma.validateProfile(user,userData);
-                    const nivelAcesso = String(userData.nivelAcesso || '');
-                    currentUserName = userData.Nome || 'Usuário';
+function openDatePicker(){pickerStart=els.inicio.value||null;pickerEnd=els.fim.value||null;const base=parseISO(pickerStart||pickerEnd)||new Date();pickerMonth=new Date(base.getFullYear(),base.getMonth(),1);renderDatePicker();els.dateModal.classList.add('show')}
+function renderDatePicker(){const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];els.dateMonth.textContent=`${months[pickerMonth.getMonth()]} ${pickerMonth.getFullYear()}`;els.dateGrid.innerHTML='';const y=pickerMonth.getFullYear(),m=pickerMonth.getMonth(),firstDay=new Date(y,m,1),gridStart=new Date(y,m,1-firstDay.getDay());for(let i=0;i<42;i++){const d=new Date(gridStart);d.setDate(gridStart.getDate()+i);const iso=isoFromDate(d),b=document.createElement('button');b.type='button';b.className='date-picker-day';b.textContent=String(d.getDate());if(d.getMonth()!==m)b.classList.add('out-month');const end=pickerEnd||pickerStart;if(pickerStart&&end&&iso>=pickerStart&&iso<=end)b.classList.add('in-range');if(pickerStart&&iso===pickerStart)b.classList.add('range-start');if(pickerEnd&&iso===pickerEnd)b.classList.add('range-end');b.onclick=()=>{if(!pickerStart||(pickerStart&&pickerEnd)){pickerStart=iso;pickerEnd=null}else if(iso<pickerStart){pickerEnd=pickerStart;pickerStart=iso}else pickerEnd=iso;renderDatePicker()};els.dateGrid.appendChild(b)}}
+els.datePrev.onclick=()=>{pickerMonth=new Date(pickerMonth.getFullYear(),pickerMonth.getMonth()-1,1);renderDatePicker()};els.dateNext.onclick=()=>{pickerMonth=new Date(pickerMonth.getFullYear(),pickerMonth.getMonth()+1,1);renderDatePicker()};els.dateApply.onclick=()=>{if(pickerStart&&!pickerEnd)pickerEnd=pickerStart;els.inicio.value=pickerStart||'';els.fim.value=pickerEnd||'';updatePeriodLabel();els.dateModal.classList.remove('show')};els.dateClear.onclick=()=>{pickerStart=null;pickerEnd=null;renderDatePicker()};els.dateClose.onclick=()=>els.dateModal.classList.remove('show');els.period.onclick=openDatePicker;
 
-                    localStorage.setItem('calcadosroma-65ac6:userNivelAcesso', nivelAcesso);
-                    localStorage.setItem('calcadosroma-65ac6:userName', currentUserName);
+async function loadModels(){const s=await getDocs(collection(db,'modelos'));modelsMap=new Map();s.docs.forEach(d=>{const x={id:d.id,...d.data()},k=modelKey(x.linha,x.modelo);modelsMap.set(d.id,x);if(k!=='.'){modelsMap.set(k,x);modelsMap.set(k.replace('.','-'),x);modelsMap.set(k.replace('.','_'),x)}})}
+function getModel(l,m){for(const k of [modelKey(l,m),modelKey(l,m).replace('.','-'),modelKey(l,m).replace('.','_')])if(modelsMap.has(k))return modelsMap.get(k);return null}
+function modelSectorEntries(model){return Object.entries(model?.preco?.setores||{}).filter(([,v])=>num(v)!==0).sort(([a],[b])=>a.localeCompare(b,'pt-BR',{numeric:true}))}
+function defaultSectorSource(model,key){const entries=modelSectorEntries(model);const exact=entries.find(([name])=>norm(name)===key);return exact?.[0]||''}
+function getStoredLink(model,sector,atelier){return model?.romaneioVinculos?.[sector]?.[safeKey(atelier)]||null}
+function resolvePrice(model,sector,atelier){if(!model)return{source:'',unit:0,manual:false};const link=getStoredLink(model,sector,atelier);if(link){if(link.tipo==='manual')return{source:'__manual__',unit:num(link.valor),manual:true};if(link.fonte){const found=modelSectorEntries(model).find(([name])=>name===link.fonte||norm(name)===norm(link.fonte));if(found)return{source:found[0],unit:num(found[1]),manual:false}}}const source=defaultSectorSource(model,sector);const found=modelSectorEntries(model).find(([n])=>n===source);return{source,unit:num(found?.[1]),manual:false}}
+function atelierName(t,key){const s=SECTORS[key];return String(first(t,s.atelier)||'Sem ateliê').trim()}
+async function loadTaloes(){const s=await getDocs(collection(db,'taloes'));return s.docs.map(d=>({id:d.id,...d.data()}))}
 
-                    window.SistemaNavegacao.init({
-                        userLevel: nivelAcesso,
-                        userName: currentUserName,
-                        title: 'Controle de produção Calçados Roma',
-                        onLogout: async () => {
-                            try {
-                                await signOut(auth);
-                                localStorage.removeItem('calcadosroma-65ac6:userNivelAcesso');
-                                localStorage.removeItem('calcadosroma-65ac6:userName');
-                                window.location.href = 'login.html';
-                            } catch (error) {
-                                console.error('Erro ao fazer logout:', error);
-                                alert('Erro ao fazer logout. Tente novamente.');
-                            }
-                        }
-                    });
+function calc(taloes,start,end){const details=[];for(const t of taloes){const linha=getLinha(t),modelo=getModelo(t),pares=getPares(t);if(!linha||!modelo||pares<=0)continue;for(const [key,s] of Object.entries(SECTORS)){if(!inRange(t[s.date],start,end))continue;const model=getModel(linha,modelo),atelier=atelierName(t,key),resolved=resolvePrice(model,key,atelier),unit=resolved.unit,missingModel=!model,missingPrice=!missingModel&&unit<=0,exit=normDate(t[s.date]),receipt=normDate(t[s.receipt]);details.push({...t,sector:key,sectorLabel:s.label,atelier,linha,modelo,pares,unit,priceSource:resolved.source,value:Math.round(pares*unit*100)/100,missingModel,missingPrice,exit,receipt,pendingReceipt:!receipt})}}
+const groups=new Map();for(const r of details){const k=`${r.sector}|${r.atelier}`;if(!groups.has(k))groups.set(k,{key:k,sector:r.sector,sectorLabel:r.sectorLabel,atelier:r.atelier,rows:[],taloes:0,pares:0,value:0,models:new Set(),pending:0,pricePending:0});const g=groups.get(k);g.rows.push(r);g.taloes++;g.pares+=r.pares;g.value+=r.value;g.models.add(modelKey(r.linha,r.modelo));if(r.pendingReceipt)g.pending++;if(r.missingModel||r.missingPrice)g.pricePending++}const ateliers=[...groups.values()].sort((a,b)=>a.sectorLabel.localeCompare(b.sectorLabel)||a.atelier.localeCompare(b.atelier,'pt-BR',{numeric:true}));const total={rows:details.length,pares:details.reduce((a,r)=>a+r.pares,0),value:details.reduce((a,r)=>a+r.value,0),ateliers:ateliers.length,models:new Set(details.map(r=>modelKey(r.linha,r.modelo))).size,pending:details.filter(r=>r.pendingReceipt).length,pricePending:details.filter(r=>r.missingModel||r.missingPrice).length};return{start,end,details,ateliers,total}}
+function recalcReportTotals(){for(const g of lastReport.ateliers){g.value=g.rows.reduce((a,r)=>a+r.value,0);g.pricePending=g.rows.filter(r=>r.missingModel||r.missingPrice).length}lastReport.total.value=lastReport.details.reduce((a,r)=>a+r.value,0);lastReport.total.pricePending=lastReport.details.filter(r=>r.missingModel||r.missingPrice).length}
+function aggregate(rows){const m=new Map();for(const r of rows){const k=modelKey(r.linha,r.modelo);if(!m.has(k))m.set(k,{key:k,linha:r.linha,modelo:r.modelo,taloes:0,pares:0,unit:r.unit,value:0,source:r.priceSource,missingModel:r.missingModel,missingPrice:r.missingPrice,model:getModel(r.linha,r.modelo)});const x=m.get(k);x.taloes++;x.pares+=r.pares;x.value+=r.value}return[...m.values()].sort((a,b)=>Number(a.linha)-Number(b.linha)||Number(a.modelo)-Number(b.modelo))}
+function clear(){lastReport=null;currentGroup=null;els.summaryCard.classList.add('hidden');els.cardsSection.classList.add('hidden');els.general.disabled=true;els.detailModal.classList.remove('show')}
+async function generate(){let a=els.inicio.value,b=els.fim.value;if(!a||!b){show('warning','Selecione uma data ou período.');return}if(a>b)[a,b]=[b,a],els.inicio.value=a,els.fim.value=b;updatePeriodLabel();clear();show('info','Buscando saídas de Costura, Palmilha e Sola...');els.search.disabled=els.refresh.disabled=true;try{await loadModels();const taloes=await loadTaloes();lastReport=calc(taloes,a,b);render(lastReport);els.general.disabled=!lastReport.details.length;show(lastReport.details.length?'success':'warning',lastReport.details.length?`Romaneio gerado de ${isoBR(a)} a ${isoBR(b)}: ${nfmt(lastReport.total.pares)} pares e ${money(lastReport.total.value)}.`:'Nenhuma saída encontrada no período.')}catch(e){console.error(e);show('error','Erro ao gerar romaneio: '+e.message)}finally{els.search.disabled=els.refresh.disabled=false}}
+function render(r){els.summaryInfo.textContent=`${isoBR(r.start)} até ${isoBR(r.end)}`;els.summaryGrid.innerHTML=`<div class="summary-box"><strong>${nfmt(r.total.ateliers)}</strong><small>Ateliês / setores</small></div><div class="summary-box"><strong>${nfmt(r.total.rows)}</strong><small>Talões produzidos</small></div><div class="summary-box"><strong>${nfmt(r.total.pares)}</strong><small>Pares</small></div><div class="summary-box ok"><strong>${money(r.total.value)}</strong><small>Valor geral</small></div><div class="summary-box"><strong>${nfmt(r.total.models)}</strong><small>Modelos</small></div><div class="summary-box ${r.total.pricePending?'danger':''}"><strong>${nfmt(r.total.pricePending)}</strong><small>Pendências preço</small></div><div class="summary-box ${r.total.pending?'warn':''}"><strong>${nfmt(r.total.pending)}</strong><small>Sem recebimento</small></div>`;els.summaryCard.classList.remove('hidden');const order=['costura','palmilha','sola'];els.sectorCards.innerHTML=order.map(sec=>{const list=r.ateliers.filter(g=>g.sector===sec);if(!list.length)return'';return`<div class="sector-block"><h4 class="sector-title"><span class="sector-pill sector-${sec}">${SECTORS[sec].label}</span> ${list.length} ateliê(s)</h4><div class="atelier-grid">${list.map(g=>`<article class="atelier-card ${sec}" data-key="${esc(g.key)}"><div class="atelier-head"><div><h3>${esc(g.atelier)}</h3><span class="mini-help">${nfmt(g.models.size)} modelo(s)</span></div>${g.pricePending?`<span class="tag bad">${nfmt(g.pricePending)} pendência(s)</span>`:'<span class="tag good">Valores OK</span>'}</div><div class="atelier-card-grid"><div class="atelier-stat"><strong>${nfmt(g.taloes)}</strong><small>Talões</small></div><div class="atelier-stat"><strong>${nfmt(g.pares)}</strong><small>Pares</small></div><div class="atelier-stat"><strong>${money(g.value)}</strong><small>Valor ${SECTORS[sec].label}</small></div><div class="atelier-stat"><strong>${nfmt(g.pending)}</strong><small>Sem recebimento</small></div></div><span class="click-hint">Clique para abrir, ajustar valores e imprimir.</span></article>`).join('')}</div></div>`}).join('')||'<div class="empty-state">Nenhum ateliê encontrado.</div>';els.sectorCards.querySelectorAll('.atelier-card').forEach(c=>c.onclick=()=>openIndividual(c.dataset.key));els.cardsSection.classList.remove('hidden')}
 
-                    loadAtelies();
-                } else {
-                    alert('Dados do usuário não encontrados. Faça login novamente.');
-                    await signOut(auth);
-                    window.location.href = 'login.html';
-                }
-            } else {
-                window.location.href = 'login.html';
-            }
-        });
+function priceOptions(model,selected){const entries=modelSectorEntries(model);return `<option value="">Sem valor</option>${entries.map(([name,val])=>`<option value="${esc(name)}" ${name===selected?'selected':''}>${esc(name)} - ${money(val)}</option>`).join('')}<option value="__manual__" ${selected==='__manual__'?'selected':''}>Valor manual</option>`}
+function openIndividual(key){const g=lastReport?.ateliers.find(x=>x.key===key);if(!g)return;currentGroup=g;detailFilter='all';els.detailTitle.textContent=`Romaneio - ${g.atelier} - ${g.sectorLabel}`;els.detailSubtitle.textContent=`Período de ${isoBR(lastReport.start)} a ${isoBR(lastReport.end)}. Você pode vincular outro valor cadastrado no modelo para este ateliê.`;renderDetail();els.detailModal.classList.add('show')}
+function renderDetail(){const g=currentGroup;if(!g)return;
+const agAll=aggregate(g.rows),priceModels=new Set(agAll.filter(x=>x.missingModel||x.missingPrice).map(x=>x.key));
+let rows=g.rows,ag=agAll;
+if(detailFilter==='price'){rows=g.rows.filter(r=>priceModels.has(modelKey(r.linha,r.modelo)));ag=aggregate(rows)}
+if(detailFilter==='receipt'){rows=g.rows.filter(r=>r.pendingReceipt);const keys=new Set(rows.map(r=>modelKey(r.linha,r.modelo)));ag=agAll.filter(x=>keys.has(x.key))}
+els.detailSummary.innerHTML=`<div class="detail-summary-box"><strong>${nfmt(g.taloes)}</strong><small>Talões</small></div><div class="detail-summary-box"><strong>${nfmt(g.pares)}</strong><small>Pares</small></div><div class="detail-summary-box"><strong>${nfmt(g.models.size)}</strong><small>Modelos</small></div><div class="detail-summary-box"><strong>${money(g.value)}</strong><small>Valor total</small></div><div class="detail-summary-box clickable ${detailFilter==='price'?'active-filter':''}" data-detail-filter="price" title="Mostrar somente modelos e talões com pendência de preço"><strong>${nfmt(g.pricePending)}</strong><small>Pendências preço</small></div><div class="detail-summary-box clickable ${detailFilter==='receipt'?'active-filter':''}" data-detail-filter="receipt" title="Mostrar somente talões sem recebimento"><strong>${nfmt(g.pending)}</strong><small>Sem recebimento</small></div>`;
+els.detailSummary.querySelectorAll('[data-detail-filter]').forEach(card=>card.onclick=()=>{const f=card.dataset.detailFilter;detailFilter=detailFilter===f?'all':f;renderDetail()});
+const filterLabel=detailFilter==='price'?' — somente pendências de preço':detailFilter==='receipt'?' — somente sem recebimento':'';
+const modelHeading=els.modelsBody.closest('.table-section')?.querySelector('h4');if(modelHeading)modelHeading.textContent='Resumo por modelo e vínculo de valor'+filterLabel;
+const talaoHeading=els.taloesBody.closest('.table-section')?.querySelector('h4');if(talaoHeading)talaoHeading.textContent='Talões bipados'+filterLabel;
+els.modelsBody.innerHTML=ag.length?ag.map(x=>`<tr class="${x.missingModel||x.missingPrice?'missing-row':''}" data-model="${esc(x.key)}"><td><strong>${esc(x.key)}</strong></td><td>${nfmt(x.taloes)}</td><td>${nfmt(x.pares)}</td><td>${x.missingModel?'<span class="tag bad">Modelo não cadastrado</span>':`<select class="price-select" data-price-source>${priceOptions(x.model,x.source)}</select>`}</td><td>${x.missingModel?'-':`<input class="price-input" data-price-value value="${moneyInput(x.unit)}" ${x.source==='__manual__'?'':'readonly'}>`}</td><td class="money" data-row-total><strong>${money(x.value)}</strong></td><td>${x.missingModel?'<span class="tag bad">Modelo não cadastrado</span>':x.missingPrice?'<span class="tag bad">Sem valor vinculado</span>':`<span class="tag good">${x.source==='__manual__'?'Manual':esc(x.source||'OK')}</span>`}</td></tr>`).join('')+`<tr class="total-row"><td colspan="4">TOTAL</td><td></td><td class="money"><strong>${money(rows.reduce((a,r)=>a+r.value,0))}</strong></td><td></td></tr>`:`<tr><td colspan="7" class="empty-state">Nenhuma pendência encontrada neste filtro.</td></tr>`;
+els.taloesBody.innerHTML=rows.length?rows.map(r=>`<tr><td>${esc(r.numeroRemessa||'')}</td><td>${esc(r.numeroTalaoSequencial||r.numeroTalao||r.talao||'')}</td><td><strong>${esc(modelKey(r.linha,r.modelo))}</strong></td><td>${nfmt(r.pares)}</td><td>${isoBR(r.exit)}</td><td>${r.pendingReceipt?'<span class="tag warn">Pendente</span>':isoBR(r.receipt)}</td><td class="money">${money(r.unit)}</td><td class="money"><strong>${money(r.value)}</strong></td></tr>`).join(''):`<tr><td colspan="8" class="empty-state">Nenhum talão encontrado neste filtro.</td></tr>`;
+els.modelsBody.querySelectorAll('[data-price-source]').forEach(sel=>sel.onchange=()=>{const tr=sel.closest('tr'),mk=tr.dataset.model,model=getModel(...mk.split('.')),input=tr.querySelector('[data-price-value]');if(sel.value==='__manual__'){input.readOnly=false;input.focus()}else{input.readOnly=true;const found=modelSectorEntries(model).find(([n])=>n===sel.value);input.value=moneyInput(found?.[1]||0)}updatePreviewRow(tr)});els.modelsBody.querySelectorAll('[data-price-value]').forEach(inp=>inp.oninput=()=>updatePreviewRow(inp.closest('tr')))}
+function updatePreviewRow(tr){const mk=tr.dataset.model,x=aggregate(currentGroup.rows).find(a=>a.key===mk);if(!x)return;const unit=num(tr.querySelector('[data-price-value]')?.value),total=x.pares*unit;tr.querySelector('[data-row-total]').innerHTML=`<strong>${money(total)}</strong>`}
+async function persistModelLink(model,sector,atelier,source,unit){const vinculos=JSON.parse(JSON.stringify(model.romaneioVinculos||{}));vinculos[sector]=vinculos[sector]||{};const base={setorDestino:sector,setorLabel:SECTORS[sector]?.label||sector,atelier:String(atelier||''),fonteValor:source,atualizadoPor:currentUserName,atualizadoEm:new Date().toISOString()};vinculos[sector][safeKey(atelier)]=source==='__manual__'?{...base,tipo:'manual',valor:unit}:{...base,tipo:'modelo',fonte:source};await updateDoc(doc(db,'modelos',model.id),{romaneioVinculos:vinculos});model.romaneioVinculos=vinculos}
+async function applyValues(){if(!currentGroup)return;const rows=[...els.modelsBody.querySelectorAll('tr[data-model]')];els.applyValues.disabled=true;let persistErrors=0;try{for(const tr of rows){const mk=tr.dataset.model,source=tr.querySelector('[data-price-source]')?.value||'',unit=num(tr.querySelector('[data-price-value]')?.value),model=getModel(...mk.split('.'));currentGroup.rows.filter(r=>modelKey(r.linha,r.modelo)===mk).forEach(r=>{r.unit=unit;r.priceSource=source;r.value=Math.round(r.pares*unit*100)/100;r.missingPrice=!r.missingModel&&unit<=0});if(els.persist.checked&&model){try{await persistModelLink(model,currentGroup.sector,currentGroup.atelier,source,unit)}catch(e){console.error('Falha ao salvar vínculo',mk,e);persistErrors++}}}recalcReportTotals();render(lastReport);renderDetail();show(persistErrors?'warning':'success',persistErrors?`Valores aplicados. ${persistErrors} vínculo(s) não puderam ser salvos no cadastro do modelo por permissão do banco.`:'Valores aplicados e vínculos salvos no cadastro dos modelos.')}finally{els.applyValues.disabled=false}}
 
-        // --- Carregar Ateliês (Usuários de Nível 03) para o Dropdown ---
-        async function loadAtelies() {
-            try {
-                const q = query(collection(db, 'atelies'), where('setor', '==', 'costura'));
-                const querySnapshot = await getDocs(q);
-                filterAtelie.innerHTML = '<option value="">Selecione um Ateliê</option>';
-                querySnapshot.forEach((doc) => {
-                    const atelieName = doc.data().nome;
-                    if (atelieName) {
-                        const option = document.createElement('option');
-                        option.value = atelieName;
-                        option.textContent = atelieName;
-                        filterAtelie.appendChild(option);
-                    }
-                });
-            } catch (error) {
-                console.error("Erro ao carregar ateliês:", error);
-            }
-        }
+function getQuinzenaBase(){const d=parseISO(els.inicio.value)||new Date();return{year:d.getFullYear(),month:d.getMonth()}}
+function quinzenaRanges(year,month){const last=new Date(year,month+1,0).getDate();return[{numero:1,mes:month+1,inicio:isoFromDate(new Date(year,month,1)),fim:isoFromDate(new Date(year,month,15))},{numero:2,mes:month+1,inicio:isoFromDate(new Date(year,month,16)),fim:isoFromDate(new Date(year,month,last))}]}
+function yearFortnightRanges(year){const out=[];for(let m=0;m<12;m++)out.push(...quinzenaRanges(year,m));return out}
+function renderQuinzenaEditor(ranges,year){const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];let html='';for(let m=1;m<=12;m++){const rows=ranges.filter(q=>Number(q.mes)===m);html+=`<section class="quinzena-month"><h4 class="quinzena-month-title">${months[m-1]} ${year}</h4>${rows.map(q=>`<div class="quinzena-item" data-q-mes="${m}" data-q-num="${q.numero}"><strong>${q.numero}ª quinzena</strong><div class="quinzena-dates"><div class="quinzena-date"><label>Data inicial</label><input type="date" data-q-inicio value="${q.inicio}"></div><div class="quinzena-date"><label>Data final</label><input type="date" data-q-fim value="${q.fim}"></div></div><button class="btn btn-secondary" data-q-select>Selecionar</button></div>`).join('')}</section>`}els.quinzenasList.innerHTML=html;els.quinzenasList.querySelectorAll('[data-q-select]').forEach(b=>b.onclick=()=>{const item=b.closest('.quinzena-item'),i=item.querySelector('[data-q-inicio]').value,f=item.querySelector('[data-q-fim]').value;if(!i||!f||i>f){show('warning','Confira a data inicial e final da quinzena.');return}els.inicio.value=i;els.fim.value=f;updatePeriodLabel();els.quinzenasModal.classList.remove('show');generate()})}
+async function loadSavedQuinzenas(){try{const snap=await getDocs(collection(db,'quinzenas'));const arr=snap.docs.map(d=>({id:d.id,...d.data()})).filter(q=>q.dataInicio&&q.dataFim).sort((a,b)=>String(a.dataInicio).localeCompare(String(b.dataInicio)));window.__romaneioQuinzenas=arr;updateQuickFortnightButtons();return arr}catch(e){console.warn('Não foi possível ler quinzenas',e);window.__romaneioQuinzenas=[];updateQuickFortnightButtons();return[]}}
+function updateQuickFortnightButtons(){const arr=window.__romaneioQuinzenas||[],today=isoFromDate(new Date());const current=arr.find(q=>q.dataInicio<=today&&q.dataFim>=today);let past=null;if(current){const idx=arr.indexOf(current);past=idx>0?arr[idx-1]:null}else{past=[...arr].filter(q=>q.dataFim<today).pop()||null}els.currentFortnight.classList.toggle('hidden',!current);els.pastFortnight.classList.toggle('hidden',!past);els.currentFortnight.dataset.qid=current?.id||'';els.pastFortnight.dataset.qid=past?.id||''}
+function applySavedFortnight(id){const q=(window.__romaneioQuinzenas||[]).find(x=>x.id===id);if(!q)return;els.inicio.value=q.dataInicio;els.fim.value=q.dataFim;updatePeriodLabel();generate()}
+async function loadQuinzenaYearEditor(year,forceDefaults=false){const saved=await loadSavedQuinzenas();const defaults=yearFortnightRanges(year);const ranges=defaults.map(q=>{if(forceDefaults)return q;const found=saved.find(x=>Number(x.ano)===year&&Number(x.mes)===q.mes&&Number(x.numero)===q.numero);return found?{numero:q.numero,mes:q.mes,inicio:found.dataInicio,fim:found.dataFim}:q});els.quinzenasAno.value=year;els.quinzenasSubtitle.textContent=`${year} · 24 períodos editáveis conforme o calendário real da fábrica`;renderQuinzenaEditor(ranges,year)}
+async function openQuinzenas(){const {year}=getQuinzenaBase();await loadQuinzenaYearEditor(year,false);els.quinzenasModal.classList.add('show')}
+async function saveQuinzenas(){const year=Number(els.quinzenasAno.value)||getQuinzenaBase().year;const items=[...els.quinzenasList.querySelectorAll('.quinzena-item')];const ranges=items.map(item=>({mes:Number(item.dataset.qMes),numero:Number(item.dataset.qNum),inicio:item.querySelector('[data-q-inicio]').value,fim:item.querySelector('[data-q-fim]').value}));if(ranges.length!==24){show('warning','Carregue o ano completo antes de salvar.');return}if(ranges.some(q=>!q.inicio||!q.fim||q.inicio>q.fim)){show('warning','Revise as datas das quinzenas antes de salvar.');return}els.salvarQuinzenas.disabled=true;try{for(const q of ranges){const id=`${year}-${String(q.mes).padStart(2,'0')}-Q${q.numero}`;await setDoc(doc(db,'quinzenas',id),{ano:year,mes:q.mes,numero:q.numero,dataInicio:q.inicio,dataFim:q.fim,descricao:`${q.numero}ª quinzena - ${String(q.mes).padStart(2,'0')}/${year}`,atualizadoEm:serverTimestamp(),atualizadoPor:currentUserName},{merge:true})}await loadSavedQuinzenas();show('success',`As 24 quinzenas de ${year} foram salvas com as datas informadas.`);els.quinzenasModal.classList.remove('show')}catch(e){console.error(e);show('error','Não foi possível salvar as quinzenas: '+e.message)}finally{els.salvarQuinzenas.disabled=false}}
 
-        // --- Gerar Relatório de Romaneio ---
-        searchButton.addEventListener('click', async () => {
-            const dataInicio = filterDataInicio.value;
-            const dataFim = filterDataFim.value;
-            const atelieResponsavel = filterAtelie.value;
+function buildPrintHtml(title,subtitle,rows){const ag=aggregate(rows),total=rows.reduce((a,r)=>a+r.value,0),pares=rows.reduce((a,r)=>a+r.pares,0),sector=rows[0]?.sectorLabel||'',atelier=rows[0]?.atelier||'',periodo=`${isoBR(lastReport.start)} a ${isoBR(lastReport.end)}`;return`<section class="print-doc"><div class="print-cover"><div class="print-headline"><h1>${esc(title)}</h1><div class="meta">${esc(subtitle)}</div></div><div class="print-summary"><div class="print-summary-box"><strong>${nfmt(rows.length)}</strong><span>Talões bipados</span></div><div class="print-summary-box"><strong>${nfmt(pares)}</strong><span>Pares produzidos</span></div><div class="print-summary-box"><strong>${nfmt(ag.length)}</strong><span>Modelos</span></div><div class="print-summary-box"><strong>${esc(sector)}</strong><span>Setor</span></div></div><div class="print-total"><small>Valor total do romaneio</small><strong>${money(total)}</strong></div><h3 class="print-section-title">Resumo por modelo</h3><table class="print-model-table"><thead><tr><th>Modelo</th><th>Talões</th><th>Pares</th><th>Fonte do valor</th><th>Valor unit.</th><th>Total</th></tr></thead><tbody>${ag.map(x=>`<tr><td><strong>${esc(x.key)}</strong></td><td>${nfmt(x.taloes)}</td><td>${nfmt(x.pares)}</td><td>${esc(x.source==='__manual__'?'Manual':x.source||'Sem valor')}</td><td class="money">${money(x.unit)}</td><td class="money"><strong>${money(x.value)}</strong></td></tr>`).join('')}<tr class="total-row"><td colspan="2"><strong>TOTAL</strong></td><td><strong>${nfmt(pares)}</strong></td><td></td><td></td><td class="money"><strong>${money(total)}</strong></td></tr></tbody></table></div><div class="print-detail-page"><div class="print-detail-head"><h2>Talões bipados — ${esc(atelier)}</h2><span>${esc(sector)} · ${periodo}</span></div><table class="print-talao-table"><thead><tr><th>Remessa</th><th>Talão</th><th>Modelo</th><th>Pares</th><th>Data saída</th><th>Valor unit.</th><th>Total</th></tr></thead><tbody>${rows.slice().sort((a,b)=>String(a.numeroRemessa||'').localeCompare(String(b.numeroRemessa||''),'pt-BR',{numeric:true})||num(a.numeroTalaoSequencial||a.numeroTalao||a.talao)-num(b.numeroTalaoSequencial||b.numeroTalao||b.talao)).map(r=>`<tr><td>${esc(r.numeroRemessa||'')}</td><td>${esc(r.numeroTalaoSequencial||r.numeroTalao||r.talao||'')}</td><td><strong>${esc(modelKey(r.linha,r.modelo))}</strong></td><td>${nfmt(r.pares)}</td><td>${isoBR(r.exit)}</td><td class="money">${money(r.unit)}</td><td class="money"><strong>${money(r.value)}</strong></td></tr>`).join('')}<tr class="total-row"><td colspan="3"><strong>TOTAL</strong></td><td><strong>${nfmt(pares)}</strong></td><td></td><td></td><td class="money"><strong>${money(total)}</strong></td></tr></tbody></table></div></section>`}
+function printIndividual(){if(!currentGroup)return;els.printArea.innerHTML=buildPrintHtml(`Romaneio - ${currentGroup.atelier}`,`${currentGroup.sectorLabel} · Período de ${isoBR(lastReport.start)} a ${isoBR(lastReport.end)}.`,currentGroup.rows);window.print()}
+function openGeneral(){if(!lastReport?.details.length)return;const groups=lastReport.ateliers.map((g,i)=>`${i?'<div class="print-group-break"></div>':''}${buildPrintHtml(`Romaneio - ${g.atelier}`,`${g.sectorLabel} · Período de ${isoBR(lastReport.start)} a ${isoBR(lastReport.end)}.`,g.rows)}`).join('');els.printArea.innerHTML=groups;window.print()}
 
-            if (!dataInicio || !dataFim || !atelieResponsavel) {
-                alert('Por favor, preencha a data de início, data de fim e selecione um ateliê.');
-                return;
-            }
-
-            // Exibir mensagem de busca
-            taloesTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Buscando talões...</td></tr>';
-            summaryCard.style.display = 'none';
-            pendingSummaryCard.style.display = 'none';
-            tableContainer.style.display = 'none';
-
-            let taloes = [];
-
-            try {
-                const taloesColRef = collection(db, 'taloes');
-                const q = query(
-                    taloesColRef,
-                    where('idAtelieResponsavel', '==', atelieResponsavel),
-                    where('dataSaidaCostura', '>=', dataInicio),
-                    where('dataSaidaCostura', '<=', dataFim)
-                );
-
-                const querySnapshot = await getDocs(q);
-                taloes = querySnapshot.docs.map(doc => doc.data());
-
-                renderReport(taloes);
-
-            } catch (error) {
-                console.error("Erro ao gerar relatório:", error);
-                taloesTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Erro ao buscar dados.</td></tr>';
-            }
-        });
-
-        // --- Renderizar o relatório na tela ---
-        function renderReport(taloes) {
-            summaryCard.style.display = 'block';
-            pendingSummaryCard.style.display = 'block';
-            tableContainer.style.display = 'block';
-
-            let totalParesGeral = 0;
-            let totalParesPendentes = 0;
-            let totalTaloesPendentes = 0;
-            const resumoPorLinhaModelo = {};
-            const resumoPendentePorModelo = {};
-
-            if (taloes.length === 0) {
-                summaryCard.innerHTML = `
-                    <h4>Romaneio para o ateliê: <strong>${filterAtelie.value}</strong></h4>
-                    <p>Período: ${formatDate(filterDataInicio.value)} a ${formatDate(filterDataFim.value)}</p>
-                    <p class="total">Nenhum talão encontrado para este ateliê e período.</p>
-                `;
-                taloesTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum talão encontrado para este ateliê e período.</td></tr>';
-                pendingSummaryCard.style.display = 'none';
-                return;
-            }
-            
-            // Processar os dados para o resumo
-            taloes.forEach(talao => {
-                const pares = talao.pares || 0;
-                const modelo = talao.modelo || 'N/A';
-                
-                // Soma para o resumo geral
-                totalParesGeral += pares;
-                const chaveGeral = `${talao.linha || 'N/A'} - ${modelo}`;
-                if (!resumoPorLinhaModelo[chaveGeral]) {
-                    resumoPorLinhaModelo[chaveGeral] = 0;
-                }
-                resumoPorLinhaModelo[chaveGeral] += pares;
-
-                // Soma para o resumo de pendentes
-                
-                if (!talao.dataEntradaDistribuicao) {
-                    totalTaloesPendentes++;
-                    totalParesPendentes += pares;
-                    if (!resumoPendentePorModelo[modelo]) {
-                        resumoPendentePorModelo[modelo] = 0;
-                    }
-                    resumoPendentePorModelo[modelo] += pares;
-                }
-            });
-
-            // Renderizar o card de resumo geral
-            let summaryDetailsHtml = '';
-            for (const [key, value] of Object.entries(resumoPorLinhaModelo)) {
-                summaryDetailsHtml += `<div class="summary-item"><span>${key}</span> <span>${value} pares</span></div>`;
-            }
-
-            summaryCard.innerHTML = `
-                <h4>Romaneio para o ateliê: <strong>${filterAtelie.value}</strong></h4>
-                <p>Período: ${formatDate(filterDataInicio.value)} a ${formatDate(filterDataFim.value)}</p>
-                <div class="summary-details">
-                    <p><strong>Total de talões:</strong> ${taloes.length}</p>
-                    <p><strong>Total de pares:</strong> ${totalParesGeral}</p>
-                </div>
-                <hr>
-                <h5>Pares por Linha e Modelo:</h5>
-                <div class="summary-details">${summaryDetailsHtml}</div>
-            `;
-            
-            // Renderizar o card de resumo de pendentes
-            let pendingDetailsHtml = '';
-            if (Object.keys(resumoPendentePorModelo).length > 0) {
-                for (const [key, value] of Object.entries(resumoPendentePorModelo)) {
-                    pendingDetailsHtml += `<div class="summary-item"><span>${key}</span> <span>${value} pares</span></div>`;
-                }
-                pendingSummaryCard.innerHTML = `
-                    <h4>Talões Pendentes de Entrada na Distribuição</h4>
-                    <p>Talões que saíram da costura, mas ainda não foram lidos na distribuição.</p>
-                    <div class="summary-details">
-                        <p><strong>Total de talões pendentes:</strong> ${totalTaloesPendentes}</p>
-                        <p><strong>Total de pares pendentes:</strong> ${totalParesPendentes}</p>
-                    </div>
-                    <hr>
-                    <h5>Pares Pendentes por Modelo:</h5>
-                    <div class="summary-details">${pendingDetailsHtml}</div>
-                `;
-            } else {
-                pendingSummaryCard.innerHTML = `
-                    <h4>Talões Pendentes de Entrada na Distribuição</h4>
-                    <p class="total">Nenhum talão pendente encontrado.</p>
-                `;
-            }
-
-            // Renderizar a tabela
-            taloesTableBody.innerHTML = '';
-            taloes.forEach(talao => {
-                const row = document.createElement('tr');
-                // Adiciona a classe "pending-row" se não houver dataEntradaDistribuicao
-                if (!talao.dataEntradaDistribuicao) {
-                    row.className = 'pending-row';
-                }
-                row.innerHTML = `
-                    <td>${talao.numeroRemessa || ''}</td>
-                    <td>${talao.numeroTalaoSequencial || ''}</td>
-                    <td>${talao.linha || ''}.${talao.modelo || ''}</td>
-                    <td>${talao.pares || 0}</td>
-                    <td>${formatDate(talao.dataSaidaCostura)}</td>
-                    <td>${formatDate(talao.dataEntradaDistribuicao) || 'PENDENTE'}</td>
-                `;
-                taloesTableBody.appendChild(row);
-            });
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const [year, month, day] = dateString.split('-');
-            return `${day}/${month}/${year}`;
-        }
-    </script>
+els.search.onclick=generate;els.refresh.onclick=generate;els.general.onclick=openGeneral;els.quinzenas.onclick=openQuinzenas;els.currentFortnight.onclick=()=>applySavedFortnight(els.currentFortnight.dataset.qid);els.pastFortnight.onclick=()=>applySavedFortnight(els.pastFortnight.dataset.qid);els.quinzenasClose.onclick=()=>els.quinzenasModal.classList.remove('show');els.carregarAnoQuinzenas.onclick=()=>loadQuinzenaYearEditor(Number(els.quinzenasAno.value)||new Date().getFullYear(),false);els.padronizarAnoQuinzenas.onclick=()=>loadQuinzenaYearEditor(Number(els.quinzenasAno.value)||new Date().getFullYear(),true);els.salvarQuinzenas.onclick=saveQuinzenas;els.detailClose.onclick=()=>els.detailModal.classList.remove('show');els.applyValues.onclick=applyValues;els.printIndividual.onclick=printIndividual;
+window.addEventListener('click',e=>{if(e.target===els.dateModal)els.dateModal.classList.remove('show');if(e.target===els.detailModal)els.detailModal.classList.remove('show');if(e.target===els.quinzenasModal)els.quinzenasModal.classList.remove('show')});setTimeout(()=>loadSavedQuinzenas(),1200);
+</script>
 </body>
 </html>
-
