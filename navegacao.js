@@ -133,7 +133,6 @@
     "name": "Romaneio",
     "href": "romaneio.html",
     "levels": [
-      "07",
       "08",
       "09"
     ]
