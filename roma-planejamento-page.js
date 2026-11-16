@@ -621,6 +621,109 @@
       </article>`;
     }
 
+    // Resumo real dos talões desta remessa, data e trilho. Não utiliza o total
+    // programado como substituto do saldo de cada etapa.
+    function weekCardRecords(track, date, remessa) {
+      return (state.week?.records || []).filter(row => {
+        const plan = helper.getPlan(row);
+        return plan.planned && plan.track === Number(track) && plan.date === date && text(row.numeroRemessa) === remessa;
+      });
+    }
+
+    function costuraPending(row) {
+      return !(typeof root.Roma?.stageComplete === 'function'
+        ? root.Roma.stageComplete(row, 'costura')
+        : (row.statusCostura === 'Finalizado' || !!row.dataSaidaCostura));
+    }
+
+    function weekCardInfo(track, date, remessa) {
+      const records = weekCardRecords(track, date, remessa);
+      const lines = [...new Set(records.map(row => text(row.linha)).filter(Boolean))]
+        .sort((a,b) => a.localeCompare(b,'pt-BR',{numeric:true}));
+      const overrides = [...new Set(records.map(row => text(row.dataEmbarquePlanejada)).filter(Boolean))];
+      return {
+        lines: lines.join(', ') || '—',
+        costura: sumPairs(records.filter(costuraPending)),
+        montagem: sumPairs(records.filter(row => !helper.isMounted(row))),
+        embarque: overrides.length === 1 && /^\d{4}-\d{2}-\d{2}$/.test(overrides[0]) ? overrides[0] : date,
+        divergent: overrides.length > 1,
+        count: records.length
+      };
+    }
+
+    function weekRemessaCardHTML(remessa, track, date) {
+      const info = weekCardInfo(track, date, remessa.remessa);
+      const label = `Remessa ${remessa.remessa}, Linha ${info.lines}`;
+      return `<li class="week-remessa-card" data-card-remessa="${escape(remessa.remessa)}" data-card-track="${track}" data-card-date="${date}">
+        <div class="roma-week-row">
+          <div class="roma-week-id"><button type="button" class="week-remessa-link" data-week-remessa="${escape(remessa.remessa)}" data-track="${track}" data-date="${date}" aria-label="Detalhar ${escape(label)}">${escape(remessa.remessa)}</button><span class="week-card-line" title="Linha ${escape(info.lines)}">Linha ${escape(info.lines)}</span></div>
+          <div class="week-card-quantity"><span title="Pares que faltam costurar"><small>Cost.</small><strong class="${info.costura > 0 ? 'week-balance-pending' : ''}">${number(info.costura)}</strong></span><span title="Pares que faltam montar"><small>Mont.</small><strong class="${info.montagem > 0 ? 'week-balance-pending' : ''}">${number(info.montagem)}</strong></span></div>
+          <div class="roma-week-shipping"><span>Embarque</span><button type="button" class="roma-week-short-date" data-open-embarque ${!state.canEdit ? 'disabled' : ''} aria-label="Alterar data de embarque de ${escape(label)}"><span data-embarque-label>${info.embarque.slice(8,10)}/${info.embarque.slice(5,7)}</span><span aria-hidden="true">▦</span></button><input type="date" data-embarque-date value="${info.embarque}" ${!state.canEdit ? 'disabled' : ''} aria-label="Data de embarque, ${escape(label)}" title="Padrão: previsão de montagem. Alteração salva nos talões desta remessa e programação."><span class="week-card-save" aria-live="polite">${info.divergent ? 'Datas divergentes' : ''}</span></div>
+        </div>
+      </li>`;
+    }
+
+    async function saveWeekShippingDate(input) {
+      const card = input.closest('[data-card-remessa]');
+      if (!card || !state.canEdit || !state.authenticated) return;
+      const {cardRemessa: remessa, cardTrack: track, cardDate: date} = card.dataset;
+      const records = weekCardRecords(track, date, remessa);
+      const value = input.value;
+      const oldValue = weekCardInfo(track, date, remessa).embarque;
+      const status = card.querySelector('.week-card-save');
+      const display = card.querySelector('[data-embarque-label]');
+      if (!records.length || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        input.value = oldValue;
+        if (display) display.textContent = `${oldValue.slice(8,10)}/${oldValue.slice(5,7)}`;
+        status.textContent = 'Selecione uma data válida';
+        return;
+      }
+      input.disabled = true;
+      status.textContent = 'Salvando…';
+      let written = 0;
+      try {
+        root.Roma.requireWrite('planejamento');
+        const actor = root.Roma.session;
+        if (!actor?.uid) throw new Error('Sessão inválida. Faça login novamente.');
+        // Transações pequenas evitam limites do Firestore e impedem sobrescrever
+        // um embarque alterado por outra pessoa desde a última consulta.
+        for (let i = 0; i < records.length; i += 100) {
+          const batch = records.slice(i,i+100);
+          await sdk.runTransaction(db, async transaction => {
+            const refs = batch.map(row => sdk.doc(db,'taloes',row.id));
+            const snapshots = await Promise.all(refs.map(ref => transaction.get(ref)));
+            snapshots.forEach((snapshot,index) => {
+              const row = batch[index];
+              if (!snapshot.exists()) throw new Error('Um talão foi removido. Consulte a semana novamente.');
+              const current = snapshot.data();
+              if (text(current.dataEmbarquePlanejada) !== text(row.dataEmbarquePlanejada))
+                throw new Error('A data de embarque foi alterada em outro acesso. Consulte a semana novamente.');
+              const currentPlan = helper.getPlan(current);
+              if (currentPlan.track !== Number(track) || currentPlan.date !== date || text(current.numeroRemessa) !== remessa)
+                throw new Error('O planejamento mudou em outro acesso. Consulte a semana novamente.');
+              transaction.update(refs[index], {
+                dataEmbarquePlanejada:value,
+                embarquePlanejadoAtualizadoEm:sdk.serverTimestamp(),
+                embarquePlanejadoAtualizadoPor:actor.uid,
+                embarquePlanejadoAtualizadoPorNome:actor.name || ''
+              });
+            });
+          });
+          batch.forEach(row => {row.dataEmbarquePlanejada=value;});
+          written += batch.length;
+        }
+        if (display) display.textContent = `${value.slice(8,10)}/${value.slice(5,7)}`;
+        status.textContent = 'Salvo';
+      } catch(error) {
+        input.value = oldValue;
+        if (display) display.textContent = `${oldValue.slice(8,10)}/${oldValue.slice(5,7)}`;
+        status.textContent = written ? `Salvo parcialmente (${written}/${records.length}). Consulte novamente.` : 'Não foi salvo';
+        message('weekMessage',errorText(error),'error');
+      } finally {
+        input.disabled = !state.canEdit;
+      }
+    }
+
     function renderWeek(result) {
       const board = helper.weekCalendar(result.summary, result.start);
       state.weekBoard = board;
@@ -657,8 +760,7 @@
               const descriptor = board.days[index];
               return `<section class="week-day${descriptor.weekend ? ' week-day-weekend' : ''}" data-date="${day.date}" aria-label="${escape(descriptor.label)}, ${dateLabel(day.date)}">
                 <header class="week-day-head"><div class="week-day-head-copy"><time datetime="${day.date}" title="${dateLabel(day.date)}">${weekDateLabel(day.date)}</time><h4>${escape(descriptor.label)}</h4><label class="holiday-check"><input type="checkbox" data-holiday-date="${day.date}" ${state.holidays.has(day.date)?'checked':''} ${state.canEdit?'':'disabled'}><span>Feriado</span></label></div><button type="button" class="week-day-taloes-button" data-day-taloes-track="${track.track}" data-day-taloes-date="${day.date}" title="Ver os talões ainda não montados de ${escape(descriptor.label)}">Talões</button></header>
-                <div class="week-day-columns"><span>Remessa</span><span>Pares</span><span>Falta mont.</span></div>
-                <ul class="week-day-list">${day.remessas.length ? day.remessas.map(remessa => `<li><button type="button" class="week-remessa-link" data-week-remessa="${escape(remessa.remessa)}" data-track="${track.track}" data-date="${day.date}" aria-label="Detalhar remessa ${escape(remessa.remessa || 'sem número')}, ${number(remessa.pairs)} pares, ${number(remessa.remainingPairs)} faltando montar, ${escape(trackName)}, ${escape(descriptor.label)}, ${dateLabel(day.date)}">${escape(remessa.remessa || 'Sem remessa')}</button><span>${number(remessa.pairs)}</span><span class="remessa-remaining">${number(remessa.remainingPairs)}</span></li>`).join('') : '<li class="week-day-empty">Sem programação</li>'}</ul>
+                <ul class="week-day-list">${day.remessas.length ? day.remessas.map(remessa => weekRemessaCardHTML(remessa,track.track,day.date)).join('') : '<li class="week-day-empty">Sem programação</li>'}</ul>
                 <footer class="week-day-totals"><div class="week-day-total"><span>Total de pares</span><strong>${number(day.pairs)}</strong></div><div class="week-day-total secondary"><span>Falta montar</span><strong>${number(day.remainingPairs)}</strong></div></footer>
               </section>`;
             }).join('')}
@@ -929,6 +1031,14 @@
       const source = document.querySelector(`#trackCards .week-board-track[data-track="${Number(trackNumber)}"]`);
       if (!source) return '';
       const clone = source.cloneNode(true);
+      clone.querySelectorAll('input[data-embarque-date]').forEach(input => {
+        const span = document.createElement('strong');
+        span.className = 'print-embarque-date';
+        span.textContent = `${input.value.slice(8,10)}/${input.value.slice(5,7)}`;
+        input.closest('.roma-week-shipping')?.querySelector('[data-open-embarque]')?.replaceWith(span);
+        input.remove();
+      });
+      clone.querySelectorAll('.week-card-save').forEach(node => node.remove());
       clone.querySelectorAll('button').forEach(button => {
         if (button.classList.contains('week-remessa-link')) {
           const span = document.createElement('span');
@@ -1247,10 +1357,19 @@
         message('weekMessage',errorText(error),'error');
       }
     });
+    $('trackCards').addEventListener('change', event => {
+      const input = event.target.closest('input[data-embarque-date]');
+      if (input) void saveWeekShippingDate(input);
+    });
     $('trackCards').addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button || button.disabled) return;
-      if (button.matches('[data-week-offset]')) {
+      if (button.matches('[data-open-embarque]')) {
+        const input = button.closest('.roma-week-shipping')?.querySelector('input[data-embarque-date]');
+        if (input && !input.disabled) {
+          try { input.showPicker(); } catch(error) { input.focus(); input.click(); }
+        }
+      } else if (button.matches('[data-week-offset]')) {
         const increment = Number(button.dataset.weekOffset);
         if ([-7,7].includes(increment)) void navigateWeek(increment, button.closest('[data-track]').dataset.track);
       } else if (button.matches('[data-day-taloes-track]')) {
