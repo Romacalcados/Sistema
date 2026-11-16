@@ -218,9 +218,37 @@
         group.records = group.all;
         group.plan = planOfGroup(group.eligible.length ? group.eligible : group.all);
       }
-      return [...groups.values()].sort((a, b) => a.cut.localeCompare(b.cut)
-        || a.line.localeCompare(b.line, 'pt-BR', {numeric:true}) || a.remessa.localeCompare(b.remessa, 'pt-BR', {numeric:true})
-        || a.delivery.localeCompare(b.delivery));
+      // Ordem do planejamento: Prev. Mont. > Trilho > Dt. Corte > Linha > Remessa.
+      // Previsoes sem data/trilho ficam ao final, sem bloquear o planejamento.
+      return [...groups.values()].sort(compareScheduleGroups);
+    }
+
+    function effectiveGroupPlan(group) {
+      return state.drafts.get(group.key) || group.plan;
+    }
+
+    function compareScheduleGroups(a, b) {
+      const pa = effectiveGroupPlan(a), pb = effectiveGroupPlan(b);
+      const da = pa.date || '9999-12-31', db = pb.date || '9999-12-31';
+      const ta = Number(pa.track) || 999, tb = Number(pb.track) || 999;
+      return da.localeCompare(db) || ta - tb || a.cut.localeCompare(b.cut)
+        || a.line.localeCompare(b.line, 'pt-BR', {numeric:true})
+        || a.remessa.localeCompare(b.remessa, 'pt-BR', {numeric:true})
+        || a.delivery.localeCompare(b.delivery);
+    }
+
+    // Move apenas os elementos TR ja existentes: nao recria os inputs,
+    // nao perde rascunhos, foco nem listeners de salvamento automatico.
+    function reorderPlanningRows() {
+      const body = $('planningTableBody');
+      const rows = [...body.querySelectorAll('tr[data-group-key]')];
+      if (rows.length < 2) return;
+      rows.sort((ra, rb) => {
+        const a = state.scheduleGroups.get(ra.dataset.groupKey);
+        const b = state.scheduleGroups.get(rb.dataset.groupKey);
+        return a && b ? compareScheduleGroups(a, b) : 0;
+      });
+      for (const row of rows) body.appendChild(row);
     }
 
     function stageCells(records, stage) {
@@ -359,6 +387,7 @@
       $('planPairsCount').textContent = number(sumPairs(pending));
       $('planPlannedPairs').textContent = number(sumPairs(pending.filter(row => helper.getPlan(row).planned)));
       $('planUnplannedPairs').textContent = number(sumPairs(pending.filter(row => !helper.getPlan(row).planned)));
+      reorderPlanningRows();
       updateInlineFeedback();
       setControls();
     }
@@ -404,6 +433,7 @@
         state.drafts.set(group.key, draft);
         state.saveStates.delete(group.key);
       }
+      reorderPlanningRows();
       updateInlineFeedback();
       setControls();
       armAutosave();
