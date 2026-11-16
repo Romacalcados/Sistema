@@ -56,6 +56,27 @@
     .cards-grid .week-card.current{box-shadow:0 8px 24px rgba(37,99,235,.13)}
 
     @media(max-width:1450px){.cards-grid{grid-template-columns:repeat(2,minmax(280px,1fr))}}@media(max-width:760px){.main-content{width:calc(100vw - 16px);padding:8px 0 18px}.cards-grid{grid-template-columns:1fr}.page-head{flex-direction:column}.filters-card{padding:10px}.form-group{flex:1 1 160px}.btn{flex:1 1 150px}.week-card{min-height:auto}}
+    .modal-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .btn-print{min-height:36px;background:#167347;color:#fff;padding:8px 13px;border-radius:9px}
+    .btn-print:hover{background:#0f5d39}
+    @media(max-width:600px){.modal-head{align-items:flex-start}.modal-head-actions{gap:6px}.btn-print{flex:none;font-size:12px;padding:7px 9px}.modal-head h3{font-size:15px}}
+
+    /* Cores dos 4 cards principais da esquerda para direita */
+    .cards-grid .week-card:nth-child(1){border-color:#e5b8b8;background:#fffafa}
+    .cards-grid .week-card:nth-child(1) .week-head{background:#f6dddd;border-bottom-color:#e5b8b8}
+
+    .cards-grid .week-card:nth-child(2){border-color:#eadb94;background:#fffdf2}
+    .cards-grid .week-card:nth-child(2) .week-head{background:#fff6cc;border-bottom-color:#eadb94}
+
+    .cards-grid .week-card:nth-child(3){border-color:#b8d9c5;background:#fbfffc}
+    .cards-grid .week-card:nth-child(3) .week-head{background:#e2f3e8;border-bottom-color:#b8d9c5}
+
+    .cards-grid .week-card:nth-child(4){border-color:#b8cbe0;background:#fbfdff}
+    .cards-grid .week-card:nth-child(4) .week-head{background:#dfeaf7;border-bottom-color:#b8cbe0}
+
+    .cards-grid .week-card.current{box-shadow:0 8px 24px rgba(37,99,235,.13)}
+
+    @media(max-width:1450px){.cards-grid{grid-template-columns:repeat(2,minmax(280px,1fr))}}@media(max-width:760px){.main-content{width:calc(100vw - 16px);padding:8px 0 18px}.cards-grid{grid-template-columns:1fr}.page-head{flex-direction:column}.filters-card{padding:10px}.form-group{flex:1 1 160px}.btn{flex:1 1 150px}.week-card{min-height:auto}}
   </style>
 
 
@@ -230,7 +251,7 @@
     <div class="modal-content">
       <div class="modal-head">
         <h3 id="listModalTitle">Listagem</h3>
-        <button class="modal-close" id="closeListModalButton" type="button">Fechar</button>
+        <div class="modal-head-actions"><button class="btn btn-print" id="printListModalButton" type="button" title="Imprimir somente os talões exibidos, respeitando os filtros">🖨 Imprimir relatório</button><button class="modal-close" id="closeListModalButton" type="button">Fechar</button></div>
       </div>
       <div class="modal-summary" id="listModalSummary">Carregando...</div>
       <div class="modal-options">
@@ -277,6 +298,7 @@
       const removeProducedCheckbox = document.getElementById("removeProducedCheckbox");
       const onlyNoEntryCheckbox = document.getElementById("onlyNoEntryCheckbox");
       const closeListModalButton = document.getElementById("closeListModalButton");
+      const printListModalButton = document.getElementById("printListModalButton");
 
       let currentUserName = "";
       let currentUserUid = "";
@@ -484,6 +506,73 @@
         }).join("");
       }
 
+      // Relatório isolado do modal: imprime a lista filtrada no momento do clique.
+      function printListModal(){
+        const list = getModalVisibleTaloes();
+        if (!list.length) { alert("Não há talões exibidos para imprimir."); return; }
+        const popup = window.open("", "_blank");
+        if (!popup) { alert("O navegador bloqueou a janela de impressão. Permita pop-ups para esta página e tente novamente."); return; }
+
+        const groups = groupTaloesByRemessa(list);
+        const generatedAt = new Date().toLocaleString("pt-BR");
+        const filters = [];
+        if (removeProducedCheckbox.checked) filters.push("Sem talões já produzidos");
+        if (onlyNoEntryCheckbox.checked) filters.push("Somente sem entrada no ateliê");
+        const atelier = getSelectedAtelieLabel();
+        const content = groups.map(([remessa, taloes]) => {
+          const ref = taloes[0] || {};
+          const rows = taloes.map((t) => {
+            const entradaSola = hasFilledDate(t.solaDataInicio);
+            const entradaFabrica = hasFilledDate(t.dataEntradaDistribuicao);
+            const saiuSola = hasFilledDate(t.dataSaidaSola);
+            const situacao = getStatusText(t);
+            return `<tr>
+              <td>${escapeHTML(t.numeroTalaoSequencial)}</td>
+              <td class="model">${escapeHTML(getModelKey(t))}</td>
+              <td>${escapeHTML(getColorKey(t))}</td>
+              <td class="numeric">${normalizePares(t.pares).toLocaleString("pt-BR")}</td>
+              <td class="${entradaSola ? "" : "warning"}">${entradaSola ? escapeHTML(formatDate(t.solaDataInicio)) : "X"}</td>
+              <td>${saiuSola ? escapeHTML(formatDate(t.dataSaidaSola)) : "-"}</td>
+              <td class="${saiuSola && !entradaFabrica ? "warning" : ""}">${entradaFabrica ? escapeHTML(formatDate(t.dataEntradaDistribuicao)) : "-"}</td>
+              <td class="${!entradaSola ? "warning" : ""}">${escapeHTML(situacao)}</td>
+            </tr>`;
+          }).join("");
+          return `<section class="remessa-group">
+            <div class="remessa-heading"><b>Remessa: ${escapeHTML(remessa)}</b><span>Corte: ${escapeHTML(formatDate(ref.dataCorte)) || "-"}</span><span>Entrega: ${escapeHTML(formatDate(ref.dataEntrega)) || "-"}</span><span>Cliente: ${escapeHTML(getTipoClienteLabelFromTalao(ref))}</span></div>
+            <table><thead><tr><th>Talão</th><th>Linha/Modelo</th><th>Cor</th><th>Pares</th><th>Entrada Sola</th><th>Saída Sola</th><th>Entrada Fábrica</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>
+            <div class="remessa-total">${taloes.length.toLocaleString("pt-BR")} talões • ${sumTotal(taloes).toLocaleString("pt-BR")} pares</div>
+          </section>`;
+        }).join("");
+        const title = escapeHTML(currentModalTitle || "Listagem");
+        const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${title} - Relatório</title>
+          <style>
+            @page { size: A4 landscape; margin: 11mm 10mm 12mm; }
+            *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#17212f;margin:0;font-size:10px}
+            .heading{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid #193e68;padding-bottom:7px;margin-bottom:8px}
+            h1{font-size:18px;margin:0 0 3px}h2{font-size:11px;margin:0;color:#526377;font-weight:600}
+            .meta{text-align:right;color:#526377;font-size:10px}.summary{background:#eff4fa;border:1px solid #d3dce7;padding:7px 9px;margin-bottom:12px;border-radius:4px}
+            .remessa-group{margin:0 0 13px;break-inside:auto;page-break-inside:auto}
+            .remessa-heading{display:flex;flex-wrap:wrap;gap:16px;align-items:center;border:1px solid #b7cce7;background:#e9f2fd;padding:6px 8px;font-size:10px;break-after:avoid;page-break-after:avoid}
+            .remessa-heading b{font-size:12px;color:#002b5c}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px}
+            th,td{padding:4px 6px;border:1px solid #d5dde8;text-align:center;overflow-wrap:anywhere}
+            th{background:#e6edf7;font-weight:bold}td.model{text-align:left;font-weight:bold}td.numeric{text-align:right}
+            th:nth-child(1){width:7%}th:nth-child(2){width:14%}th:nth-child(3){width:10%}th:nth-child(4){width:8%}
+            th:nth-child(5){width:13%}th:nth-child(6){width:13%}th:nth-child(7){width:13%}th:nth-child(8){width:22%}
+            tbody tr:nth-child(even){background:#f6f9fc}tr{break-inside:avoid;page-break-inside:avoid}
+            thead{display:table-header-group}.warning{color:#b91c1c;font-weight:bold}.remessa-total{text-align:right;font-weight:bold;padding:5px 4px}
+            .footer{margin-top:13px;border-top:1px solid #ccd5df;padding-top:6px;color:#526377;font-size:9px}
+            @media screen{body{max-width:1100px;margin:20px auto;padding:0 12px;background:white}}
+          </style></head><body>
+          <div class="heading"><div><h1>Calçados Roma — Programação Ateliê</h1><h2>${title}</h2></div><div class="meta">Ateliê: ${escapeHTML(atelier)}<br>Emitido: ${escapeHTML(generatedAt)}</div></div>
+          <div class="summary"><b>Total exibido:</b> ${list.length.toLocaleString("pt-BR")} talões • <b>${sumTotal(list).toLocaleString("pt-BR")} pares</b> • ${groups.length.toLocaleString("pt-BR")} remessas${filters.length ? `<br><b>Filtros:</b> ${escapeHTML(filters.join(" | "))}` : ""}</div>
+          ${content}<div class="footer">Relatório gerado a partir dos talões exibidos no modal da Programação Ateliê — Sola.</div>
+          <script>window.addEventListener('load', function(){ window.focus(); window.print(); });<\/script>
+          </body></html>`;
+        popup.document.open();
+        popup.document.write(html);
+        popup.document.close();
+      }
+
       function openListModal(title, taloes){
         currentModalTitle = title || "Listagem";
         currentModalTaloes = Array.isArray(taloes) ? [...taloes] : [];
@@ -598,6 +687,7 @@
       filterAtelie.addEventListener("change", renderCards);
       if (removeProducedCheckbox) removeProducedCheckbox.addEventListener("change", renderListModalContent);
       if (onlyNoEntryCheckbox) onlyNoEntryCheckbox.addEventListener("change", renderListModalContent);
+      printListModalButton.addEventListener("click", printListModal);
       closeListModalButton.addEventListener("click", closeListModal);
       listModal.addEventListener("click", (event)=>{ if(event.target === listModal) closeListModal(); });
 
