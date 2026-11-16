@@ -180,13 +180,13 @@
         table {
             table-layout: fixed;
             width: 100%;
-            min-width: 1280px;
+            min-width: 1420px;
             border-collapse: collapse;
         }
         table th,
         table td {
             box-sizing: border-box;
-            padding: 4px 6px;
+            padding: 4px 4px;
             font-size: 0.75em;
             line-height: 1.25;
             height: 25px; 
@@ -213,23 +213,31 @@
             height: 25px; 
         }
 
-        /* Larguras das 16 colunas da tabela de Corte. */
+        /* Distribuicao proporcional das 17 colunas, incluindo o setor Pre. */
         table th:nth-child(1), table td:nth-child(1) { width: 3%; text-align: center; }
         table th:nth-child(2), table td:nth-child(2) { width: 7%; }
         table th:nth-child(3), table td:nth-child(3) { width: 6%; }
-        table th:nth-child(4), table td:nth-child(4) { width: 4%; }
-        table th:nth-child(5), table td:nth-child(5) { width: 5%; }
+        table th:nth-child(4), table td:nth-child(4) { width: 3.5%; }
+        table th:nth-child(5), table td:nth-child(5) { width: 4%; }
         table th:nth-child(6), table td:nth-child(6) { width: 5%; }
-        table th:nth-child(7), table td:nth-child(7) { width: 6%; }
-        table th:nth-child(8), table td:nth-child(8) { width: 4%; }
-        table th:nth-child(9), table td:nth-child(9) { width: 8.5%; }
-        table th:nth-child(10), table td:nth-child(10) { width: 11%; }
-        table th:nth-child(11), table td:nth-child(11) { width: 10%; text-align: center; }
-        table th:nth-child(12), table td:nth-child(12) { width: 8%; text-align: center; }
-        table th:nth-child(13), table td:nth-child(13) { width: 6%; text-align: center; }
-        table th:nth-child(14), table td:nth-child(14) { width: 4.5%; text-align: center; }
+        table th:nth-child(7), table td:nth-child(7) { width: 5.5%; }
+        table th:nth-child(8), table td:nth-child(8) { width: 3.5%; }
+        table th:nth-child(9), table td:nth-child(9) { width: 10%; }
+        table th:nth-child(10), table td:nth-child(10) { width: 14%; }
+        table th:nth-child(11), table td:nth-child(11) { width: 7%; text-align: center; }
+        table th:nth-child(12), table td:nth-child(12) { width: 7%; text-align: center; }
+        table th:nth-child(13), table td:nth-child(13) { width: 4.5%; text-align: center; }
+        table th:nth-child(14), table td:nth-child(14) { width: 4%; text-align: center; }
         table th:nth-child(15), table td:nth-child(15) { width: 4%; text-align: center; }
-        table th:nth-child(16), table td:nth-child(16) { width: 8%; text-align: center; }
+        table th:nth-child(16), table td:nth-child(16) { width: 7%; text-align: center; }
+        table th:nth-child(17), table td:nth-child(17) { width: 5%; text-align: center; }
+        table th { overflow-wrap: anywhere; white-space: normal; }
+        table td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        table td:nth-child(10) { overflow: visible; }
+        table td:nth-child(n+13) input[type="checkbox"] { width: 17px; height: 17px; vertical-align: middle; }
+        @media (min-width: 1450px) {
+            table { min-width: 0; }
+        }
 
         /* Row colors based on client type */
         .row-azul { background-color: #8dbafd; } /* Exportação */
@@ -563,12 +571,14 @@
                             <option value="forro_true">Forro Concluído</option>
                             <option value="tiras_true">Tiras Concluído</option>
                             <option value="aviamento_true">Aviamento Concluído</option>
+                            <option value="pre_true">Pré Concluído (Sola/Palmilha)</option>
                         </optgroup>
                         <optgroup label="Desmarcar">
                             <option value="cabedal_false">Desmarcar Cabedal</option>
                             <option value="forro_false">Desmarcar Forro</option>
                             <option value="tiras_false">Desmarcar Tiras</option>
                             <option value="aviamento_false">Desmarcar Aviamento</option>
+                            <option value="pre_false">Desmarcar Pré (Sola/Palmilha)</option>
                         </optgroup>
                     </select>
                 </div>
@@ -614,10 +624,11 @@
                         <th>Forro</th>
                         <th>Tiras</th>
                         <th>Aviamentos</th>
+                        <th title="Pré-fabricado: Sola e Palmilha. Não interfere na conclusão do Corte para Costura.">Pré</th>
                     </tr>
                 </thead>
                 <tbody id="taloesTableBody">
-                    <tr><td colspan="16" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>
+                    <tr><td colspan="17" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -723,8 +734,8 @@
     let tempRangeEnd = '';
     const MAX_ROWS_RENDER = 1200;
 
-    // AJUSTE 2: Inicia o checkbox de Corte Aberto marcado por padrão
-    corteAbertoCheckbox.checked = true;
+    // Exibir todos os talões por padrão; filtrar somente abertos é opcional.
+    corteAbertoCheckbox.checked = false;
 
 
 
@@ -1016,7 +1027,7 @@
         const cor = filterCor.value.toLowerCase().trim();
 
         taloesTableBody.classList.add('is-loading');
-        taloesTableBody.innerHTML = '<tr><td colspan="16" style="text-align: center;">Buscando talões...</td></tr>';
+        taloesTableBody.innerHTML = '<tr><td colspan="17" style="text-align: center;">Buscando talões...</td></tr>';
 
         const startedAt = performance.now();
 
@@ -1052,6 +1063,7 @@
             selectedTaloes.clear(); selectVisibleTaloes.checked=false;
 
             // Filtros de texto continuam locais para permitir busca parcial com "contém".
+            const ocultosPorCorteAberto = corteAbertoFilter ? allTaloes.filter(t => window.Roma.cutComplete(t)).length : 0;
             filteredTaloes = allTaloes.filter(t => {
                 if (dataCorteInicio && (!t.dataCorte || t.dataCorte < dataCorteInicio)) return false;
                 if (dataCorteFim && (!t.dataCorte || t.dataCorte > dataCorteFim)) return false;
@@ -1075,6 +1087,13 @@
 
             const duration = ((performance.now() - startedAt) / 1000).toFixed(2);
             console.log(`Busca corte: ${querySnapshot.size} docs baixados, ${filteredTaloes.length} exibidos, ${duration}s`);
+            if (corteAbertoFilter && !filteredTaloes.length && ocultosPorCorteAberto) {
+                taloesTableBody.innerHTML = `<tr><td colspan="17" style="text-align:center; padding:18px;">Nenhum talão com Corte aberto encontrado. ${ocultosPorCorteAberto} talão(ões) já está(ão) com o Corte da Costura completo. <button type="button" id="showAllCorteButton" style="cursor:pointer; padding:8px 12px; margin-left:8px;">Mostrar todos os talões</button></td></tr>`;
+                document.getElementById('showAllCorteButton')?.addEventListener('click', () => {
+                    corteAbertoCheckbox.checked = false;
+                    fetchTaloesWithFilters();
+                });
+            }
 
         } catch (error) {
             console.error("Erro ao buscar talões:", error);
@@ -1084,7 +1103,7 @@
                 errorMessage = 'O Firestore pediu um índice para combinar estes filtros. Abra o console do navegador, copie o link do erro e crie o índice sugerido pelo Firebase.';
             }
 
-            taloesTableBody.innerHTML = `<tr><td colspan="16" style="text-align: center; color: red;">${errorMessage}</td></tr>`;
+            taloesTableBody.innerHTML = `<tr><td colspan="17" style="text-align: center; color: red;">${errorMessage}</td></tr>`;
         } finally {
             taloesTableBody.classList.remove('is-loading');
         }
@@ -1129,7 +1148,7 @@
         filterTipoCliente.value = '';
         filterAteliePredesignado.value = '';
         filterStatusCorte.value = '';
-        corteAbertoCheckbox.checked = true; // NOVO: Volta para o estado inicial marcado
+        corteAbertoCheckbox.checked = false; // Exibir todos por padrão
         
         // Limpa os dados do card
         taloesCountDisplay.textContent = '0';
@@ -1139,7 +1158,7 @@
         
         allTaloes = [];
         filteredTaloes = [];
-        taloesTableBody.innerHTML = '<tr><td colspan="16" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>';
+        taloesTableBody.innerHTML = '<tr><td colspan="17" style="text-align: center;">Aplique os filtros e clique em "Buscar Talões" para carregar os dados.</td></tr>';
     });
 
     // --- Listener para Ação em Massa ---
@@ -1174,9 +1193,21 @@
             .replaceAll("'", '&#039;');
     }
 
+    // Compatibilidade com instalações que ainda utilizam roma-core.js anterior ao setor Pré.
+    // O Pré é independente dos quatro componentes exigidos pela Costura.
+    function preApplicable(talao) {
+        return window.Roma.requiresComponent(talao, 'sola') ||
+               window.Roma.requiresComponent(talao, 'palmilha');
+    }
+    function preComplete(talao) {
+        if (!preApplicable(talao)) return true;
+        if (typeof talao?.preConcluido === 'boolean') return talao.preConcluido;
+        return !!talao?.preData && talao.preData !== 'N/A' && talao.preData !== 'Não se aplica';
+    }
+
     function renderTable(taloes) {
         if (taloes.length === 0) {
-            taloesTableBody.innerHTML = '<tr><td colspan="16" style="text-align: center;">Nenhum talão encontrado com os filtros aplicados.</td></tr>';
+            taloesTableBody.innerHTML = '<tr><td colspan="17" style="text-align: center;">Nenhum talão encontrado com os filtros aplicados.</td></tr>';
             return;
         }
 
@@ -1206,6 +1237,10 @@
           return `<select class="atelie-dropdown" data-id="${escapeHtml(talao.id)}" data-setor="${sector}" ${window.Roma.canWrite('corte')?'':'disabled'}>${options.join('')}</select>`;
         };
         const getComponentInput=(talao,key)=>{
+          if(key==='pre'){
+            if(!preApplicable(talao))return '<span title="Modelo sem Sola ou Palmilha">—</span>';
+            return `<input type="checkbox" data-id="${escapeHtml(talao.id)}" data-etapa="pre" title="Pré-fabricado (Sola/Palmilha): independente da Costura" ${preComplete(talao)?'checked':''} ${window.Roma.canWrite('corte')?'':'disabled'}>`;
+          }
           if(!window.Roma.requiresComponent(talao,key))return '<span title="Este componente não faz parte do modelo">—</span>';
           return `<input type="checkbox" data-id="${escapeHtml(talao.id)}" data-etapa="${key}" ${window.Roma.cutItemComplete(talao,key)?'checked':''} ${window.Roma.canWrite('corte')?'':'disabled'}>`;
         };
@@ -1233,12 +1268,13 @@
                     <td>${getComponentInput(talao,'forro')}</td>
                     <td>${getComponentInput(talao,'tiras')}</td>
                     <td>${getComponentInput(talao,'aviamento')}</td>
+                    <td>${getComponentInput(talao,'pre')}</td>
                 </tr>
             `;
         }).join('');
 
         const limitWarning = taloes.length > MAX_ROWS_RENDER
-            ? `<tr><td colspan="16" style="text-align:center; background:#fff3cd; font-weight:bold;">
+            ? `<tr><td colspan="17" style="text-align:center; background:#fff3cd; font-weight:bold;">
                     Mostrando ${MAX_ROWS_RENDER} de ${taloes.length} talões. Refine o filtro para ver menos linhas e deixar a tela mais rápida.
                </td></tr>`
             : '';
@@ -1259,8 +1295,16 @@
           if(atelierId!=='__clear__'&&!atelier)throw new Error('Selecione um ateliê ativo do setor.');
           Object.assign(patch,window.Roma.assignmentPatch(sector,atelier,'corte'));
         }
-        if(etapa && window.Roma.requiresComponent(current,etapa)){
-          patch[etapa+'Concluido']=isChecked;patch[etapa+'Data']=isChecked?new Date().toISOString().slice(0,10):'';patch[etapa+'Usuario']=isChecked?currentUserName:'';
+        // Pré pertence a Sola/Palmilha e nunca altera statusCorte ou statusGeral da Costura.
+        if(etapa==='pre' && preApplicable(current)){
+          patch.preConcluido=isChecked;
+          patch.preData=isChecked?window.Roma.localISODate():'';
+          patch.preUsuario=isChecked?currentUserName:'';
+        } else if(etapa && etapa!=='pre' && window.Roma.requiresComponent(current,etapa)){
+          const field=etapa==='aviamentos'?'aviamento':etapa;
+          patch[field+'Concluido']=isChecked;
+          patch[field+'Data']=isChecked?window.Roma.localISODate():'';
+          patch[field+'Usuario']=isChecked?currentUserName:'';
           const next={...current,...patch};
           patch.statusCorte=window.Roma.cutComplete(next)?'Cortado':window.Roma.cutStarted(next)?'Em produção':'Aguardando Material';
           if(!current.costuraDataInicio&&!current.dataSaidaCostura&&!current.dataEntradaDistribuicao&&!current.dataEntradaTalonagem&&!current.dataEntradaMontagem){
