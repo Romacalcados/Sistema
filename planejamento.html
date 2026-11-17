@@ -31,7 +31,7 @@
   <script src="roma-producao.js"></script>
   <script src="roma-planejamento.js?v=20261101-trilhos123"></script>
   <script src="navegacao.js"></script>
-  <link rel="stylesheet" href="planejamento.css?v=roma-print-v12">
+  <link rel="stylesheet" href="planejamento.css?v=roma-planning-v15">
 </head>
 <body class="planning-page">
   <main class="planning-main">
@@ -133,45 +133,51 @@
       <section class="planning-card planning-results" aria-labelledby="planningResultsTitle">
         <div class="planning-section-heading results-heading schedule-toolbar">
           <div><h2 id="planningResultsTitle">Planejamento das remessas</h2><p>Edite Trilho e Prev. Mont. na linha. Clique na remessa para planejar por talão.</p></div>
-          <span class="schedule-autosave-note">Salvamento automático</span>
+          <div class="planning-table-actions">
+            <span class="schedule-autosave-note">Salvamento automático</span>
+            <details class="planning-columns-menu" id="planningColumnsMenu"><summary>Colunas <span aria-hidden="true">▾</span></summary><div class="planning-columns-options" id="planningColumnOptions" aria-label="Escolha quais colunas mostrar"></div><div class="planning-columns-footer"><button type="button" id="resetPlanningColumns">Restaurar padrão</button></div></details>
+            <button type="button" id="printPlanningTableButton" class="planning-button secondary">Imprimir relatório</button>
+          </div>
         </div>
         <p id="inlinePlanningMessage" class="planning-message info" role="status" aria-live="polite" hidden></p>
         <div class="planning-table-wrap" tabindex="0" role="region" aria-label="Remessas consultadas. Role para ver todas as colunas.">
           <table id="planningTable" class="planning-table planning-schedule-table">
             <colgroup>
-              <col class="schedule-col-line"><col class="schedule-col-remessa"><col class="schedule-col-pairs"><col class="schedule-col-count"><col class="schedule-col-date"><col class="schedule-col-date">
-              <col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count"><col class="schedule-col-stage-pairs"><col class="schedule-col-stage-count">
-              <col class="schedule-col-track"><col class="schedule-col-planned-date">
+              <col class="schedule-col-line" data-column="linha"><col class="schedule-col-remessa" data-column="remessa"><col class="schedule-col-pairs" data-column="pares"><col class="schedule-col-count" data-column="taloes"><col class="schedule-col-date" data-column="corte-data"><col class="schedule-col-date" data-column="entrega-data"><col class="schedule-col-cliente" data-column="cliente"><col class="schedule-col-normativa" data-column="normativa">
+              <col class="schedule-col-stage-pairs" data-column="corte"><col class="schedule-col-stage-count" data-column="corte"><col class="schedule-col-stage-pairs" data-column="costura"><col class="schedule-col-stage-count" data-column="costura"><col class="schedule-col-stage-pairs" data-column="palmilha"><col class="schedule-col-stage-count" data-column="palmilha"><col class="schedule-col-stage-pairs" data-column="sola"><col class="schedule-col-stage-count" data-column="sola"><col class="schedule-col-stage-pairs" data-column="distribuicao"><col class="schedule-col-stage-count" data-column="distribuicao"><col class="schedule-col-stage-pairs" data-column="talonagem"><col class="schedule-col-stage-count" data-column="talonagem"><col class="schedule-col-stage-pairs" data-column="montagem"><col class="schedule-col-stage-count" data-column="montagem">
+              <col class="schedule-col-track" data-column="trilho"><col class="schedule-col-planned-date" data-column="prev-mont">
             </colgroup>
             <thead>
               <tr>
-                <th scope="col" rowspan="2">Linha</th>
-                <th scope="col" rowspan="2">Remessa</th>
-                <th scope="col" rowspan="2">Pares</th>
-                <th scope="col" rowspan="2">Talões</th>
-                <th scope="col" rowspan="2"><abbr title="Data de corte">Dt. Corte</abbr></th>
-                <th scope="col" rowspan="2" class="schedule-stage-end"><abbr title="Data de entrega">Dt. Entr.</abbr></th>
-                <th scope="colgroup" colspan="2" class="schedule-stage-end">Corte</th>
-                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Costura">Cost.</abbr></th>
-                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Palmilha">Palm.</abbr></th>
-                <th scope="colgroup" colspan="2" class="schedule-stage-end">Sola</th>
-                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Disponível na fábrica: pares com Costura e os componentes Palmilha/Sola aplicáveis recebidos">Dis na Fab</abbr></th>
-                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Talonagem">Talon.</abbr></th>
-                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Montagem">Mont.</abbr></th>
-                <th scope="col" rowspan="2" class="schedule-edit-heading">Trilho</th>
-                <th scope="col" rowspan="2" class="schedule-edit-heading"><abbr title="Previsão de montagem">Prev. Mont.</abbr></th>
+                <th scope="col" rowspan="2" data-column="linha">Linha</th>
+                <th scope="col" rowspan="2" data-column="remessa">Remessa</th>
+                <th scope="col" rowspan="2" data-column="pares">Prs</th>
+                <th scope="col" rowspan="2" data-column="taloes"><abbr title="Talões">TL.</abbr></th>
+                <th scope="col" rowspan="2" data-column="corte-data"><abbr title="Data de corte">Dt. Corte</abbr></th>
+                <th scope="col" rowspan="2" data-column="entrega-data" class="schedule-stage-end"><abbr title="Data de entrega">Entr.</abbr></th>
+                <th scope="col" rowspan="2" data-column="cliente">Cliente</th>
+                <th scope="col" rowspan="2" data-column="normativa">Normativa</th>
+                <th scope="colgroup" colspan="2" data-column="corte" class="schedule-stage-end">Corte</th>
+                <th scope="colgroup" colspan="2" data-column="costura" class="schedule-stage-end"><abbr title="Costura">Cost.</abbr></th>
+                <th scope="colgroup" colspan="2" data-column="palmilha" class="schedule-stage-end"><abbr title="Palmilha">Palm.</abbr></th>
+                <th scope="colgroup" colspan="2" data-column="sola" class="schedule-stage-end">Sola</th>
+                <th scope="colgroup" colspan="2" data-column="distribuicao" class="schedule-stage-end"><abbr title="Disponível na fábrica: pares com Costura e os componentes Palmilha/Sola aplicáveis recebidos">Dis na Fab</abbr></th>
+                <th scope="colgroup" colspan="2" data-column="talonagem" class="schedule-stage-end"><abbr title="Talonagem">Talon.</abbr></th>
+                <th scope="colgroup" colspan="2" data-column="montagem" class="schedule-stage-end"><abbr title="Montagem">Mont.</abbr></th>
+                <th scope="col" rowspan="2" data-column="trilho" class="schedule-edit-heading">Trilho</th>
+                <th scope="col" rowspan="2" data-column="prev-mont" class="schedule-edit-heading"><abbr title="Previsão de montagem">Prev. Mont.</abbr></th>
               </tr>
               <tr>
-                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
-                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
-                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
-                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
-                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
-                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
-                <th scope="col">Pares</th><th scope="col" class="schedule-stage-end"><abbr title="Talões">Tal.</abbr></th>
+                <th scope="col" data-column="corte">Prs</th><th scope="col" data-column="corte" class="schedule-stage-end"><abbr title="Talões">TL.</abbr></th>
+                <th scope="col" data-column="costura">Prs</th><th scope="col" data-column="costura" class="schedule-stage-end"><abbr title="Talões">TL.</abbr></th>
+                <th scope="col" data-column="palmilha">Prs</th><th scope="col" data-column="palmilha" class="schedule-stage-end"><abbr title="Talões">TL.</abbr></th>
+                <th scope="col" data-column="sola">Prs</th><th scope="col" data-column="sola" class="schedule-stage-end"><abbr title="Talões">TL.</abbr></th>
+                <th scope="col" data-column="distribuicao">Prs</th><th scope="col" data-column="distribuicao" class="schedule-stage-end"><abbr title="Talões">TL.</abbr></th>
+                <th scope="col" data-column="talonagem">Prs</th><th scope="col" data-column="talonagem" class="schedule-stage-end"><abbr title="Talões">TL.</abbr></th>
+                <th scope="col" data-column="montagem">Prs</th><th scope="col" data-column="montagem" class="schedule-stage-end"><abbr title="Talões">TL.</abbr></th>
               </tr>
             </thead>
-            <tbody id="planningTableBody"><tr><td colspan="22" class="plan-empty">Aguardando validação de acesso para consultar as remessas.</td></tr></tbody>
+            <tbody id="planningTableBody"><tr><td colspan="24" class="plan-empty">Aguardando validação de acesso para consultar as remessas.</td></tr></tbody>
           </table>
         </div>
         <p id="planningResultNote" class="planning-result-note" role="status" aria-live="polite"></p>
@@ -323,7 +329,7 @@
   </dialog>
 
   <noscript><p class="planning-message error">Ative o JavaScript do navegador para abrir o planejamento de montagem.</p></noscript>
-  <script src="roma-planejamento-page.js?v=roma-print-v12"></script>
+  <script src="roma-planejamento-page.js?v=roma-planning-v15"></script>
   <script type="module">
     import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
     import {getAuth,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';
