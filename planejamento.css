@@ -1908,3 +1908,93 @@ body.planning-page:has(#panelPlanejamento:not([hidden])) > .planning-main > .pla
     line-height: 1.1 !important;
   }
 }
+
+
+/* Planejamento v13 — escolha de colunas e relatório específico da tabela */
+#panelPlanejamento .planning-table-actions { display:flex; align-items:center; justify-content:flex-end; gap:9px; flex-wrap:wrap; }
+#panelPlanejamento .planning-table-actions .planning-button { padding:7px 10px; min-height:31px; font-size:11px; }
+#panelPlanejamento .planning-columns-menu { position:relative; font-size:11px; z-index:15; }
+#panelPlanejamento .planning-columns-menu > summary { cursor:pointer; user-select:none; list-style:none; padding:8px 10px; border:1px solid #c8d5e5; border-radius:5px; background:#f7faff; color:#123e69; font-weight:650; }
+#panelPlanejamento .planning-columns-menu > summary::-webkit-details-marker {display:none;}
+#panelPlanejamento .planning-columns-menu[open] > summary { background:#e8f2ff; }
+#panelPlanejamento .planning-columns-options { position:absolute; right:0; top:calc(100% + 3px); width:260px; max-height:300px; overflow:auto; padding:10px; background:white; border:1px solid #c6d4e6; border-radius:7px 7px 0 0; box-shadow:0 7px 18px #14283b33; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+#panelPlanejamento .planning-columns-options label {display:flex; align-items:center; gap:4px; font-size:11px; text-align:left; cursor:pointer;}
+#panelPlanejamento .planning-columns-options input {width:14px; height:14px; margin:0;}
+#panelPlanejamento .planning-columns-footer { position:absolute; right:0; top:calc(100% + 323px); width:260px; text-align:right; background:#fff; border:1px solid #c6d4e6; border-top:0; padding:7px; border-radius:0 0 7px 7px; box-shadow:0 7px 18px #14283b33; }
+#panelPlanejamento .planning-columns-footer button {cursor:pointer; background:#e8f0f8; border:0; border-radius:4px; padding:5px 9px;}
+#planningTable .schedule-col-cliente { width:190px; }
+#planningTable .schedule-col-normativa { width:170px; }
+#planningTable.planning-schedule-table { min-width:1600px; }
+#planningTable.planning-schedule-table [hidden] { display:none !important; }
+#planningTable.planning-schedule-table td.schedule-text { text-align:left; white-space:normal; overflow-wrap:anywhere; font-size:10px; line-height:1.25; }
+@media print {
+  @page planning-table-report { size: A3 landscape; margin: 9mm; }
+  body.planning-custom-print.print-planning-table .planning-print-sheet { page: planning-table-report; }
+  body.planning-custom-print.print-planning-table .planning-table-print-report { display:block; width:100%; color:#111; font-family:Arial, sans-serif; }
+  body.planning-custom-print.print-planning-table .planning-table-print-report header { margin-bottom:4mm; border-bottom:1px solid #999; padding-bottom:2mm; }
+  body.planning-custom-print.print-planning-table .planning-table-print-report header h1 { margin:2mm 0; font-size:16pt; }
+  body.planning-custom-print.print-planning-table .planning-table-print-report header p { margin:1mm 0; font-size:8pt; }
+  body.planning-custom-print.print-planning-table .planning-table-print-grid { overflow:visible; }
+  body.planning-custom-print.print-planning-table table { width:100%; min-width:0 !important; table-layout:auto; border-collapse:collapse; font-size:7pt; }
+  body.planning-custom-print.print-planning-table thead { display:table-header-group; }
+  body.planning-custom-print.print-planning-table tr { break-inside:avoid; page-break-inside:avoid; }
+  body.planning-custom-print.print-planning-table th, body.planning-custom-print.print-planning-table td { position:static !important; text-align:center; padding:1.5mm 1mm; border:1px solid #aaa; white-space:normal; overflow-wrap:anywhere; height:auto; }
+  body.planning-custom-print.print-planning-table td.schedule-text {text-align:left; min-width:23mm;}
+  body.planning-custom-print.print-planning-table .schedule-done {color:#111;}
+}
+
+/* v14: clique direto nos titulos do cabecalho para ocultar colunas. */
+#planningTable.planning-schedule-table th .planning-header-hide {
+  display: flex; justify-content: center; align-items: center;
+  width: 100%; height: 100%; min-height: 25px;
+  border: 0; border-radius: 3px; padding: 2px 3px;
+  background: transparent; color: inherit; font: inherit;
+  text-align: center; cursor: pointer;
+}
+#planningTable.planning-schedule-table th .planning-header-hide:hover,
+#planningTable.planning-schedule-table th .planning-header-hide:focus-visible {
+  background: #d7e8fb; color: #0b4a83; outline: 1px solid #80aedb;
+}
+#planningTable.planning-schedule-table th .planning-header-hide abbr { pointer-events:none; }
+@media print {
+  #planningTable.planning-schedule-table th .planning-header-hide { display: inline; border:0; padding:0; }
+}
+
+
+/* v15: tabela mais justa e data curta na previsao, preservando ISO no input. */
+@media screen {
+  #planningTable.planning-schedule-table { min-width: 0; width: 100%; font-size: 10.5px; }
+  #planningTable .schedule-col-line { width: 41px; }
+  #planningTable .schedule-col-remessa { width: 69px; }
+  #planningTable .schedule-col-pairs { width: 48px; }
+  #planningTable .schedule-col-count { width: 36px; }
+  #planningTable .schedule-col-date { width: 53px; }
+  #planningTable .schedule-col-cliente { width: 170px; }
+  #planningTable .schedule-col-normativa { width: 147px; }
+  #planningTable .schedule-col-stage-pairs { width: 42px; }
+  #planningTable .schedule-col-stage-count { width: 30px; }
+  #planningTable .schedule-col-track { width: 67px; }
+  #planningTable .schedule-col-planned-date { width: 74px; }
+  #planningTable.planning-schedule-table th,
+  #planningTable.planning-schedule-table td { padding: 3px 2px; }
+  #planningTable.planning-schedule-table th { font-size: 10px; }
+  #planningTable.planning-schedule-table thead tr:nth-child(2) th { font-size: 10px; }
+  #planningTable .schedule-track-input { height: 25px; min-height: 25px; font-size: 10.5px; padding: 2px 0 2px 3px; }
+  #planningTable .schedule-short-date-wrap {
+    position: relative; display: flex; align-items: center; justify-content: space-between;
+    height: 25px; width: 100%; min-width: 0; padding: 2px 3px;
+    border: 1px solid #aebbc8; border-radius: 4px;
+    background: rgba(255,255,255,.55); color: #24384c;
+    cursor: pointer;
+  }
+  #planningTable .schedule-short-date-label { font-variant-numeric: tabular-nums; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+  #planningTable .schedule-short-date-icon { font-size: 12px; color: #486079; }
+  #planningTable .schedule-short-date-wrap:focus-within { border-color: #4276a7; outline: 1px solid #4276a7; }
+  #planningTable .schedule-short-date-wrap .schedule-date-input {
+    position:absolute; inset:0; display:block; width:100%; height:100%;
+    min-height:0; max-width:none; opacity:0; border:0; padding:0; margin:0;
+    cursor:pointer; z-index:1;
+  }
+  #planningTable .schedule-plan-state { font-size: 9px; }
+  #planningTable.planning-schedule-table td.schedule-text { font-size: 10px; }
+}
