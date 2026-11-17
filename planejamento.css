@@ -1998,3 +1998,100 @@ body.planning-page:has(#panelPlanejamento:not([hidden])) > .planning-main > .pla
   #planningTable .schedule-plan-state { font-size: 9px; }
   #planningTable.planning-schedule-table td.schedule-text { font-size: 10px; }
 }
+
+/* v16: largura baseada no conteudo, sem expandir as colunas para preencher a janela.
+   Apenas a tabela de Planejamento e afetada; impressao usa regras proprias. */
+@media screen {
+  #panelPlanejamento .planning-table-wrap { overflow-x: auto; }
+  #planningTable.planning-schedule-table {
+    min-width: 0 !important;
+    width: max-content !important;
+    max-width: none !important;
+    table-layout: fixed !important;
+    font-size: 10.5px;
+  }
+  #planningTable col.schedule-col-line { width: 40px; }
+  #planningTable col.schedule-col-remessa { width: 66px; }
+  #planningTable col.schedule-col-pairs { width: 50px; }
+  #planningTable col.schedule-col-count { width: 32px; }
+  #planningTable col.schedule-col-date { width: 49px; }
+  #planningTable col.schedule-col-cliente { width: 170px; }
+  #planningTable col.schedule-col-normativa { width: 155px; }
+  #planningTable col.schedule-col-stage-pairs { width: 43px; }
+  #planningTable col.schedule-col-stage-count { width: 26px; }
+  #planningTable col.schedule-col-track { width: 58px; }
+  #planningTable col.schedule-col-planned-date { width: 79px; }
+  #planningTable.planning-schedule-table th,
+  #planningTable.planning-schedule-table td {
+    box-sizing: border-box;
+    padding: 3px 2px;
+    overflow: hidden;
+  }
+  #planningTable.planning-schedule-table thead th {
+    font-size: 10px;
+  }
+  #planningTable.planning-schedule-table td.schedule-text {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.18;
+    text-align: left;
+  }
+  #planningTable.planning-schedule-table th .planning-header-hide {
+    min-height: 22px;
+    padding: 1px 0;
+  }
+  #planningTable .schedule-track-input {
+    width: 100%; height: 24px; min-height: 24px;
+    padding: 2px 1px; font-size: 10px;
+  }
+  #planningTable .schedule-short-date-wrap {
+    width: 100%; height: 24px;
+    padding-inline: 3px;
+  }
+  #planningTable .schedule-short-date-label { font-size: 10px; }
+  #planningTable .schedule-short-date-icon { font-size: 11px; }
+  #planningTable.planning-schedule-table .schedule-stage-end {
+    border-right-width: 1px;
+  }
+}
+
+/* v17: data de montagem digitavel com calendario separado; sem Embarque semanal. */
+@media screen {
+  #planningTable .schedule-short-date-wrap { position:relative; display:flex; align-items:center; gap:2px; padding:1px 2px; cursor:default; }
+  #planningTable .schedule-short-date-wrap .schedule-date-typed {
+    position:relative; flex:1 1 auto; width:40px; min-width:0; height:21px;
+    padding:1px 2px; border:0; outline:0; background:transparent;
+    font:inherit; font-size:10.5px; color:inherit; cursor:text; z-index:2;
+  }
+  #planningTable .schedule-date-open { flex:0 0 17px; height:21px; padding:0; font-size:13px; border:0; background:transparent; color:#315d84; cursor:pointer; z-index:3; }
+  #planningTable .schedule-short-date-wrap .schedule-date-input {
+    position:absolute; width:1px; height:1px; top:10px; right:3px;
+    opacity:0; pointer-events:none; z-index:0; padding:0; border:0;
+  }
+  .roma-week-row { grid-template-columns: minmax(0,1fr) auto !important; }
+  .roma-week-id { min-width:0; }
+}
+
+@media print {
+  body.planning-custom-print .roma-print-metrics { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+}
+
+/* v18: preencher a largura disponivel na tela sem criar faixa vazia
+   depois da ultima coluna. Mantem as larguras proporcionais e a rolagem
+   horizontal quando a janela for pequena. A impressao nao e alterada. */
+@media screen {
+  #panelPlanejamento .planning-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+  #planningTable.planning-schedule-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    table-layout: fixed !important;
+  }
+  #planningTable.planning-schedule-table th,
+  #planningTable.planning-schedule-table td {
+    box-sizing: border-box;
+  }
+}
