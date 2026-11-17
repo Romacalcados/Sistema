@@ -641,8 +641,13 @@
       const lines = [...new Set(records.map(row => text(row.linha)).filter(Boolean))]
         .sort((a,b) => a.localeCompare(b,'pt-BR',{numeric:true}));
       const overrides = [...new Set(records.map(row => text(row.dataEmbarquePlanejada)).filter(Boolean))];
+      // Mesma origem de dados usada no modal de detalhes do planejamento.
+      const distinct = field => [...new Set(records.map(row => text(row[field]).trim()).filter(Boolean))];
       return {
         lines: lines.join(', ') || '—',
+        clientes: distinct('cliente').join(' / ') || 'Não informado',
+        normativas: distinct('normativa').join(' / ') || 'Não informada',
+        tipos: distinct('tipoCliente').join(' / ') || 'Não informado',
         costura: sumPairs(records.filter(costuraPending)),
         montagem: sumPairs(records.filter(row => !helper.isMounted(row))),
         embarque: overrides.length === 1 && /^\d{4}-\d{2}-\d{2}$/.test(overrides[0]) ? overrides[0] : date,
@@ -659,6 +664,11 @@
           <div class="roma-week-id"><button type="button" class="week-remessa-link" data-week-remessa="${escape(remessa.remessa)}" data-track="${track}" data-date="${date}" aria-label="Detalhar ${escape(label)}">${escape(remessa.remessa)}</button><span class="week-card-line" title="Linha ${escape(info.lines)}">Linha ${escape(info.lines)}</span></div>
           <div class="week-card-quantity"><span title="Pares que faltam costurar"><small>Cost.</small><strong class="${info.costura > 0 ? 'week-balance-pending' : ''}">${number(info.costura)}</strong></span><span title="Pares que faltam montar"><small>Mont.</small><strong class="${info.montagem > 0 ? 'week-balance-pending' : ''}">${number(info.montagem)}</strong></span></div>
           <div class="roma-week-shipping"><span>Embarque</span><button type="button" class="roma-week-short-date" data-open-embarque ${!state.canEdit ? 'disabled' : ''} aria-label="Alterar data de embarque de ${escape(label)}"><span data-embarque-label>${info.embarque.slice(8,10)}/${info.embarque.slice(5,7)}</span><span aria-hidden="true">▦</span></button><input type="date" data-embarque-date value="${info.embarque}" ${!state.canEdit ? 'disabled' : ''} aria-label="Data de embarque, ${escape(label)}" title="Padrão: previsão de montagem. Alteração salva nos talões desta remessa e programação."><span class="week-card-save" aria-live="polite">${info.divergent ? 'Datas divergentes' : ''}</span></div>
+        </div>
+        <div class="roma-week-extra" aria-label="Cliente e normativa da remessa">
+          <span class="roma-week-extra-client" title="Cliente: ${escape(info.clientes)}"><b>Cliente</b> ${escape(info.clientes)}</span>
+          <span class="roma-week-extra-norm" title="Normativa: ${escape(info.normativas)}"><b>Norm.</b> ${escape(info.normativas)}</span>
+          <span class="roma-week-extra-type" title="Tipo: ${escape(info.tipos)}"><b>Tipo</b> ${escape(info.tipos)}</span>
         </div>
       </li>`;
     }
@@ -969,8 +979,57 @@
       if (!$('weekDetailModal').open) $('weekDetailModal').showModal();
     }
 
-    function printSheetHTML(title, subtitle, cards) {
-      return `<div class="print-sheet-page"><header class="print-sheet-head"><div><strong>Calçados Roma</strong><h1>${escape(title)}</h1><p>${escape(subtitle)}</p></div></header><div class="print-sheet-cards">${cards}</div></div>`;
+    // Impressão enriquecida: preserva cliente/normativa completos dos talões,
+    // sem reutilizar o texto truncado dos cards do navegador.
+    function printRemessaInfo(records, trackNumber, dayISO, remessa) {
+      const matching = (records || []).filter(row => {
+        const plan = helper.getPlan(row);
+        return plan.planned && plan.track === Number(trackNumber) && plan.date === dayISO &&
+          text(row.numeroRemessa) === text(remessa);
+      });
+      const unique = field => [...new Set(matching.map(row => text(row[field]).trim()).filter(Boolean))];
+      const departures = unique('dataEmbarquePlanejada').filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v));
+      return {
+        linhas: unique('linha').join(' / ') || '—',
+        clientes: unique('cliente').join(' / ') || 'Não informado',
+        normativas: unique('normativa').join(' / ') || 'Não informada',
+        tipos: unique('tipoCliente').join(' / ') || 'Não informado',
+        costura: sumPairs(matching.filter(costuraPending)),
+        montagem: sumPairs(matching.filter(row => !helper.isMounted(row))),
+        embarque: departures.length === 1 ? departures[0] : dayISO,
+        divergente: departures.length > 1
+      };
+    }
+
+    function printCompactDate(iso) {
+      return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso.slice(8,10)}/${iso.slice(5,7)}` : '—';
+    }
+
+    function printDayPanel(track, day, descriptor, records, options = {}) {
+      const remessas = options.remessas || day?.remessas || [];
+      const fragment = Boolean(options.fragment);
+      const continuation = Boolean(options.continuation);
+      const hasMore = Boolean(options.hasMore);
+      const partialPairs = fragment ? remessas.reduce((sum, row) => sum + Number(row.pairs || 0), 0) : Number(day?.pairs || 0);
+      const partialRemaining = fragment ? remessas.reduce((sum, row) => sum + Number(row.remainingPairs || 0), 0) : Number(day?.remainingPairs || 0);
+      const rows = remessas.map(item => {
+        const info = printRemessaInfo(records, track.track, day.date, item.remessa);
+        return `<article class="roma-print-remessa">
+          <div class="roma-print-remessa-top">
+            <div class="roma-print-remessa-id"><strong>${escape(item.remessa || 'Sem remessa')}</strong><small>Linha ${escape(info.linhas)}</small></div>
+            <div class="roma-print-metrics"><span><small>Pares</small><b>${number(item.pairs)}</b></span><span><small>Costura</small><b>${number(info.costura)}</b></span><span><small>Montagem</small><b>${number(info.montagem)}</b></span><span><small>Embarque</small><b>${escape(printCompactDate(info.embarque))}</b></span></div>
+          </div>
+          <div class="roma-print-details"><div><b>Cliente:</b> ${escape(info.clientes)}</div><div><b>Normativa:</b> ${escape(info.normativas)}</div><div><b>Tipo:</b> ${escape(info.tipos)}</div>${info.divergente ? '<div class="roma-print-alert">Datas de embarque divergentes entre talões</div>' : ''}</div>
+        </article>`;
+      }).join('');
+      return `<section class="roma-print-day-panel"><header class="roma-print-day-head"><div><h2>Trilho ${String(track.track).padStart(2,'0')}</h2><span>${escape(descriptor.label)} · ${escape(dateLabel(day.date))}</span></div><strong>${number(partialPairs)} pares</strong></header>
+        <div class="roma-print-rows">${rows || '<p class="roma-print-empty">Sem programação</p>'}</div>
+        <footer>${fragment ? 'Nesta coluna' : 'Total'}: <strong>${number(partialPairs)}</strong> pares · Falta montar: <strong>${number(partialRemaining)}</strong>${hasMore ? ' · <b class="roma-print-continua">Continua →</b>' : continuation ? ' · <b class="roma-print-fim">Fim do trilho</b>' : ''}</footer>
+      </section>`;
+    }
+
+    function printReport(title, subtitle, panels, extraClass = '') {
+      return `<div class="roma-print-report ${extraClass}"><header class="roma-print-report-head"><div><small>Calçados Roma · Planejamento de Montagem</small><h1>${escape(title)}</h1><p>${escape(subtitle)}</p></div></header><div class="roma-print-report-panels">${panels}</div></div>`;
     }
 
     function beginPrint(html, mode) {
@@ -979,8 +1038,6 @@
       const originalNext = sheet.nextSibling;
       sheet.innerHTML = html;
       sheet.setAttribute('aria-hidden', 'false');
-      // Durante a impressão o quadro fica como filho direto do body para
-      // ocultar toda a interface sem esconder o conteúdo impresso.
       document.body.appendChild(sheet);
       document.body.classList.add('planning-custom-print', mode);
       const cleanup = () => {
@@ -991,29 +1048,25 @@
         root.removeEventListener('afterprint', cleanup);
       };
       root.addEventListener('afterprint', cleanup);
-      root.print();
-      root.setTimeout(() => { if (document.body.classList.contains('planning-custom-print')) cleanup(); }, 1500);
+      // Evita remover o relatório enquanto o Chrome ainda constrói a prévia.
+      root.requestAnimationFrame(() => root.requestAnimationFrame(() => root.print()));
     }
 
     function boardForDate(board, date) {
       const descriptor = board.days.find(item => item.date === date) || {date, label:['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][new Date(`${date}T12:00:00Z`).getUTCDay()]};
-      return {descriptor, tracks: board.tracks.map(track => ({track, day: track.days.find(item => item.date === date) || {date, pairs:0, remessas:[]}}))};
-    }
-
-    async function loadBoardForDate(date) {
-      if (state.weekBoard && date >= state.weekBoard.start && date <= addDays(state.weekBoard.start, 6)) return state.weekBoard;
-      const result = await service.loadWeek(date);
-      return helper.weekCalendar(result.summary, result.start);
+      return {descriptor, tracks: board.tracks.map(track => ({track, day: track.days.find(item => item.date === date) || {date, pairs:0, remainingPairs:0, remessas:[]}}))};
     }
 
     async function printDaily(date) {
       if (!state.authenticated || state.weekLoading || state.inlineSaving) return;
       try {
-        const board = await loadBoardForDate(date);
+        const inLoadedWeek = state.weekBoard && date >= state.weekBoard.start && date <= addDays(state.weekBoard.start, 6) && state.week?.records;
+        const result = inLoadedWeek ? state.week : await service.loadWeek(date);
+        const board = inLoadedWeek ? state.weekBoard : helper.weekCalendar(result.summary, result.start);
         const view = boardForDate(board, date);
-        const cards = view.tracks.map(({track, day}) => renderTrackDayCard(track, day, view.descriptor, {showPrint:false})).join('');
+        const panels = view.tracks.map(({track, day}) => printDayPanel(track, day, view.descriptor, result.records)).join('');
         const total = view.tracks.reduce((sum, item) => sum + Number(item.day.pairs || 0), 0);
-        beginPrint(`<div class="print-sheet-page print-daily-page"><div class="print-daily-title"><strong>Programação do dia ${escape(dateLabel(date))}</strong><span>${escape(view.descriptor.label)} · Total dos trilhos: ${number(total)} pares</span></div><div class="print-sheet-cards">${cards}</div></div>`, 'print-daily-all');
+        beginPrint(printReport(`Programação do dia ${dateLabel(date)}`, `${view.descriptor.label} · Total dos trilhos: ${number(total)} pares`, panels, 'roma-print-daily'), 'print-daily-all');
       } catch (error) { message('weekMessage', errorText(error), 'error'); }
     }
 
@@ -1023,31 +1076,17 @@
       const descriptor = state.weekBoard.days.find(item => item.date === date);
       const day = track?.days.find(item => item.date === date);
       if (!track || !descriptor || !day) return;
-      const card = renderTrackDayCard(track, day, descriptor, {showPrint:false});
-      beginPrint(printSheetHTML(`Trilho ${String(track.track).padStart(2,'0')}`, `${descriptor.label}, ${dateLabel(date)} · ${number(day.pairs)} pares programados`, card), 'print-single-track');
+      const panel = printDayPanel(track, day, descriptor, state.week?.records || []);
+      beginPrint(printReport(`Trilho ${String(track.track).padStart(2,'0')}`, `${descriptor.label}, ${dateLabel(date)} · ${number(day.pairs)} pares programados`, panel, 'roma-print-single'), 'print-single-track');
     }
 
     function weeklyTrackCardHTML(trackNumber) {
-      const source = document.querySelector(`#trackCards .week-board-track[data-track="${Number(trackNumber)}"]`);
-      if (!source) return '';
-      const clone = source.cloneNode(true);
-      clone.querySelectorAll('input[data-embarque-date]').forEach(input => {
-        const span = document.createElement('strong');
-        span.className = 'print-embarque-date';
-        span.textContent = `${input.value.slice(8,10)}/${input.value.slice(5,7)}`;
-        input.closest('.roma-week-shipping')?.querySelector('[data-open-embarque]')?.replaceWith(span);
-        input.remove();
-      });
-      clone.querySelectorAll('.week-card-save').forEach(node => node.remove());
-      clone.querySelectorAll('button').forEach(button => {
-        if (button.classList.contains('week-remessa-link')) {
-          const span = document.createElement('span');
-          span.className = 'week-remessa-print-label';
-          span.textContent = button.textContent;
-          button.replaceWith(span);
-        } else button.remove();
-      });
-      return `<div class="print-week-track-page">${clone.outerHTML}</div>`;
+      const track = state.weekBoard?.tracks.find(item => item.track === Number(trackNumber));
+      if (!track) return '';
+      const panels = state.weekBoard.days.filter(day => track.days.some(d => d.date === day.date))
+        .map(descriptor => printDayPanel(track, track.days.find(d => d.date === descriptor.date), descriptor, state.week?.records || [])).join('');
+      return printReport(`Programação semanal · Trilho ${String(track.track).padStart(2,'0')}`,
+        `Semana de ${dateLabel(state.weekBoard.start)} · Clientes e normativas completos`, panels, 'roma-print-weekly');
     }
 
     function printWeekTrack(trackNumber) {
@@ -1057,9 +1096,83 @@
       beginPrint(html, 'print-week-track');
     }
 
+    // Uma data por folha (A4 retrato); em caso de excesso de remessas,
+    // somente os trilhos pendentes continuam na(s) folha(s) seguinte(s).
+    // Um mesmo trilho pode ocupar mais de uma coluna na continuação.
+    function printTrackPages(day, records, trackNumber, date) {
+      const pages = [];
+      let chunk = [];
+      let used = 0;
+      // Altura util real aproximada do A4 retrato apos a reducao do
+      // cabecalho, subtitulo, titulo do trilho e rodape (em mm).
+      const availableHeight = 241;
+      for (const item of (day?.remessas || [])) {
+        const info = printRemessaInfo(records, trackNumber, date, item.remessa);
+        // Inclui Tipo, Cliente e Normativa, inclusive conteúdo de várias linhas.
+        // Em 3 colunas A4 retrato ha cerca de 59 mm para texto;
+        // mede linhas aproximadas conservando cliente e normativa inteiros.
+        const lineCount = [info.clientes, info.normativas, info.tipos]
+          .reduce((count, value) => count + Math.max(1, Math.ceil((value.length + 10) / 39)), 0);
+        const height = 8.2 + lineCount * 2.65 + (info.divergente ? 3 : 0) + 1.8;
+        if (chunk.length && used + height > availableHeight) {
+          pages.push(chunk);
+          chunk = [];
+          used = 0;
+        }
+        chunk.push(item);
+        used += height;
+      }
+      if (chunk.length) pages.push(chunk);
+      return pages;
+    }
+
+    function weeklyDayPrintHTML(descriptor) {
+      const records = state.week?.records || [];
+      const groups = [...state.weekBoard.tracks].sort((a,b) => Number(a.track) - Number(b.track)).map(track => {
+        const day = track.days.find(item => item.date === descriptor.date) ||
+          {date: descriptor.date, pairs: 0, remainingPairs: 0, remessas: []};
+        return {track, day, pages: printTrackPages(day, records, track.track, descriptor.date)};
+      });
+      const total = groups.reduce((sum, group) => sum + Number(group.day.pairs || 0), 0);
+      const sheets = [];
+      // Primeira folha: os três trilhos, exatamente como na programação do dia.
+      sheets.push(groups.map(group => ({...group, pageIndex: 0, items: group.pages[0] || [],
+        hasMore: group.pages.length > 1, continuation: false})));
+      // Continuação: NÃO repetir trilhos já encerrados. Preencher até três
+      // colunas com as partes restantes, inclusive repetindo o mesmo trilho.
+      const pending = groups.map(group => ({group, next: 1}));
+      while (pending.some(item => item.next < item.group.pages.length)) {
+        const columns = [];
+        while (columns.length < 3) {
+          const available = pending.filter(item => item.next < item.group.pages.length);
+          if (!available.length) break;
+          // Continua sempre na ordem crescente: Trilho 01, 02, 03.
+          // Se apenas um trilho continuar, ele ocupa colunas adjacentes.
+          const slot = available[0];
+          const pageIndex = slot.next++;
+          columns.push({...slot.group, pageIndex, items: slot.group.pages[pageIndex],
+            hasMore: slot.next < slot.group.pages.length, continuation: true});
+        }
+        if (!columns.length) break;
+        sheets.push(columns);
+      }
+      return sheets.map((columns, sheetIndex) => {
+        const panels = columns.map(column => printDayPanel(
+          column.track, column.day, descriptor, records, {
+            remessas: column.items, fragment: sheets.length > 1,
+            continuation: column.continuation, hasMore: column.hasMore
+          })).join('');
+        const suffix = sheets.length > 1
+          ? ` · Folha ${sheetIndex+1} de ${sheets.length}${sheetIndex ? ' · Continuação' : ''}` : '';
+        return printReport(`Programação do dia ${dateLabel(descriptor.date)}`,
+          `${descriptor.label} · ${number(total)} pares${suffix}`,
+          panels, 'roma-print-week-day');
+      }).join('');
+    }
+
     function printWholeWeek() {
       if (!state.weekBoard || state.weekDirty || state.weekLoading || state.inlineSaving) return;
-      const html = state.weekBoard.tracks.map(track => weeklyTrackCardHTML(track.track)).join('');
+      const html = state.weekBoard.days.map(weeklyDayPrintHTML).join('');
       if (!html) return;
       beginPrint(html, 'print-whole-week');
     }
