@@ -251,19 +251,129 @@
       for (const row of rows) body.appendChild(row);
     }
 
+    // Apenas apresentação: nunca modifica os dados originais no Firebase.
+    function cleanOptionalDisplay(value) {
+      const valueText = text(value).trim();
+      return /^(?:n[aã]o\s+informad[oa]s?|n\/?a|n\/?d|null|undefined)$/i.test(valueText) ? '' : valueText;
+    }
+
+    function distinctGroupValues(records, field, fallback = '') {
+      return [...new Set(records.map(row => cleanOptionalDisplay(row[field])).filter(Boolean))]
+        .sort((a,b) => a.localeCompare(b, 'pt-BR', {numeric:true})).join(' / ') || '';
+    }
+
+    const PLANNING_COLUMNS = [
+      ['linha','Linha'],['remessa','Remessa'],['pares','Pares'],['taloes','Talões'],
+      ['corte-data','Dt. Corte'],['entrega-data','Dt. Entr.'],
+      ['cliente','Cliente'],['normativa','Normativa'],['corte','Corte'],
+      ['costura','Costura'],['palmilha','Palmilha'],['sola','Sola'],
+      ['distribuicao','Dis. na fábrica'],['talonagem','Talonagem'],
+      ['montagem','Montagem'],['trilho','Trilho'],['prev-mont','Prev. Mont.']
+    ];
+    const hiddenPlanningColumns = new Set();
+    function applyPlanningColumns() {
+      const table = $('planningTable');
+      table.querySelectorAll('[data-column]').forEach(cell => {
+        cell.hidden = hiddenPlanningColumns.has(cell.dataset.column);
+      });
+      const active = PLANNING_COLUMNS.reduce((total,[key]) => total + !hiddenPlanningColumns.has(key), 0);
+      table.style.minWidth = `${Math.max(570, 1600 - [...hiddenPlanningColumns].reduce((total,key) => total + (key === 'cliente' ? 190 : key === 'normativa' ? 170 : ['trilho','prev-mont'].includes(key) ? 115 : ['corte','costura','palmilha','sola','distribuicao','talonagem','montagem'].includes(key) ? 88 : 65),0))}px`;
+      const inputs = $('planningColumnOptions')?.querySelectorAll('input[data-toggle-column]') || [];
+      inputs.forEach(input => {input.checked = !hiddenPlanningColumns.has(input.dataset.toggleColumn);});
+    }
+    function enablePlanningHeaderClicks() {
+      const table = $('planningTable');
+      // A primeira linha possui o cabeçalho de cada grupo; a segunda, Pares/Tal.
+      table.querySelectorAll('thead tr:first-child th[data-column]').forEach(th => {
+        if (th.querySelector('[data-hide-column]')) return;
+        const key = th.dataset.column;
+        const label = PLANNING_COLUMNS.find(item => item[0] === key)?.[1] || key;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'planning-header-hide';
+        button.dataset.hideColumn = key;
+        button.title = `Ocultar ${label}. Para mostrar novamente, use Colunas.`;
+        button.setAttribute('aria-label', `Ocultar coluna ${label}`);
+        while (th.firstChild) button.appendChild(th.firstChild);
+        th.appendChild(button);
+      });
+      table.tHead.addEventListener('click', event => {
+        const button = event.target.closest('button[data-hide-column]');
+        if (!button || !table.tHead.contains(button)) return;
+        if (PLANNING_COLUMNS.length - hiddenPlanningColumns.size <= 1) return;
+        hiddenPlanningColumns.add(button.dataset.hideColumn);
+        applyPlanningColumns();
+      });
+    }
+    function initPlanningColumns() {
+      enablePlanningHeaderClicks();
+      $('planningColumnOptions').innerHTML = PLANNING_COLUMNS.map(([key,label]) =>
+        `<label><input type="checkbox" data-toggle-column="${key}" checked> ${label}</label>`).join('');
+      $('planningColumnOptions').addEventListener('change', event => {
+        const input = event.target.closest('input[data-toggle-column]');
+        if (!input) return;
+        if (!input.checked && hiddenPlanningColumns.size >= PLANNING_COLUMNS.length - 1) {
+          input.checked = true; return;
+        }
+        if (input.checked) hiddenPlanningColumns.delete(input.dataset.toggleColumn);
+        else hiddenPlanningColumns.add(input.dataset.toggleColumn);
+        applyPlanningColumns();
+      });
+      $('resetPlanningColumns').addEventListener('click', () => {
+        hiddenPlanningColumns.clear(); applyPlanningColumns();
+      });
+      $('printPlanningTableButton').addEventListener('click', printPlanningTableReport);
+    }
+    function printPlanningTableReport() {
+      if (!state.authenticated || state.loading || !state.query) {
+        message('inlinePlanningMessage','Consulte as remessas antes de imprimir.', 'warning'); return;
+      }
+      const table = $('planningTable').cloneNode(true);
+      table.removeAttribute('id');
+      table.querySelectorAll('button[data-hide-column]').forEach(button => {
+        const th = button.parentNode;
+        while (button.firstChild) th.insertBefore(button.firstChild, button);
+        button.remove();
+      });
+      table.classList.add('planning-report-table');
+      table.querySelectorAll('[data-column]').forEach(el => {if (hiddenPlanningColumns.has(el.dataset.column)) el.remove();});
+      table.querySelectorAll('button.schedule-remessa-link').forEach(el => {
+        const span = document.createElement('span'); span.textContent = el.textContent; el.replaceWith(span);
+      });
+      table.querySelectorAll('.schedule-short-date-wrap').forEach(wrapper => {
+        const dateInput = wrapper.querySelector('input[type="date"]');
+        const span = document.createElement('span');
+        span.textContent = dateInput?.value ? shortDate(dateInput.value) : '—';
+        wrapper.replaceWith(span);
+      });
+      table.querySelectorAll('select, input').forEach(el => {
+        const span = document.createElement('span');
+        span.textContent = el.type === 'date' ? dateLabel(el.value) : (el.selectedOptions?.[0]?.textContent || el.value || '—');
+        el.replaceWith(span);
+      });
+      table.querySelectorAll('.schedule-plan-state').forEach(el => el.remove());
+      table.querySelectorAll('colgroup').forEach(el => el.remove());
+      const shown = table.querySelectorAll('tbody tr[data-group-key]').length;
+      if (!shown) {message('inlinePlanningMessage','Nenhuma remessa visível para imprimir.', 'warning');return;}
+      const data = root.Roma.localISODate();
+      const scope = $('planningResultNote').textContent;
+      const report = `<section class="planning-table-print-report"><header><strong>Calçados Roma · Planejamento de Montagem</strong><h1>Relatório de planejamento</h1><p>Emitido em ${escape(dateLabel(data))} · ${number(shown)} linha(s)</p><p>${escape(scope)}</p></header><div class="planning-table-print-grid">${table.outerHTML}</div></section>`;
+      beginPrint(report, 'print-planning-table');
+    }
+
     function stageCells(records, stage) {
       if (stage === 'distribuicao') {
         // Disponibilidade física é a interseção dos recebimentos aplicáveis
         // de cada talão. Saídas de ateliê, sozinhas, não significam chegada.
         const available = records.filter(row => !helper.isMounted(row)
           && ['costura','palmilha','sola'].every(sector => !root.Roma.stageApplicable(row, sector) || root.Roma.factoryReceived(row, sector)));
-        return `<td data-stage="factory" data-measure="pairs">${number(sumPairs(available))}</td><td class="schedule-stage-end" data-stage="factory" data-measure="taloes">${number(available.length)}</td>`;
+        return `<td data-column="distribuicao" data-stage="factory" data-measure="pairs">${number(sumPairs(available))}</td><td class="schedule-stage-end" data-column="distribuicao" data-stage="factory" data-measure="taloes">${number(available.length)}</td>`;
       }
       const result = records.reduce((total, row) => production.addToStage(total, {...row, pares:pairs(row)}, stage), production.emptyStage());
       const end = 'schedule-stage-end';
-      if (!result.aplicaveis) return `<td colspan="2" class="schedule-na ${end}" data-stage="${stage}" title="Este componente não faz parte dos modelos deste grupo">N/A</td>`;
-      if (result.allDone) return `<td colspan="2" class="schedule-done ${end}" data-stage="${stage}" title="${result.maxDate ? `Concluído em ${dateLabel(result.maxDate)}` : 'Etapa concluída'}">✓ ${result.maxDate ? shortDate(result.maxDate) : 'OK'}</td>`;
-      return `<td data-stage="${stage}" data-measure="pairs">${number(result.paresFaltando)}</td><td class="${end}" data-stage="${stage}" data-measure="taloes">${number(result.taloesFaltando)}</td>`;
+      if (!result.aplicaveis) return `<td colspan="2" class="schedule-na ${end}" data-column="${stage}" data-stage="${stage}" title="Este componente não faz parte dos modelos deste grupo">N/A</td>`;
+      if (result.allDone) return `<td colspan="2" class="schedule-done ${end}" data-column="${stage}" data-stage="${stage}" title="${result.maxDate ? `Concluído em ${dateLabel(result.maxDate)}` : 'Etapa concluída'}">✓ ${result.maxDate ? shortDate(result.maxDate) : 'OK'}</td>`;
+      return `<td data-column="${stage}" data-stage="${stage}" data-measure="pairs">${number(result.paresFaltando)}</td><td class="${end}" data-column="${stage}" data-stage="${stage}" data-measure="taloes">${number(result.taloesFaltando)}</td>`;
     }
 
     function clientClass(records) {
@@ -309,14 +419,16 @@
         const models = [...new Set(group.records.map(helper.modelLabel))].join(', ');
         const scope = `Remessa ${group.remessa}, linha ${group.line}, corte ${dateLabel(group.cut)}, entrega ${dateLabel(group.delivery)}. ${group.eligible.length} talões disponíveis. Modelos: ${models}.`;
         return `<tr class="${clientClass(group.records)}${draft ? ' schedule-dirty' : ''}" data-group-key="${escape(group.key)}" data-remessa="${remessa}" data-linha="${escape(group.line)}">
-          <td title="${escape(models)}">${escape(group.line || '—')}</td>
-          <td>${group.remessa ? `<button type="button" class="schedule-remessa-link" data-action="taloes" data-remessa="${remessa}" title="Consultar e planejar talões da remessa ${remessa}">${remessa}</button>` : 'Sem remessa'}</td>
-          <td>${number(sumPairs(group.records))}</td><td>${number(group.records.length)}</td>
-          <td title="${escape(dateLabel(group.cut))}">${shortDate(group.cut)}</td><td title="${escape(dateLabel(group.delivery))}">${shortDate(group.delivery)}</td>
+          <td data-column="linha" title="${escape(models)}">${escape(group.line || '—')}</td>
+          <td data-column="remessa">${group.remessa ? `<button type="button" class="schedule-remessa-link" data-action="taloes" data-remessa="${remessa}" title="Consultar e planejar talões da remessa ${remessa}">${remessa}</button>` : 'Sem remessa'}</td>
+          <td data-column="pares">${number(sumPairs(group.records))}</td><td data-column="taloes">${number(group.records.length)}</td>
+          <td data-column="corte-data" title="${escape(dateLabel(group.cut))}">${shortDate(group.cut)}</td><td data-column="entrega-data" title="${escape(dateLabel(group.delivery))}">${shortDate(group.delivery)}</td>
+          <td data-column="cliente" class="schedule-text" title="${escape(distinctGroupValues(group.records, 'cliente'))}">${escape(distinctGroupValues(group.records, 'cliente'))}</td>
+          <td data-column="normativa" class="schedule-text" title="${escape(distinctGroupValues(group.records, 'normativa'))}">${escape(distinctGroupValues(group.records, 'normativa'))}</td>
           ${production.STAGES.map(stage => stageCells(group.records, stage)).join('')}
-          <td><select class="schedule-track-input" data-plan-field="track" aria-label="Trilho da remessa ${remessa}, linha ${escape(group.line)}" title="${escape(scope)}"><option value="" disabled${!plan.track ? ' selected' : ''}>${hint || '—'}</option>${helper.TRACKS.map(track => `<option value="${track.value}"${String(plan.track) === String(track.value) ? ' selected' : ''}>${track.value}</option>`).join('')}</select></td>
-          <td><input class="schedule-date-input" data-plan-field="date" type="date" value="${escape(plan.date)}" aria-label="Previsão de montagem da remessa ${remessa}, linha ${escape(group.line)}" title="${escape(scope)}"><small class="schedule-plan-state" aria-live="polite"></small></td></tr>`;
-      }).join('') : '<tr><td colspan="22" class="empty-state">Nenhuma remessa encontrada com esses filtros. Ajuste o período ou procure pelo número exato da remessa.</td></tr>';
+          <td data-column="trilho"><select class="schedule-track-input" data-plan-field="track" aria-label="Trilho da remessa ${remessa}, linha ${escape(group.line)}" title="${escape(scope)}"><option value="" disabled${!plan.track ? ' selected' : ''}>${hint || '—'}</option>${helper.TRACKS.map(track => `<option value="${track.value}"${String(plan.track) === String(track.value) ? ' selected' : ''}>${track.value}</option>`).join('')}</select></td>
+          <td data-column="prev-mont"><div class="schedule-short-date-wrap"><span class="schedule-short-date-label" aria-hidden="true">${plan.date ? shortDate(plan.date) : '—'}</span><span class="schedule-short-date-icon" aria-hidden="true">▦</span><input class="schedule-date-input" data-plan-field="date" type="date" value="${escape(plan.date)}" aria-label="Previsão de montagem da remessa ${remessa}, linha ${escape(group.line)}" title="${escape(scope)}"></div><small class="schedule-plan-state" aria-live="polite"></small></td></tr>`;
+      }).join('') : '<tr><td colspan="24" class="empty-state">Nenhuma remessa encontrada com esses filtros. Ajuste o período ou procure pelo número exato da remessa.</td></tr>';
       if (state.query) {
         const scope = filter.remessa ? `Remessa ${filter.remessa}; o período de corte não limita esta consulta.` : filter.dateField === 'dataEntrega' ? `Entrega de ${dateLabel(filter.start)} a ${dateLabel(filter.end)}.` : `Corte de ${dateLabel(filter.start)} a ${dateLabel(filter.end)}.`;
         const deliveryScope = filter.dateField === 'dataEntrega' ? '' : filter.deliveryStart || filter.deliveryEnd ? ` Entrega de ${dateLabel(filter.deliveryStart || filter.deliveryEnd)} a ${dateLabel(filter.deliveryEnd || filter.deliveryStart)}.` : '';
@@ -325,6 +437,7 @@
         $('planningResultNote').textContent = `${number(remessas.size)} remessa(s) em ${number(groups.length)} linha(s). ${scope}${deliveryScope}${trackScope}${plannedScope} Cada linha reúne remessa, linha, corte e entrega; Trilho e Prev. Mont. valem para seus talões ainda não montados.`;
       }
       updateInlineFeedback();
+      applyPlanningColumns();
       setControls();
     }
 
@@ -374,6 +487,8 @@
         if (!state.drafts.has(key)) {
           trackInput.value = group.plan.track;
           dateInput.value = group.plan.date;
+          const dateLabelEl = row.querySelector('.schedule-short-date-label');
+          if (dateLabelEl) dateLabelEl.textContent = group.plan.date ? shortDate(group.plan.date) : '—';
           trackInput.querySelector('option[value=""]').textContent = group.plan.status === 'partial' ? 'Parcial' : group.plan.status === 'split' ? 'Dividido' : '—';
         }
         row.children[2].textContent = number(sumPairs(group.records));
@@ -412,6 +527,10 @@
 
     function changeInlinePlan(event) {
       const input = event.target;
+      if (input.matches('[data-plan-field="date"]')) {
+        const shortLabel = input.closest('.schedule-short-date-wrap')?.querySelector('.schedule-short-date-label');
+        if (shortLabel) shortLabel.textContent = input.value ? shortDate(input.value) : '—';
+      }
       if (!input.matches('[data-plan-field]') || !state.authenticated || !state.canEdit || state.loading || state.navigating) return;
       const row = input.closest('tr'), group = state.scheduleGroups.get(row.dataset.groupKey);
       if (!group?.eligible.length || !group.remessa || state.blockedKeys.has(group.key)) return;
@@ -587,7 +706,7 @@
         state.rows = [];
         state.query = null;
         renderPlanning();
-        $('planningTableBody').innerHTML = '<tr><td colspan="22" class="empty-state">A consulta não foi concluída. Confira a mensagem acima e busque novamente.</td></tr>';
+        $('planningTableBody').innerHTML = '<tr><td colspan="24" class="empty-state">A consulta não foi concluída. Confira a mensagem acima e busque novamente.</td></tr>';
         $('planningResultNote').textContent = '';
         message('planningPageMessage', errorText(error), 'error');
       } finally {
@@ -642,12 +761,12 @@
         .sort((a,b) => a.localeCompare(b,'pt-BR',{numeric:true}));
       const overrides = [...new Set(records.map(row => text(row.dataEmbarquePlanejada)).filter(Boolean))];
       // Mesma origem de dados usada no modal de detalhes do planejamento.
-      const distinct = field => [...new Set(records.map(row => text(row[field]).trim()).filter(Boolean))];
+      const distinct = field => [...new Set(records.map(row => cleanOptionalDisplay(row[field])).filter(Boolean))];
       return {
         lines: lines.join(', ') || '—',
-        clientes: distinct('cliente').join(' / ') || 'Não informado',
-        normativas: distinct('normativa').join(' / ') || 'Não informada',
-        tipos: distinct('tipoCliente').join(' / ') || 'Não informado',
+        clientes: distinct('cliente').join(' / ') || '',
+        normativas: distinct('normativa').join(' / ') || '',
+        tipos: distinct('tipoCliente').join(' / ') || '',
         costura: sumPairs(records.filter(costuraPending)),
         montagem: sumPairs(records.filter(row => !helper.isMounted(row))),
         embarque: overrides.length === 1 && /^\d{4}-\d{2}-\d{2}$/.test(overrides[0]) ? overrides[0] : date,
@@ -870,7 +989,7 @@
       const complete = view.records.filter(row => talaoFactoryStatus(row).complete).length;
       const body = groups.map(([remessa, rows]) => dayTaloesTableHTML(remessa, rows, true)).join('');
       const html = `<div class="print-day-taloes-page"><header class="print-day-taloes-head"><strong>Calçados Roma</strong><h1>Talões para montagem · Trilho ${String(view.track).padStart(2,'0')}</h1><p>${escape(view.descriptor.label)}, ${dateLabel(view.date)} · ${number(view.records.length)} talões · ${number(sumPairs(view.records))} pares · ${number(complete)} completos</p></header>${body}</div>`;
-      beginPrint(html, 'print-day-taloes');
+      beginPrint(html, 'print-day-taloes', 'print-planning-table');
     }
 
     function sectorWhatsRecords(sector) {
@@ -987,13 +1106,13 @@
         return plan.planned && plan.track === Number(trackNumber) && plan.date === dayISO &&
           text(row.numeroRemessa) === text(remessa);
       });
-      const unique = field => [...new Set(matching.map(row => text(row[field]).trim()).filter(Boolean))];
+      const unique = field => [...new Set(matching.map(row => cleanOptionalDisplay(row[field])).filter(Boolean))];
       const departures = unique('dataEmbarquePlanejada').filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v));
       return {
         linhas: unique('linha').join(' / ') || '—',
-        clientes: unique('cliente').join(' / ') || 'Não informado',
-        normativas: unique('normativa').join(' / ') || 'Não informada',
-        tipos: unique('tipoCliente').join(' / ') || 'Não informado',
+        clientes: unique('cliente').join(' / ') || '',
+        normativas: unique('normativa').join(' / ') || '',
+        tipos: unique('tipoCliente').join(' / ') || '',
         costura: sumPairs(matching.filter(costuraPending)),
         montagem: sumPairs(matching.filter(row => !helper.isMounted(row))),
         embarque: departures.length === 1 ? departures[0] : dayISO,
@@ -1286,13 +1405,13 @@
     }
 
     function renderModalDetails(records) {
-      const uniqueText = field => [...new Set(records.map(row => text(row[field])).filter(Boolean))];
+      const uniqueText = field => [...new Set(records.map(row => cleanOptionalDisplay(row[field])).filter(Boolean))];
       const dates = field => [...new Set(records.map(row => calendarDate(row[field])).filter(Boolean))]
         .sort().map(value => dateLabel(value) === '—' ? value : dateLabel(value));
-      $('modalCliente').textContent = uniqueText('cliente').join('\n') || 'Não informado';
-      $('modalNormativas').textContent = uniqueText('normativa').join('\n') || 'Não informadas';
-      $('modalEntrega').textContent = dates('dataEntrega').join('\n') || 'Não informada';
-      $('modalCorte').textContent = dates('dataCorte').join('\n') || 'Não informada';
+      $('modalCliente').textContent = uniqueText('cliente').join('\n') || '';
+      $('modalNormativas').textContent = uniqueText('normativa').join('\n') || '';
+      $('modalEntrega').textContent = dates('dataEntrega').join('\n') || '';
+      $('modalCorte').textContent = dates('dataCorte').join('\n') || '';
     }
 
     function replaceKnownRows(records) {
@@ -1434,6 +1553,15 @@
     ['filterRemessa','filterLinha','filterModelo'].forEach(id => $(id).addEventListener('keydown', event => {
       if (event.key === 'Enter') { event.preventDefault(); void loadPlanning(); }
     }));
+    $('planningTableBody').addEventListener('click', event => {
+      const wrapper = event.target.closest('.schedule-short-date-wrap');
+      if (!wrapper) return;
+      const input = wrapper.querySelector('input[type="date"]');
+      if (!input || input.disabled || event.target === input) return;
+      if (typeof input.showPicker === 'function') {
+        try { input.showPicker(); } catch (_) { input.focus(); }
+      } else input.focus();
+    });
     $('planningTableBody').addEventListener('input', changeInlinePlan);
     $('planningTableBody').addEventListener('change', changeInlinePlan);
     $('planningTableBody').addEventListener('click', event => {
@@ -1500,6 +1628,7 @@
     ['closeDayTaloesButton','cancelDayTaloesButton'].forEach(id => $(id).addEventListener('click', closeDayTaloes));
     $('dayTaloesModal').addEventListener('cancel', event => { event.preventDefault(); closeDayTaloes(); });
     $('printDayTaloesButton').addEventListener('click', printDayTaloesReport);
+    initPlanningColumns();
     $('whatsCosturaButton').addEventListener('click', () => openSectorMessage('costura'));
     $('whatsSolaButton').addEventListener('click', () => openSectorMessage('sola'));
     $('whatsPalmilhaButton').addEventListener('click', () => openSectorMessage('palmilha'));
@@ -1563,7 +1692,7 @@
       clearWeek();
       renderPlanning();
       $('planningResultNote').textContent = '';
-      $('planningTableBody').innerHTML = '<tr><td colspan="22" class="empty-state">Validando o acesso para consultar as remessas...</td></tr>';
+      $('planningTableBody').innerHTML = '<tr><td colspan="24" class="empty-state">Validando o acesso para consultar as remessas...</td></tr>';
       setControls();
       if (!user) { root.location.replace('login.html'); return; }
       try {
@@ -1596,7 +1725,7 @@
         state.canEdit = false;
         setControls();
         message('planningPageMessage', errorText(error), 'error');
-        $('planningTableBody').innerHTML = '<tr><td colspan="22" class="empty-state">Valide o acesso para consultar o planejamento.</td></tr>';
+        $('planningTableBody').innerHTML = '<tr><td colspan="24" class="empty-state">Valide o acesso para consultar o planejamento.</td></tr>';
       }
     });
   }
