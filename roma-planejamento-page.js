@@ -66,6 +66,13 @@
         const group = state.scheduleGroups.get(input.closest('tr').dataset.groupKey);
         input.disabled = !state.authenticated || !state.canEdit || state.loading || state.navigating || state.blockedKeys.has(input.closest('tr').dataset.groupKey) || !group?.eligible.length || !group.remessa;
       });
+      document.querySelectorAll('#planningTableBody .schedule-short-date-wrap').forEach(wrap => {
+        const disabled = Boolean(wrap.querySelector('[data-plan-field="date"]')?.disabled);
+        const typed = wrap.querySelector('.schedule-date-typed');
+        const open = wrap.querySelector('.schedule-date-open');
+        if (typed) typed.disabled = disabled;
+        if (open) open.disabled = disabled;
+      });
       updateSelection();
     }
 
@@ -263,15 +270,30 @@
     }
 
     const PLANNING_COLUMNS = [
-      ['linha','Linha'],['remessa','Remessa'],['pares','Pares'],['taloes','Talões'],
-      ['corte-data','Dt. Corte'],['entrega-data','Dt. Entr.'],
-      ['cliente','Cliente'],['normativa','Normativa'],['corte','Corte'],
-      ['costura','Costura'],['palmilha','Palmilha'],['sola','Sola'],
-      ['distribuicao','Dis. na fábrica'],['talonagem','Talonagem'],
-      ['montagem','Montagem'],['trilho','Trilho'],['prev-mont','Prev. Mont.']
+      ['linha','Linha'],['remessa','Remessa'],['pares','Prs'],['taloes','TL.'],
+      ['corte-data','Dt. Corte'],['entrega-data','Entr.'],['cliente','Cliente'],['normativa','Normativa'],
+      ['trilho','Trilho'],['prev-mont','Prev. Mont.'],
+      ['montagem','Mont.'],['talonagem','Talon.'],['distribuicao','Dis. na Fab'],
+      ['costura','Cost.'],['palmilha','Palm.'],['sola','Sola'],['corte','Corte']
     ];
+    const PLANNING_ORDER = new Map(PLANNING_COLUMNS.map(([key], index) => [key, index]));
+    function arrangePlanningColumns() {
+      const table = $('planningTable');
+      const order = node => PLANNING_ORDER.get(node.dataset.column) ?? 99;
+      const arrange = parent => {
+        if (!parent) return;
+        const nodes = [...parent.children].filter(node => node.dataset.column);
+        nodes.sort((a,b) => order(a)-order(b)); // stable for Prs/TL. within each sector
+        nodes.forEach(node => parent.appendChild(node));
+      };
+      arrange(table.querySelector('colgroup'));
+      arrange(table.tHead?.rows[0]);
+      arrange(table.tHead?.rows[1]);
+      table.querySelectorAll('tbody tr[data-group-key]').forEach(arrange);
+    }
     const hiddenPlanningColumns = new Set();
     function applyPlanningColumns() {
+      arrangePlanningColumns();
       const table = $('planningTable');
       table.querySelectorAll('[data-column]').forEach(cell => {
         cell.hidden = hiddenPlanningColumns.has(cell.dataset.column);
@@ -427,7 +449,7 @@
           <td data-column="normativa" class="schedule-text" title="${escape(distinctGroupValues(group.records, 'normativa'))}">${escape(distinctGroupValues(group.records, 'normativa'))}</td>
           ${production.STAGES.map(stage => stageCells(group.records, stage)).join('')}
           <td data-column="trilho"><select class="schedule-track-input" data-plan-field="track" aria-label="Trilho da remessa ${remessa}, linha ${escape(group.line)}" title="${escape(scope)}"><option value="" disabled${!plan.track ? ' selected' : ''}>${hint || '—'}</option>${helper.TRACKS.map(track => `<option value="${track.value}"${String(plan.track) === String(track.value) ? ' selected' : ''}>${track.value}</option>`).join('')}</select></td>
-          <td data-column="prev-mont"><div class="schedule-short-date-wrap"><span class="schedule-short-date-label" aria-hidden="true">${plan.date ? shortDate(plan.date) : '—'}</span><span class="schedule-short-date-icon" aria-hidden="true">▦</span><input class="schedule-date-input" data-plan-field="date" type="date" value="${escape(plan.date)}" aria-label="Previsão de montagem da remessa ${remessa}, linha ${escape(group.line)}" title="${escape(scope)}"></div><small class="schedule-plan-state" aria-live="polite"></small></td></tr>`;
+          <td data-column="prev-mont"><div class="schedule-short-date-wrap"><input type="text" class="schedule-date-typed" value="${plan.date ? shortDate(plan.date) : ''}" maxlength="10" inputmode="numeric" placeholder="dd/mm" autocomplete="off" aria-label="Digitar previsão da montagem, dia e mês, remessa ${remessa}"><button type="button" class="schedule-date-open" aria-label="Abrir calendário da previsão de montagem, remessa ${remessa}" title="Abrir calendário">▦</button><input class="schedule-date-input" data-plan-field="date" type="date" value="${escape(plan.date)}" aria-label="Previsão de montagem da remessa ${remessa}, linha ${escape(group.line)}" title="${escape(scope)}" tabindex="-1"></div><small class="schedule-plan-state" aria-live="polite"></small></td></tr>`;
       }).join('') : '<tr><td colspan="24" class="empty-state">Nenhuma remessa encontrada com esses filtros. Ajuste o período ou procure pelo número exato da remessa.</td></tr>';
       if (state.query) {
         const scope = filter.remessa ? `Remessa ${filter.remessa}; o período de corte não limita esta consulta.` : filter.dateField === 'dataEntrega' ? `Entrega de ${dateLabel(filter.start)} a ${dateLabel(filter.end)}.` : `Corte de ${dateLabel(filter.start)} a ${dateLabel(filter.end)}.`;
@@ -487,8 +509,8 @@
         if (!state.drafts.has(key)) {
           trackInput.value = group.plan.track;
           dateInput.value = group.plan.date;
-          const dateLabelEl = row.querySelector('.schedule-short-date-label');
-          if (dateLabelEl) dateLabelEl.textContent = group.plan.date ? shortDate(group.plan.date) : '—';
+          const dateText = row.querySelector('.schedule-date-typed');
+          if (dateText && document.activeElement !== dateText) dateText.value = group.plan.date ? shortDate(group.plan.date) : '';
           trackInput.querySelector('option[value=""]').textContent = group.plan.status === 'partial' ? 'Parcial' : group.plan.status === 'split' ? 'Dividido' : '—';
         }
         row.children[2].textContent = number(sumPairs(group.records));
@@ -502,6 +524,7 @@
       $('planPairsCount').textContent = number(sumPairs(pending));
       $('planPlannedPairs').textContent = number(sumPairs(pending.filter(row => helper.getPlan(row).planned)));
       $('planUnplannedPairs').textContent = number(sumPairs(pending.filter(row => !helper.getPlan(row).planned)));
+      arrangePlanningColumns();
       reorderPlanningRows();
       updateInlineFeedback();
       setControls();
@@ -528,8 +551,8 @@
     function changeInlinePlan(event) {
       const input = event.target;
       if (input.matches('[data-plan-field="date"]')) {
-        const shortLabel = input.closest('.schedule-short-date-wrap')?.querySelector('.schedule-short-date-label');
-        if (shortLabel) shortLabel.textContent = input.value ? shortDate(input.value) : '—';
+        const typed = input.closest('.schedule-short-date-wrap')?.querySelector('.schedule-date-typed');
+        if (typed && document.activeElement !== typed) typed.value = input.value ? shortDate(input.value) : '';
       }
       if (!input.matches('[data-plan-field]') || !state.authenticated || !state.canEdit || state.loading || state.navigating) return;
       const row = input.closest('tr'), group = state.scheduleGroups.get(row.dataset.groupKey);
@@ -552,6 +575,7 @@
         state.drafts.set(group.key, draft);
         state.saveStates.delete(group.key);
       }
+      arrangePlanningColumns();
       reorderPlanningRows();
       updateInlineFeedback();
       setControls();
@@ -759,7 +783,6 @@
       const records = weekCardRecords(track, date, remessa);
       const lines = [...new Set(records.map(row => text(row.linha)).filter(Boolean))]
         .sort((a,b) => a.localeCompare(b,'pt-BR',{numeric:true}));
-      const overrides = [...new Set(records.map(row => text(row.dataEmbarquePlanejada)).filter(Boolean))];
       // Mesma origem de dados usada no modal de detalhes do planejamento.
       const distinct = field => [...new Set(records.map(row => cleanOptionalDisplay(row[field])).filter(Boolean))];
       return {
@@ -769,8 +792,6 @@
         tipos: distinct('tipoCliente').join(' / ') || '',
         costura: sumPairs(records.filter(costuraPending)),
         montagem: sumPairs(records.filter(row => !helper.isMounted(row))),
-        embarque: overrides.length === 1 && /^\d{4}-\d{2}-\d{2}$/.test(overrides[0]) ? overrides[0] : date,
-        divergent: overrides.length > 1,
         count: records.length
       };
     }
@@ -782,7 +803,6 @@
         <div class="roma-week-row">
           <div class="roma-week-id"><button type="button" class="week-remessa-link" data-week-remessa="${escape(remessa.remessa)}" data-track="${track}" data-date="${date}" aria-label="Detalhar ${escape(label)}">${escape(remessa.remessa)}</button><span class="week-card-line" title="Linha ${escape(info.lines)}">Linha ${escape(info.lines)}</span></div>
           <div class="week-card-quantity"><span title="Pares que faltam costurar"><small>Cost.</small><strong class="${info.costura > 0 ? 'week-balance-pending' : ''}">${number(info.costura)}</strong></span><span title="Pares que faltam montar"><small>Mont.</small><strong class="${info.montagem > 0 ? 'week-balance-pending' : ''}">${number(info.montagem)}</strong></span></div>
-          <div class="roma-week-shipping"><span>Embarque</span><button type="button" class="roma-week-short-date" data-open-embarque ${!state.canEdit ? 'disabled' : ''} aria-label="Alterar data de embarque de ${escape(label)}"><span data-embarque-label>${info.embarque.slice(8,10)}/${info.embarque.slice(5,7)}</span><span aria-hidden="true">▦</span></button><input type="date" data-embarque-date value="${info.embarque}" ${!state.canEdit ? 'disabled' : ''} aria-label="Data de embarque, ${escape(label)}" title="Padrão: previsão de montagem. Alteração salva nos talões desta remessa e programação."><span class="week-card-save" aria-live="polite">${info.divergent ? 'Datas divergentes' : ''}</span></div>
         </div>
         <div class="roma-week-extra" aria-label="Cliente e normativa da remessa">
           <span class="roma-week-extra-client" title="Cliente: ${escape(info.clientes)}"><b>Cliente</b> ${escape(info.clientes)}</span>
@@ -790,67 +810,6 @@
           <span class="roma-week-extra-type" title="Tipo: ${escape(info.tipos)}"><b>Tipo</b> ${escape(info.tipos)}</span>
         </div>
       </li>`;
-    }
-
-    async function saveWeekShippingDate(input) {
-      const card = input.closest('[data-card-remessa]');
-      if (!card || !state.canEdit || !state.authenticated) return;
-      const {cardRemessa: remessa, cardTrack: track, cardDate: date} = card.dataset;
-      const records = weekCardRecords(track, date, remessa);
-      const value = input.value;
-      const oldValue = weekCardInfo(track, date, remessa).embarque;
-      const status = card.querySelector('.week-card-save');
-      const display = card.querySelector('[data-embarque-label]');
-      if (!records.length || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        input.value = oldValue;
-        if (display) display.textContent = `${oldValue.slice(8,10)}/${oldValue.slice(5,7)}`;
-        status.textContent = 'Selecione uma data válida';
-        return;
-      }
-      input.disabled = true;
-      status.textContent = 'Salvando…';
-      let written = 0;
-      try {
-        root.Roma.requireWrite('planejamento');
-        const actor = root.Roma.session;
-        if (!actor?.uid) throw new Error('Sessão inválida. Faça login novamente.');
-        // Transações pequenas evitam limites do Firestore e impedem sobrescrever
-        // um embarque alterado por outra pessoa desde a última consulta.
-        for (let i = 0; i < records.length; i += 100) {
-          const batch = records.slice(i,i+100);
-          await sdk.runTransaction(db, async transaction => {
-            const refs = batch.map(row => sdk.doc(db,'taloes',row.id));
-            const snapshots = await Promise.all(refs.map(ref => transaction.get(ref)));
-            snapshots.forEach((snapshot,index) => {
-              const row = batch[index];
-              if (!snapshot.exists()) throw new Error('Um talão foi removido. Consulte a semana novamente.');
-              const current = snapshot.data();
-              if (text(current.dataEmbarquePlanejada) !== text(row.dataEmbarquePlanejada))
-                throw new Error('A data de embarque foi alterada em outro acesso. Consulte a semana novamente.');
-              const currentPlan = helper.getPlan(current);
-              if (currentPlan.track !== Number(track) || currentPlan.date !== date || text(current.numeroRemessa) !== remessa)
-                throw new Error('O planejamento mudou em outro acesso. Consulte a semana novamente.');
-              transaction.update(refs[index], {
-                dataEmbarquePlanejada:value,
-                embarquePlanejadoAtualizadoEm:sdk.serverTimestamp(),
-                embarquePlanejadoAtualizadoPor:actor.uid,
-                embarquePlanejadoAtualizadoPorNome:actor.name || ''
-              });
-            });
-          });
-          batch.forEach(row => {row.dataEmbarquePlanejada=value;});
-          written += batch.length;
-        }
-        if (display) display.textContent = `${value.slice(8,10)}/${value.slice(5,7)}`;
-        status.textContent = 'Salvo';
-      } catch(error) {
-        input.value = oldValue;
-        if (display) display.textContent = `${oldValue.slice(8,10)}/${oldValue.slice(5,7)}`;
-        status.textContent = written ? `Salvo parcialmente (${written}/${records.length}). Consulte novamente.` : 'Não foi salvo';
-        message('weekMessage',errorText(error),'error');
-      } finally {
-        input.disabled = !state.canEdit;
-      }
     }
 
     function renderWeek(result) {
@@ -1107,7 +1066,6 @@
           text(row.numeroRemessa) === text(remessa);
       });
       const unique = field => [...new Set(matching.map(row => cleanOptionalDisplay(row[field])).filter(Boolean))];
-      const departures = unique('dataEmbarquePlanejada').filter(v => /^\d{4}-\d{2}-\d{2}$/.test(v));
       return {
         linhas: unique('linha').join(' / ') || '—',
         clientes: unique('cliente').join(' / ') || '',
@@ -1115,8 +1073,6 @@
         tipos: unique('tipoCliente').join(' / ') || '',
         costura: sumPairs(matching.filter(costuraPending)),
         montagem: sumPairs(matching.filter(row => !helper.isMounted(row))),
-        embarque: departures.length === 1 ? departures[0] : dayISO,
-        divergente: departures.length > 1
       };
     }
 
@@ -1136,9 +1092,9 @@
         return `<article class="roma-print-remessa">
           <div class="roma-print-remessa-top">
             <div class="roma-print-remessa-id"><strong>${escape(item.remessa || 'Sem remessa')}</strong><small>Linha ${escape(info.linhas)}</small></div>
-            <div class="roma-print-metrics"><span><small>Pares</small><b>${number(item.pairs)}</b></span><span><small>Costura</small><b>${number(info.costura)}</b></span><span><small>Montagem</small><b>${number(info.montagem)}</b></span><span><small>Embarque</small><b>${escape(printCompactDate(info.embarque))}</b></span></div>
+            <div class="roma-print-metrics"><span><small>Pares</small><b>${number(item.pairs)}</b></span><span><small>Costura</small><b>${number(info.costura)}</b></span><span><small>Montagem</small><b>${number(info.montagem)}</b></span></div>
           </div>
-          <div class="roma-print-details"><div><b>Cliente:</b> ${escape(info.clientes)}</div><div><b>Normativa:</b> ${escape(info.normativas)}</div><div><b>Tipo:</b> ${escape(info.tipos)}</div>${info.divergente ? '<div class="roma-print-alert">Datas de embarque divergentes entre talões</div>' : ''}</div>
+          <div class="roma-print-details"><div><b>Cliente:</b> ${escape(info.clientes)}</div><div><b>Normativa:</b> ${escape(info.normativas)}</div><div><b>Tipo:</b> ${escape(info.tipos)}</div></div>
         </article>`;
       }).join('');
       return `<section class="roma-print-day-panel"><header class="roma-print-day-head"><div><h2>Trilho ${String(track.track).padStart(2,'0')}</h2><span>${escape(descriptor.label)} · ${escape(dateLabel(day.date))}</span></div><strong>${number(partialPairs)} pares</strong></header>
@@ -1553,14 +1509,50 @@
     ['filterRemessa','filterLinha','filterModelo'].forEach(id => $(id).addEventListener('keydown', event => {
       if (event.key === 'Enter') { event.preventDefault(); void loadPlanning(); }
     }));
+    // O campo permite digitacao de dd/mm (ou dd/mm/aaaa). O botao abre o calendario.
+    function commitTypedPlanDate(field) {
+      if (!field || !state.canEdit || !state.authenticated) return;
+      const wrap = field.closest('.schedule-short-date-wrap');
+      const native = wrap?.querySelector('input[type="date"]');
+      if (!native) return;
+      const value = field.value.trim();
+      if (!value) { field.value = native.value ? shortDate(native.value) : ''; return; }
+      const match = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/.exec(value);
+      const baseYear = native.value ? Number(native.value.slice(0,4)) : new Date().getFullYear();
+      if (match) {
+        const day = Number(match[1]), month = Number(match[2]);
+        const year = match[3] ? Number(match[3]) : baseYear;
+        const test = new Date(year,month-1,day);
+        if (test.getFullYear() === year && test.getMonth() === month-1 && test.getDate() === day) {
+          const iso = `${String(year).padStart(4,'0')}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          field.value = `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}`;
+          if (native.value !== iso) {
+            native.value = iso;
+            native.dispatchEvent(new Event('change',{bubbles:true}));
+          }
+          return;
+        }
+      }
+      field.setCustomValidity('Digite uma data valida: dd/mm ou dd/mm/aaaa');
+      field.reportValidity();
+      field.setCustomValidity('');
+      field.value = native.value ? shortDate(native.value) : '';
+    }
     $('planningTableBody').addEventListener('click', event => {
-      const wrapper = event.target.closest('.schedule-short-date-wrap');
-      if (!wrapper) return;
-      const input = wrapper.querySelector('input[type="date"]');
-      if (!input || input.disabled || event.target === input) return;
-      if (typeof input.showPicker === 'function') {
-        try { input.showPicker(); } catch (_) { input.focus(); }
-      } else input.focus();
+      const target = event.target.closest('.schedule-date-open, .schedule-date-typed');
+      if (!target) return;
+      // O campo de texto aceita digitacao; o primeiro clique tambem abre o calendario.
+      const native = target.closest('.schedule-short-date-wrap')?.querySelector('input[type="date"]');
+      if (!native || native.disabled) return;
+      try { if (typeof native.showPicker === 'function') native.showPicker(); else native.focus(); }
+      catch (_) { native.focus(); }
+    });
+    $('planningTableBody').addEventListener('focusout', event => {
+      if (event.target.matches('.schedule-date-typed')) commitTypedPlanDate(event.target);
+    });
+    $('planningTableBody').addEventListener('keydown', event => {
+      if (!event.target.matches('.schedule-date-typed') || event.key !== 'Enter') return;
+      event.preventDefault(); commitTypedPlanDate(event.target); event.target.blur();
     });
     $('planningTableBody').addEventListener('input', changeInlinePlan);
     $('planningTableBody').addEventListener('change', changeInlinePlan);
@@ -1598,19 +1590,10 @@
         message('weekMessage',errorText(error),'error');
       }
     });
-    $('trackCards').addEventListener('change', event => {
-      const input = event.target.closest('input[data-embarque-date]');
-      if (input) void saveWeekShippingDate(input);
-    });
     $('trackCards').addEventListener('click', event => {
       const button = event.target.closest('button');
       if (!button || button.disabled) return;
-      if (button.matches('[data-open-embarque]')) {
-        const input = button.closest('.roma-week-shipping')?.querySelector('input[data-embarque-date]');
-        if (input && !input.disabled) {
-          try { input.showPicker(); } catch(error) { input.focus(); input.click(); }
-        }
-      } else if (button.matches('[data-week-offset]')) {
+      if (button.matches('[data-week-offset]')) {
         const increment = Number(button.dataset.weekOffset);
         if ([-7,7].includes(increment)) void navigateWeek(increment, button.closest('[data-track]').dataset.track);
       } else if (button.matches('[data-day-taloes-track]')) {
