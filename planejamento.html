@@ -31,7 +31,7 @@
   <script src="roma-producao.js"></script>
   <script src="roma-planejamento.js?v=20261101-trilhos123"></script>
   <script src="navegacao.js"></script>
-  <link rel="stylesheet" href="planejamento.css?v=20261101-atelier-msg-v1">
+  <link rel="stylesheet" href="planejamento.css?v=20261116-data-curta-v6">
 </head>
 <body class="planning-page">
   <main class="planning-main">
@@ -155,7 +155,7 @@
                 <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Costura">Cost.</abbr></th>
                 <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Palmilha">Palm.</abbr></th>
                 <th scope="colgroup" colspan="2" class="schedule-stage-end">Sola</th>
-                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Disponível na fábrica: pares recebidos que ainda aguardam Talonagem">Dis na Fab</abbr></th>
+                <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Disponível na fábrica: pares com Costura e os componentes Palmilha/Sola aplicáveis recebidos">Dis na Fab</abbr></th>
                 <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Talonagem">Talon.</abbr></th>
                 <th scope="colgroup" colspan="2" class="schedule-stage-end"><abbr title="Montagem">Mont.</abbr></th>
                 <th scope="col" rowspan="2" class="schedule-edit-heading">Trilho</th>
@@ -175,7 +175,7 @@
           </table>
         </div>
         <p id="planningResultNote" class="planning-result-note" role="status" aria-live="polite"></p>
-        <p class="planning-footnote">Etapas: pares e talões pendentes. Dis na Fab: quantidades recebidas na fábrica que ainda aguardam Talonagem. Ao talonar, o talão sai desta coluna. O planejamento pode ser feito antes dos recebimentos; os registros de produção continuam na página Montagem.</p>
+        <p class="planning-footnote">Etapas: pares e talões pendentes. Dis na Fab: quantidades disponíveis na fábrica. O planejamento pode ser feito antes dos recebimentos; os registros de produção continuam na página Montagem.</p>
       </section>
     </section>
 
@@ -323,7 +323,7 @@
   </dialog>
 
   <noscript><p class="planning-message error">Ative o JavaScript do navegador para abrir o planejamento de montagem.</p></noscript>
-  <script src="roma-planejamento-page.js?v=20261117-talonagem-fecha-distribuicao"></script>
+  <script src="roma-planejamento-page.js?v=20261116-data-curta-v6"></script>
   <script type="module">
     import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
     import {getAuth,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';
