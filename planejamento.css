@@ -1586,3 +1586,325 @@ body.planning-page:has(#panelPlanejamento:not([hidden])) > .planning-main > .pla
   .roma-week-short-date {display:none!important;}
   .roma-week-shipping .print-embarque-date {font-weight:700;}
 }
+
+
+/* Identificacao adicional de cliente e normativa por remessa - 17/11/2026 */
+@media screen {
+  .roma-week-extra {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    column-gap:9px;
+    align-items:center;
+    padding:4px 9px 5px;
+    border-top:1px solid #edf2f8;
+    background:#fafcff;
+    color:#506b85;
+    font-size:10px;
+    line-height:1.2;
+  }
+  .roma-week-extra > span {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .roma-week-extra b {font-weight:700;color:#174e83;margin-right:3px;}
+}
+@media screen and (max-width:1300px) {
+  .roma-week-extra {padding:4px 6px;font-size:9px;column-gap:5px;}
+}
+@media print {
+  .roma-week-extra {display:flex;gap:8px;padding:3px 5px;border-top:1px solid #ddd;font-size:7pt;}
+  .roma-week-extra > span {min-width:0;overflow-wrap:anywhere;}
+}
+
+
+/* Relatório v8: texto integral do cliente e da normativa na impressão. */
+@media print {
+  @page { size: A4 landscape; margin: 9mm; }
+  body.planning-custom-print .planning-print-sheet {display:block!important;position:static!important;width:100%!important;overflow:visible!important;}
+  body.planning-custom-print .roma-print-report {width:100%;color:#1b2c3f;page-break-after:always;break-after:page;}
+  body.planning-custom-print .roma-print-report:last-child {page-break-after:auto;break-after:auto;}
+  body.planning-custom-print .roma-print-report-head {border-bottom:1px solid #9ba9b8;padding:0 0 3mm;margin-bottom:4mm;}
+  body.planning-custom-print .roma-print-report-head small {font-size:8pt;color:#475569;}
+  body.planning-custom-print .roma-print-report-head h1 {font-size:17pt;line-height:1.15;margin:1mm 0;}
+  body.planning-custom-print .roma-print-report-head p {font-size:9pt;margin:0;color:#475569;}
+  body.planning-custom-print .roma-print-report-panels {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4mm;align-items:start;}
+  body.planning-custom-print .roma-print-weekly .roma-print-report-panels {grid-template-columns:repeat(2,minmax(0,1fr));} 
+  body.planning-custom-print .roma-print-single .roma-print-report-panels {grid-template-columns: minmax(0,1fr);max-width:160mm;margin:auto;}
+  body.planning-custom-print .roma-print-day-panel {border:1px solid #b5c4d4;border-radius:2mm;overflow:visible;min-width:0;break-inside:avoid-page;display:flex;flex-direction:column;}
+  body.planning-custom-print .roma-print-day-head {background:#eaf2fa!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;display:flex;justify-content:space-between;align-items:center;padding:2.5mm 3mm;border-bottom:1px solid #c3d2e1;}
+  body.planning-custom-print .roma-print-day-head h2 {font-size:12pt;margin:0;}
+  body.planning-custom-print .roma-print-day-head span {font-size:8pt;}
+  body.planning-custom-print .roma-print-day-head > strong {font-size:8pt;white-space:nowrap;}
+  body.planning-custom-print .roma-print-rows {padding:2mm;display:block;}
+  body.planning-custom-print .roma-print-remessa {margin-bottom:2mm;border-bottom:1px solid #d5dde7;padding:0 0 2mm;break-inside:avoid;}
+  body.planning-custom-print .roma-print-remessa-top {display:flex;align-items:start;justify-content:space-between;gap:2mm;}
+  body.planning-custom-print .roma-print-remessa-id strong {display:block;font-size:9.5pt;color:#123e71;}
+  body.planning-custom-print .roma-print-remessa-id small {display:block;font-size:7pt;color:#475569;}
+  body.planning-custom-print .roma-print-metrics {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1mm;flex:1;max-width:70%;text-align:right;}
+  body.planning-custom-print .roma-print-metrics > span {min-width:0;}
+  body.planning-custom-print .roma-print-metrics small {display:block;font-size:6pt;color:#5b6778;}
+  body.planning-custom-print .roma-print-metrics b {display:block;font-size:8pt;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
+  body.planning-custom-print .roma-print-details {padding-top:1mm;font-size:7.5pt;line-height:1.25;overflow-wrap:anywhere;word-break:normal;white-space:normal;}
+  body.planning-custom-print .roma-print-details div {margin-top:.5mm;}
+  body.planning-custom-print .roma-print-details b {color:#1b4169;}
+  body.planning-custom-print .roma-print-alert {color:#9a3412;font-size:7pt;}
+  body.planning-custom-print .roma-print-day-panel footer {padding:2mm 3mm;font-size:8pt;border-top:1px solid #d5dde7;}
+  body.planning-custom-print .roma-print-empty {font-size:8pt;color:#64748b;padding:3mm 0;text-align:center;}
+}
+
+/* Roma v9 - identificação completa no card e páginas semanais por dia. */
+@media screen {
+  .roma-week-extra {
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:3px;
+    padding:6px 9px;
+    font-size:10px;
+    line-height:1.3;
+  }
+  .roma-week-extra > span {
+    display:block;
+    min-width:0;
+    overflow:visible;
+    text-overflow:clip;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  .roma-week-extra b { margin-right:5px; }
+}
+@media print {
+  /* Mantém três trilhos agrupados por dia e reserva uma folha a cada
+     sequência de até cinco remessas por trilho. */
+  body.planning-custom-print.print-whole-week .roma-print-week-day {
+    width:100% !important;
+    margin:0;
+    padding:0;
+    break-after:page;
+    page-break-after:always;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day:last-child {
+    break-after:auto;
+    page-break-after:auto;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-head {
+    margin-bottom:3mm;
+    padding-bottom:2mm;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-head h1 {
+    font-size:15pt;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-panels {
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:3mm;
+    align-items:stretch;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-panel {
+    min-width:0;
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-rows {padding:1.5mm;}
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa {
+    padding-bottom:1.5mm;
+    margin-bottom:1.5mm;
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-details {
+    font-size:7pt;
+    line-height:1.16;
+    overflow-wrap:anywhere;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa-id strong {font-size:9pt;}
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-metrics small {font-size:5.6pt;}
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-metrics b {font-size:7.5pt;}
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head {padding:2mm;}
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-panel footer {padding:1.5mm 2mm;}
+}
+
+
+/* Roma v10 - alinhamento dos dados e impressão semanal em A4 retrato. */
+@media screen {
+  .week-day-list > li.week-remessa-card .roma-week-extra,
+  .week-day-list > li.week-remessa-card .roma-week-extra > span {
+    text-align: left !important;
+    justify-content: flex-start;
+    align-items: flex-start;
+    direction: ltr;
+  }
+  .week-day-list > li.week-remessa-card .roma-week-extra {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 9px;
+  }
+  .week-day-list > li.week-remessa-card .roma-week-extra > span {
+    display: block;
+    width: 100%;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+}
+@media print {
+  @page { size: A4 portrait; margin: 8mm; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day,
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-panels {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-panels {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+    gap: 2mm !important;
+    align-items: stretch;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-head {
+    margin-bottom: 3mm;
+    padding-bottom: 2mm;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-head h1 { font-size: 14pt; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head { padding: 2mm 1.5mm; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head h2 { font-size: 10pt; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head span,
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head > strong { font-size: 7pt; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-rows { padding: 1mm; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa {
+    padding: 0 0 1.5mm;
+    margin-bottom: 1.5mm;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa-top {
+    gap: .5mm;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa-id strong { font-size: 8pt; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa-id small { font-size: 6pt; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-metrics {
+    max-width: 76%;
+    gap: .3mm;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-metrics small { font-size: 5pt; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-metrics b { font-size: 6.6pt; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-details {
+    font-size: 6.8pt;
+    line-height: 1.22;
+    text-align: left !important;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    white-space: normal;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-details div {
+    text-align: left !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-panel footer {
+    padding: 1.5mm;
+    font-size: 7pt;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-panel {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+}
+
+/* Roma v11: tipo de remessa nos cards e continuação por trilho no relatório. */
+@media screen {
+ .week-day-list > li.week-remessa-card .roma-week-extra-type {display:block;width:100%;text-align:left;overflow-wrap:anywhere;}
+}
+@media print {
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-panels {align-items:start !important;}
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-panel {align-self:start !important;}
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa {break-inside:avoid;page-break-inside:avoid;}
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-details {font-size:6.6pt;line-height:1.13;}
+  body.planning-custom-print .roma-print-continua {font-weight:800;color:#8a3b08;}
+  body.planning-custom-print .roma-print-fim {font-weight:700;color:#315d3b;}
+}
+
+/* Roma v12: relatorio semanal mais compacto, sem desperdicio de altura.
+   Regras restritas a impressao da semana (demais impressões preservadas). */
+@media print {
+  body.planning-custom-print.print-whole-week .roma-print-week-day {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 3mm;
+    padding: 0 0 1.2mm !important;
+    margin: 0 0 2mm !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-head small { display: none !important; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-head h1 {
+    font-size: 11pt !important;
+    line-height: 1.08 !important;
+    margin: 0 !important;
+    white-space: nowrap;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-head p {
+    font-size: 6.9pt !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+    text-align: right;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-report-panels {
+    gap: 1.6mm !important;
+    align-items: start !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-panel {
+    border-radius: 1mm !important;
+    padding: 0 !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head {
+    padding: 1.2mm 1.5mm !important;
+    min-height: 0 !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head h2 {
+    font-size: 8pt !important;
+    line-height: 1.1 !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head span {
+    font-size: 5.6pt !important;
+    line-height: 1.05 !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-head > strong {
+    font-size: 6pt !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-rows { padding: .6mm 1mm !important; }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa {
+    padding: 0 0 .85mm !important;
+    margin-bottom: .8mm !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa-id strong {
+    font-size: 7.5pt !important;
+    line-height: 1.08 !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-remessa-id small {
+    font-size: 5.8pt !important;
+    line-height: 1.05 !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-metrics small {
+    font-size: 4.8pt !important;
+    line-height: 1.06 !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-metrics b {
+    font-size: 6.2pt !important;
+    line-height: 1.06 !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-details {
+    padding-top: .5mm !important;
+    font-size: 6.2pt !important;
+    line-height: 1.11 !important;
+    overflow-wrap: anywhere !important;
+    text-align: left !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-details div {
+    margin-top: .2mm !important;
+  }
+  body.planning-custom-print.print-whole-week .roma-print-week-day .roma-print-day-panel footer {
+    padding: 1mm 1.5mm !important;
+    font-size: 6.4pt !important;
+    line-height: 1.1 !important;
+  }
+}
