@@ -828,12 +828,8 @@
       const hoje = getTodayIso();
       const batch = writeBatch(db);
       grupo.forEach((t, id) => {
-        const payload = { atualizadoEm: serverTimestamp() };
-        if (!hasDate(t.cabedalData)) payload.cabedalData = hoje;
-        if (!hasDate(t.forroData)) payload.forroData = hoje;
-        if (!hasDate(t.tirasData)) payload.tirasData = hoje;
-        if (!hasDate(t.aviamentoData)) payload.aviamentoData = hoje;
-        if (!hasDate(t.costuraDataInicio)) payload.costuraDataInicio = hoje;
+        const operador = String(currentUserData?.Nome || currentUserData?.email || 'Admin');
+        const payload = { ...window.Roma.closeCutPatch(t, hoje, operador), atualizadoEm: serverTimestamp() };
         batch.update(doc(db, 'taloes', id), payload);
       });
 
@@ -845,14 +841,8 @@
         grupo.forEach((t, id) => {
           const idx = taloes.findIndex(item => item.id === id);
           if (idx >= 0) {
-            taloes[idx] = {
-              ...taloes[idx],
-              cabedalData: taloes[idx].cabedalData || hoje,
-              forroData: taloes[idx].forroData || hoje,
-              tirasData: taloes[idx].tirasData || hoje,
-              aviamentoData: taloes[idx].aviamentoData || hoje,
-              costuraDataInicio: taloes[idx].costuraDataInicio || hoje
-            };
+            const operador = String(currentUserData?.Nome || currentUserData?.email || 'Admin');
+            taloes[idx] = { ...taloes[idx], ...window.Roma.closeCutPatch(taloes[idx], hoje, operador) };
           }
         });
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recebimento Costura - Calçados Roma</title>
   <script src="firebase-config.js"></script>
-  <script src="roma-core.js?v=20261105-fluxo"></script>
+  <script src="roma-core.js?v=20261118-fluxo-movimentacoes"></script>
   <script src="navegacao.js"></script>
   <link rel="stylesheet" href="roma-fabrica.css?v=20261105-tabs-layout-v42">
 </head>
@@ -108,7 +108,7 @@
     window.addEventListener('unhandledrejection',event=>showCosturaStartupError(event.reason));
   </script>
   <script>
-/* Recebimento Costura R3 — encerra somente Costura, dispensando leituras prévias no ateliê. */
+/* Recebimento Costura — regulariza Corte e Costura pendentes ao registrar a chegada na fábrica. */
 (function (root) {
   'use strict';
   const MODES = Object.freeze({
@@ -161,7 +161,7 @@
           if(config.sector){
             const stage=root.Roma.SECTORS[config.sector];
             if(!root.Roma.stageApplicable(current,config.sector)) throw new Error(`Este modelo não contém ${stage.name.toLowerCase()}.`);
-            if(config.sector!=='costura' && !current[stage.start]) throw new Error(`Não é possível registrar a entrada. A saída para o ateliê de ${stage.name} ainda não foi lançada.`);
+            // A leitura na fábrica regulariza automaticamente entrada/saída pendentes do ateliê.
           }
           const date=root.Roma.localISODate();
           const patch=mode==='talonagem' ? root.Roma.talonagemPatch(current,date,session.name) : root.Roma.factoryReceiptPatch(current,mode,date,session.name);
@@ -248,7 +248,8 @@
           if(!snap.exists()) return;
           const current=snap.data();
           if(!root.Roma.stageApplicable(current,config.sector)) return;
-          if(current.dataEntradaTalonagem || current.dataEntradaMontagem) return;
+          // Revalida dentro da transação para nunca sobrescrever uma movimentação concorrente.
+          if(current[stage.start] || current[stage.end] || current[receipt.date] || current.dataEntradaTalonagem || current.dataEntradaMontagem) return;
           const patch={
             [stage.owner]:String(atelier.id),
             [stage.nameField]:String(atelier.nome||atelier.Nome||''),
@@ -269,8 +270,7 @@
       const records=(await selectBulk(params)).filter(t=>root.Roma.stageApplicable(t,config.sector));
       if(!records.length) throw new Error('Nenhum talão aplicável encontrado para este lote.');
       const stage=root.Roma.SECTORS[config.sector], receipt=fieldsFor(mode);
-      const semSaida=config.sector==='costura'?[]:records.filter(t=>!t[stage.start] && !t[receipt.date]);
-      if(semSaida.length) throw new Error(`${semSaida.length} talão(ões) deste lote ainda não possuem saída para o ateliê. Registre a saída antes da entrada.`);
+      // Em lote também regulariza automaticamente as pendências anteriores do ateliê.
       const date=root.Roma.localISODate(), session=root.Roma.session;
       let changed=0, pairs=0;
       for(const source of records) {

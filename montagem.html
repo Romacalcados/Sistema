@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
   <script src="firebase-config.js"></script>
-<script src="roma-core.js?v=20261105-fluxo"></script>
+<script src="roma-core.js?v=20261118-fluxo-movimentacoes"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Montagem - Calçados Roma</title>
     <style>
@@ -656,7 +656,8 @@ function listenToTaloes() {
                 const dataMontagemISO = window.Roma.localISODate();
                 const periodoSelecionado = periodoProducaoSelect.value;
                 const updates = {
-                    ...window.Roma.assemblyClosurePatch(talao, dataMontagemISO, currentUserName),
+                    // O fechamento das etapas anteriores é calculado dentro da transação,
+                    // sempre sobre a versão mais recente do talão.
                     statusGeral: 'Montado',
                     dataEntradaMontagem: dataMontagemISO,
                     trilhoProduzido: selectedTrilho.value,

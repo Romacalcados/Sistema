@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recebimento Palmilha - Calçados Roma</title>
   <script src="firebase-config.js"></script>
-  <script src="roma-core.js?v=20261105-fluxo"></script>
+  <script src="roma-core.js?v=20261118-fluxo-movimentacoes"></script>
   <script src="navegacao.js"></script>
   <link rel="stylesheet" href="roma-fabrica.css?v=20261105-tabs-layout-v42">
 </head>
@@ -39,7 +39,7 @@
 
         <section class="factory-card factory-movement-card factory-receive-card factory-tab-panel" data-factory-panel="receive" aria-labelledby="receiveTitle" hidden>
           <h2 id="receiveTitle">Entrada / Recebimento — Palmilha</h2>
-          <p class="factory-help">Registre a chegada à fábrica. Não é necessário escolher ateliê. A entrada só é aceita quando houver saída anterior.</p>
+          <p class="factory-help">Registre a chegada à fábrica. Não é necessário escolher ateliê. Ao registrar a chegada, o sistema fecha automaticamente entrada/saída do ateliê que ainda estiverem pendentes.</p>
           <div class="factory-operation-block"><h3>Talão individual</h3><div class="factory-bulk-grid">
             <div class="factory-span-2"><label for="receiveBarcode">Código de barras</label><input id="receiveBarcode" type="text" placeholder="Leia ou digite o código" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
           </div><button id="receiveIndividualButton" class="factory-button" type="button">Registrar entrada do talão</button></div>
@@ -109,7 +109,7 @@
       }
     },true);
   </script>
-  <script src="roma-fabrica.js?v=20261106-recebimento-auto-saida"></script>
+  <script src="roma-fabrica.js?v=20261118-recebimento-regulariza-anteriores"></script>
   <script type="module">
     import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
     import {getAuth,onAuthStateChanged,signOut} from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';

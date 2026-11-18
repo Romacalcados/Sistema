@@ -1065,229 +1065,237 @@ async function performMassUpdate(updates) {
 
 // Botão Fechar Corte
 addSafeListener(btnFecharCorte, 'click', () => {
-  performMassUpdate({
-    statusCorte: 'Cortado',
-    aviamentoData: getTodayDate(),
-    cabedalData: getTodayDate(),
-    forroData: getTodayDate(),
-    tirasData: getTodayDate(),
-    aviamentoConcluido: true,
-    cabedalConcluido: true,
-    forroConcluido: true,
-    tirasConcluido: true
-  });
-}, 'btnFecharCorte');
-
-// Botão Fechar Costura
-addSafeListener(btnFecharCostura, 'click', () => {
   if (filteredTaloes.length === 0) {
     showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
     return;
   }
-  const confirmationMessage = `Tem certeza que deseja fechar a Costura para ${filteredTaloes.length} talões filtrados? Apenas talões **sem data de saída** serão atualizados.`;
-
+  const confirmationMessage = `Tem certeza que deseja fechar o Corte para ${filteredTaloes.length} talões filtrados? Somente campos pendentes serão preenchidos.`;
   showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
     let successCount = 0;
     const today = getTodayDate();
     try {
       for (const talao of filteredTaloes) {
-        // Checa se a data de Saída da Costura está vazia
-        if (!talao.dataSaidaCostura) {
-          const docRef = db.collection('taloes').doc(talao.id);
-          const updateData = {
-            dataSaidaCostura: today,
-            statusCostura: 'Finalizado',
-            costuraDataInicio: today // Pode ser um campo redundante, mas mantido.
-          };
-          await docRef.update(updateData);
+        const docRef = db.collection('taloes').doc(talao.id);
+        await db.runTransaction(async transaction => {
+          const snap = await transaction.get(docRef);
+          if (!snap.exists) return;
+          const current = snap.data();
+          const repairDate = current.dataEntradaDistribuicao || current.dataEntradaTalonagem || current.dataEntradaMontagem || today;
+          const patch = window.Roma.closeCutPatch(current, repairDate, currentUserName || 'Admin');
+          transaction.update(docRef, patch);
           successCount++;
-        }
+        });
       }
-      showMessageModal('Sucesso', `${successCount} talões atualizados (Saída Costura registrada).`, 'success');
+      showMessageModal('Sucesso', `${successCount} talões atualizados no Corte.`, 'success');
     } catch (error) {
-      console.error('Erro na atualização em massa da Costura:', error);
-      showMessageModal('Erro', `Erro na atualização da Costura: ${error.message}`, 'error');
+      console.error('Erro ao fechar Corte:', error);
+      showMessageModal('Erro', `Erro ao fechar Corte: ${error.message}`, 'error');
+    }
+  });
+}, 'btnFecharCorte');
+
+// Botão Fechar Costura — fecha somente o processo do ateliê, preservando datas já registradas.
+addSafeListener(btnFecharCostura, 'click', () => {
+  if (filteredTaloes.length === 0) {
+    showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
+    return;
+  }
+  const confirmationMessage = `Tem certeza que deseja fechar a Costura para ${filteredTaloes.length} talões filtrados? Somente campos pendentes serão preenchidos.`;
+  showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
+    let successCount = 0;
+    const today = getTodayDate();
+    try {
+      for (const talao of filteredTaloes) {
+        const docRef = db.collection('taloes').doc(talao.id);
+        await db.runTransaction(async transaction => {
+          const snap = await transaction.get(docRef);
+          if (!snap.exists) return;
+          const current = snap.data();
+          const repairDate = current.dataEntradaDistribuicao || current.dataEntradaTalonagem || current.dataEntradaMontagem || today;
+          const patch = window.Roma.closeSectorPatch(current, 'costura', repairDate, currentUserName || 'Admin', { receive: false });
+          if (!current.dataEntradaDistribuicao && !current.dataEntradaTalonagem && !current.dataEntradaMontagem) patch.statusGeral = 'Costurado';
+          transaction.update(docRef, patch);
+          successCount++;
+        });
+      }
+      showMessageModal('Sucesso', `${successCount} talões atualizados na Costura.`, 'success');
+    } catch (error) {
+      console.error('Erro ao fechar Costura:', error);
+      showMessageModal('Erro', `Erro ao fechar Costura: ${error.message}`, 'error');
     }
   });
 }, 'btnFecharCostura');
 
-// Botão Fechar Palmilha
+// Botão Fechar Palmilha — fecha entrada, saída e recebimento pendentes do setor.
 addSafeListener(btnFecharPalmilha, 'click', () => {
   if (filteredTaloes.length === 0) {
     showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
     return;
   }
   const confirmationMessage = `Tem certeza que deseja fechar a Palmilha para ${filteredTaloes.length} talões filtrados? Somente campos pendentes serão preenchidos.`;
-
   showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
-    let successCount = 0;
-    let ignoredCount = 0;
+    let successCount = 0, ignoredCount = 0;
     const today = getTodayDate();
     try {
       for (const talao of filteredTaloes) {
-        const componentes = talao.componentes || {};
-        const aplicaPalmilha = componentes.palmilha !== false && talao.statusPalmilha !== 'Não se aplica';
-        if (!aplicaPalmilha) {
-          ignoredCount++;
-          continue;
-        }
-
-        const updateData = {};
-        if (!talao.palmilhaDataInicio) updateData.palmilhaDataInicio = today;
-        if (!talao.dataSaidaPalmilha) updateData.dataSaidaPalmilha = today;
-        if (!talao.dataRecebimentoPalmilha) updateData.dataRecebimentoPalmilha = today;
-        if (talao.statusPalmilha !== 'Finalizado') updateData.statusPalmilha = 'Finalizado';
-
-        if (Object.keys(updateData).length) {
-          await db.collection('taloes').doc(talao.id).update(updateData);
+        const docRef = db.collection('taloes').doc(talao.id);
+        await db.runTransaction(async transaction => {
+          const snap = await transaction.get(docRef);
+          if (!snap.exists) { ignoredCount++; return; }
+          const current = snap.data();
+          if (!window.Roma.stageApplicable(current, 'palmilha')) { ignoredCount++; return; }
+          const repairDate = current.dataRecebimentoPalmilha || current.dataEntradaTalonagem || current.dataEntradaMontagem || today;
+          const patch = window.Roma.closeSectorPatch(current, 'palmilha', repairDate, currentUserName || 'Admin', { receive: true });
+          transaction.update(docRef, patch);
           successCount++;
-        } else {
-          ignoredCount++;
-        }
+        });
       }
-      showMessageModal('Sucesso', `${successCount} talões atualizados na Palmilha. ${ignoredCount} já estavam concluídos ou não utilizam Palmilha.`, 'success');
+      showMessageModal('Sucesso', `${successCount} talões atualizados na Palmilha. ${ignoredCount} não utilizam Palmilha ou foram ignorados.`, 'success');
     } catch (error) {
-      console.error('Erro na atualização em massa da Palmilha:', error);
+      console.error('Erro ao fechar Palmilha:', error);
       showMessageModal('Erro', `Erro ao fechar Palmilha: ${error.message}`, 'error');
     }
   });
 }, 'btnFecharPalmilha');
 
-// Botão Fechar Sola
+// Botão Fechar Sola — fecha entrada, saída e recebimento pendentes do setor.
 addSafeListener(btnFecharSola, 'click', () => {
   if (filteredTaloes.length === 0) {
     showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
     return;
   }
   const confirmationMessage = `Tem certeza que deseja fechar a Sola para ${filteredTaloes.length} talões filtrados? Somente campos pendentes serão preenchidos.`;
-
   showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
-    let successCount = 0;
-    let ignoredCount = 0;
+    let successCount = 0, ignoredCount = 0;
     const today = getTodayDate();
     try {
       for (const talao of filteredTaloes) {
-        const componentes = talao.componentes || {};
-        const aplicaSola = componentes.sola !== false && talao.statusSola !== 'Não se aplica';
-        if (!aplicaSola) {
-          ignoredCount++;
-          continue;
-        }
-
-        const updateData = {};
-        if (!talao.solaDataInicio) updateData.solaDataInicio = today;
-        if (!talao.dataSaidaSola) updateData.dataSaidaSola = today;
-        if (!talao.dataRecebimentoSola) updateData.dataRecebimentoSola = today;
-        if (talao.statusSola !== 'Finalizado') updateData.statusSola = 'Finalizado';
-
-        if (Object.keys(updateData).length) {
-          await db.collection('taloes').doc(talao.id).update(updateData);
+        const docRef = db.collection('taloes').doc(talao.id);
+        await db.runTransaction(async transaction => {
+          const snap = await transaction.get(docRef);
+          if (!snap.exists) { ignoredCount++; return; }
+          const current = snap.data();
+          if (!window.Roma.stageApplicable(current, 'sola')) { ignoredCount++; return; }
+          const repairDate = current.dataRecebimentoSola || current.dataEntradaTalonagem || current.dataEntradaMontagem || today;
+          const patch = window.Roma.closeSectorPatch(current, 'sola', repairDate, currentUserName || 'Admin', { receive: true });
+          transaction.update(docRef, patch);
           successCount++;
-        } else {
-          ignoredCount++;
-        }
+        });
       }
-      showMessageModal('Sucesso', `${successCount} talões atualizados na Sola. ${ignoredCount} já estavam concluídos ou não utilizam Sola.`, 'success');
+      showMessageModal('Sucesso', `${successCount} talões atualizados na Sola. ${ignoredCount} não utilizam Sola ou foram ignorados.`, 'success');
     } catch (error) {
-      console.error('Erro na atualização em massa da Sola:', error);
+      console.error('Erro ao fechar Sola:', error);
       showMessageModal('Erro', `Erro ao fechar Sola: ${error.message}`, 'error');
     }
   });
 }, 'btnFecharSola');
 
-// Botão Distribuição
+// Botão Distribuição / Recebimento Costura — fecha Corte + entrada/saída Costura + recebimento.
 addSafeListener(btnFecharDistribuicao, 'click', () => {
   if (filteredTaloes.length === 0) {
     showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
     return;
   }
-  const confirmationMessage = `Tem certeza que deseja fechar a Distribuição para ${filteredTaloes.length} talões filtrados? Apenas talões **sem data de entrada** serão atualizados.`;
-
+  const confirmationMessage = `Tem certeza que deseja registrar o Recebimento Costura para ${filteredTaloes.length} talões filtrados? As etapas anteriores pendentes serão fechadas automaticamente.`;
   showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
-    let successCount = 0;
+    let successCount = 0, ignoredCount = 0;
     const today = getTodayDate();
     try {
       for (const talao of filteredTaloes) {
-        // Checa se a data de Entrada na Distribuição está vazia
-        if (!talao.dataEntradaDistribuicao) {
-          const docRef = db.collection('taloes').doc(talao.id);
-          const updateData = {
-            dataEntradaDistribuicao: today,
-            statusCostura: 'Finalizado' // Mantém a atualização do status
+        const docRef = db.collection('taloes').doc(talao.id);
+        await db.runTransaction(async transaction => {
+          const snap = await transaction.get(docRef);
+          if (!snap.exists) { ignoredCount++; return; }
+          const current = snap.data();
+          const repairDate = current.dataEntradaDistribuicao || current.dataEntradaTalonagem || current.dataEntradaMontagem || today;
+          const actor = current.usuarioDistribuicao || current.usuarioTalonagem || current.usuarioMontagem || currentUserName || 'Admin';
+          const patch = {
+            ...window.Roma.closeCutPatch(current, repairDate, actor),
+            ...window.Roma.closeSectorPatch(current, 'costura', repairDate, actor, { receive: true })
           };
-          await docRef.update(updateData);
+          if (!current.dataEntradaDistribuicao && !current.dataEntradaTalonagem && !current.dataEntradaMontagem) patch.statusGeral = 'Distribuído';
+          transaction.update(docRef, patch);
           successCount++;
-        }
+        });
       }
-      showMessageModal('Sucesso', `${successCount} talões atualizados (Entrada Distribuição registrada).`, 'success');
+      showMessageModal('Sucesso', `${successCount} talões recebidos na Costura. ${ignoredCount} já estavam recebidos ou foram ignorados.`, 'success');
     } catch (error) {
-      console.error('Erro na atualização em massa da Distribuição:', error);
-      showMessageModal('Erro', `Erro na atualização da Distribuição: ${error.message}`, 'error');
+      console.error('Erro no Recebimento Costura:', error);
+      showMessageModal('Erro', `Erro no Recebimento Costura: ${error.message}`, 'error');
     }
   });
 }, 'btnFecharDistribuicao');
 
-// Botão Talonagem
+// Botão Talonagem — ao avançar, fecha todas as etapas anteriores que estiverem pendentes.
 addSafeListener(btnFecharTalonagem, 'click', () => {
   if (filteredTaloes.length === 0) {
     showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
     return;
   }
-  const confirmationMessage = `Tem certeza que deseja fechar a Talonagem para ${filteredTaloes.length} talões filtrados? Apenas talões **sem data de entrada** serão atualizados.`;
-
+  const confirmationMessage = `Tem certeza que deseja fechar a Talonagem para ${filteredTaloes.length} talões filtrados? Todas as etapas anteriores pendentes serão regularizadas.`;
   showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
-    let successCount = 0;
+    let successCount = 0, ignoredCount = 0;
     const today = getTodayDate();
     try {
       for (const talao of filteredTaloes) {
-        // Checa se a data de Entrada na Talonagem está vazia
-        if (!talao.dataEntradaTalonagem) {
-          const docRef = db.collection('taloes').doc(talao.id);
-          const updateData = {
-            dataEntradaTalonagem: today
-          };
-          await docRef.update(updateData);
+        const docRef = db.collection('taloes').doc(talao.id);
+        await db.runTransaction(async transaction => {
+          const snap = await transaction.get(docRef);
+          if (!snap.exists) { ignoredCount++; return; }
+          const current = snap.data();
+          let patch;
+          if (current.dataEntradaTalonagem || current.dataEntradaMontagem) {
+            const repairDate = current.dataEntradaTalonagem || current.dataEntradaMontagem;
+            const actor = current.usuarioTalonagem || current.usuarioMontagem || currentUserName || 'Admin';
+            patch = window.Roma.assemblyClosurePatch(current, repairDate, actor);
+          } else {
+            patch = window.Roma.talonagemPatch(current, today, currentUserName || 'Admin');
+          }
+          transaction.update(docRef, patch);
           successCount++;
-        }
+        });
       }
-      showMessageModal('Sucesso', `${successCount} talões atualizados (Entrada Talonagem registrada).`, 'success');
+      showMessageModal('Sucesso', `${successCount} talões talonados. ${ignoredCount} já estavam talonados ou foram ignorados.`, 'success');
     } catch (error) {
-      console.error('Erro na atualização em massa da Talonagem:', error);
-      showMessageModal('Erro', `Erro na atualização da Talonagem: ${error.message}`, 'error');
+      console.error('Erro ao fechar Talonagem:', error);
+      showMessageModal('Erro', `Erro ao fechar Talonagem: ${error.message}`, 'error');
     }
   });
 }, 'btnFecharTalonagem');
 
-// Botão Montagem
+// Botão Montagem — garante o fechamento de Corte, ateliês, recebimentos e Talonagem antes de montar.
 addSafeListener(btnFecharMontagem, 'click', () => {
   if (filteredTaloes.length === 0) {
     showMessageModal('Atenção', 'Nenhum talão filtrado para atualização.', 'error');
     return;
   }
-  const confirmationMessage = `Tem certeza que deseja fechar a Montagem para ${filteredTaloes.length} talões filtrados? Apenas talões **sem data de montagem** serão atualizados.`;
-  
+  const confirmationMessage = `Tem certeza que deseja fechar a Montagem para ${filteredTaloes.length} talões filtrados? Todas as etapas anteriores pendentes serão regularizadas.`;
   showMessageModal('Confirmar Ação', confirmationMessage, 'confirm', async () => {
-    let successCount = 0;
+    let successCount = 0, ignoredCount = 0;
     const today = getTodayDate();
     try {
-      // Itera APENAS sobre os talões filtrados
       for (const talao of filteredTaloes) {
-        // ** VERIFICAÇÃO CONDICIONAL **
-        // Se o talão NÃO tiver dataEntradaMontagem (é nulo ou vazio)
-        if (!talao.dataEntradaMontagem) {
-          const docRef = db.collection('taloes').doc(talao.id);
-          const updateData = {
-            dataEntradaMontagem: today, // Seta a data de hoje
-            statusGeral: 'Montado'      // Garante que o status é 'Montado'
+        const docRef = db.collection('taloes').doc(talao.id);
+        await db.runTransaction(async transaction => {
+          const snap = await transaction.get(docRef);
+          if (!snap.exists) { ignoredCount++; return; }
+          const current = snap.data();
+          const montagemDate = current.dataEntradaMontagem || today;
+          const actor = current.usuarioMontagem || currentUserName || 'Admin';
+          const patch = {
+            ...window.Roma.assemblyClosurePatch(current, montagemDate, actor),
+            ...(!current.dataEntradaMontagem ? { dataEntradaMontagem: montagemDate, usuarioMontagem: actor } : {}),
+            statusMontagem: 'Montado',
+            statusGeral: 'Montado'
           };
-          await docRef.update(updateData);
+          transaction.update(docRef, patch);
           successCount++;
-        }
+        });
       }
-      showMessageModal('Sucesso', `${successCount} talões atualizados (Montagem registrada).`, 'success');
+      showMessageModal('Sucesso', `${successCount} talões montados. ${ignoredCount} já estavam montados ou foram ignorados.`, 'success');
     } catch (error) {
-      console.error('Erro na atualização em massa da Montagem:', error);
-      showMessageModal('Erro', `Erro na atualização da Montagem: ${error.message}`, 'error');
+      console.error('Erro ao fechar Montagem:', error);
+      showMessageModal('Erro', `Erro ao fechar Montagem: ${error.message}`, 'error');
     }
   });
 }, 'btnFecharMontagem');

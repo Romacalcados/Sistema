@@ -1,0 +1,91 @@
+CALCADOS ROMA - AUDITORIA DE MOVIMENTACOES
+Data: 18/11/2026
+
+REGRA OPERACIONAL VALIDADA
+
+1. ATELIES (Costura / Palmilha / Sola)
+- Entrada do atelie registra inicio do setor.
+- Saida do atelie continua BLOQUEADA se nao houver entrada/inicio anterior.
+- A saida finaliza apenas o proprio setor do atelie.
+- A regra esta centralizada em roma-setores.js e tambem protegida pelas regras do Firestore.
+
+2. RECEBIMENTO COSTURA - FABRICA
+- Ao ler o talao na fabrica, o sistema regulariza automaticamente o que estiver pendente antes desse ponto.
+- Fecha Corte pendente (componentes aplicaveis, datas e status).
+- Fecha Entrada Costura pendente.
+- Fecha Saida Costura pendente.
+- Registra dataEntradaDistribuicao / usuarioDistribuicao.
+- Datas que ja existirem sao preservadas e nao sao sobrescritas.
+
+3. SOLA E PALMILHA - SAIDA PARA ATELIE
+- A saida da fabrica para o atelie define o atelie responsavel.
+- Essa movimentacao ja registra o inicio/entrada do setor no atelie.
+- Lotes revalidam os dados dentro da transacao para nao sobrescrever movimentacao concorrente.
+
+4. RECEBIMENTO SOLA / PALMILHA - FABRICA
+- A leitura da fabrica NAO exige que o atelie tenha bipado entrada/saida.
+- Se estiverem pendentes, registra automaticamente:
+  * entrada/inicio do setor;
+  * saida do atelie;
+  * status Finalizado;
+  * recebimento na fabrica e operador.
+- O mesmo vale para leitura individual e lote.
+- Datas ja existentes sao preservadas.
+
+5. TALONAGEM
+- Ao talonar, fecha todas as etapas anteriores que ainda estiverem abertas:
+  * Corte;
+  * Costura + recebimento fabrica;
+  * Palmilha + recebimento fabrica, quando aplicavel;
+  * Sola + recebimento fabrica, quando aplicavel.
+- Pendencias recebem a data da propria Talonagem.
+- Registra dataEntradaTalonagem e usuarioTalonagem.
+
+6. MONTAGEM
+- Ao montar, garante o fechamento de todas as etapas anteriores.
+- Se ja existir Talonagem, qualquer pendencia anterior usa a DATA DA TALONAGEM, e nao a data da Montagem.
+- Se nao existir Talonagem, a Montagem regulariza os anteriores e cria a Talonagem com a data da Montagem.
+- O fechamento e calculado novamente dentro da transacao usando a versao mais recente do talao.
+
+7. PROGRAMACAO DE CORTE
+- O botao Fechar corte nao registra mais costuraDataInicio.
+- Agora fecha somente os campos do Corte de forma completa e coerente.
+
+8. FECHAMENTO DE REMESSAS / ENCERRAMENTO
+- Ferramenta administrativa passou a usar as mesmas regras centrais de fechamento.
+- Reparos preservam datas existentes.
+- Quando um processo posterior ja existe, campos anteriores pendentes herdam a data do processo que comprova o fechamento (Recebimento, Talonagem ou Montagem), evitando data retroativa incorreta.
+
+ARQUIVOS AJUSTADOS
+- roma-core.js
+- roma-fabrica.js
+- distribuicao.html
+- recebimento_sola.html
+- recebimento_palmilha.html
+- talonagem.html
+- montagem.html
+- programacaocrt.html
+- encerramento.html
+
+ARQUIVOS CONFERIDOS SEM NECESSIDADE DE ALTERACAO
+- roma-setores.js
+- costura_entrada.html
+- costura_saida.html
+- palmilha_entrada.html
+- palmilha_saida.html
+- sola_entrada.html
+- sola_saida.html
+- corte.html
+- firestore.rules
+
+VALIDACOES EXECUTADAS
+- Verificacao de sintaxe dos scripts JS compartilhados.
+- Verificacao de sintaxe dos scripts embutidos nas paginas de movimentacao.
+- Teste da sequencia Entrada -> Saida dos atelies.
+- Teste de bloqueio de Saida sem Entrada.
+- Teste de recebimento Palmilha/Sola sem bip anterior do atelie.
+- Teste de Recebimento Costura fechando Corte + Costura.
+- Teste de preservacao de datas ja registradas.
+- Teste de Talonagem fechando etapas anteriores com a data da Talonagem.
+- Teste de Montagem herdando a data da Talonagem para pendencias anteriores.
+- Conferencia estatica dos campos permitidos pelas regras do Firestore.

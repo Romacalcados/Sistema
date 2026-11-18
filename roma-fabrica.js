@@ -51,7 +51,8 @@
           if(config.sector){
             const stage=root.Roma.SECTORS[config.sector];
             if(!root.Roma.stageApplicable(current,config.sector)) throw new Error(`Este modelo não contém ${stage.name.toLowerCase()}.`);
-            if(!current[stage.start]) throw new Error(`Não é possível registrar a entrada. A saída para o ateliê de ${stage.name} ainda não foi lançada.`);
+            // A leitura na fábrica regulariza automaticamente entrada/saída pendentes do ateliê.
+            // O bloqueio de saída sem entrada permanece somente nas páginas do próprio ateliê.
           }
           const date=root.Roma.localISODate();
           const patch=mode==='talonagem' ? root.Roma.talonagemPatch(current,date,session.name) : root.Roma.factoryReceiptPatch(current,mode,date,session.name);
@@ -138,7 +139,8 @@
           if(!snap.exists()) return;
           const current=snap.data();
           if(!root.Roma.stageApplicable(current,config.sector)) return;
-          if(current.dataEntradaTalonagem || current.dataEntradaMontagem) return;
+          // Revalida dentro da transação para nunca sobrescrever uma movimentação concorrente.
+          if(current[stage.start] || current[stage.end] || current[receipt.date] || current.dataEntradaTalonagem || current.dataEntradaMontagem) return;
           const patch={
             [stage.owner]:String(atelier.id),
             [stage.nameField]:String(atelier.nome||atelier.Nome||''),
@@ -159,8 +161,7 @@
       const records=(await selectBulk(params)).filter(t=>root.Roma.stageApplicable(t,config.sector));
       if(!records.length) throw new Error('Nenhum talão aplicável encontrado para este lote.');
       const stage=root.Roma.SECTORS[config.sector], receipt=fieldsFor(mode);
-      const semSaida=records.filter(t=>!t[stage.start] && !t[receipt.date]);
-      if(semSaida.length) throw new Error(`${semSaida.length} talão(ões) deste lote ainda não possuem saída para o ateliê. Registre a saída antes da entrada.`);
+      // Recebimento em lote segue a mesma regra da leitura individual: pendências do ateliê são fechadas automaticamente.
       const date=root.Roma.localISODate(), session=root.Roma.session;
       let changed=0, pairs=0;
       for(const source of records) {
