@@ -29,7 +29,7 @@
     if (!applicable(t,stage) || !complete(t,stage)) return '';
     return stage==='corte' ? root.Roma.cutCompletionDate(t) || '' : dateISO(t?.[END_FIELDS[stage]]);
   }
-  function emptyStage() { return {paresFaltando:0,taloesFaltando:0,allDone:true,maxDate:null,aplicaveis:0}; }
+  function emptyStage() { return {paresFaltando:0,taloesFaltando:0,allDone:true,maxDate:null,aplicaveis:0,semData:0}; }
   function addToStage(group,t,stage) {
     if (!applicable(t,stage)) return group;
     group.aplicaveis++;
@@ -40,6 +40,7 @@
     } else {
       const date=completedDate(t,stage);
       if(date && (!group.maxDate || date>group.maxDate)) group.maxDate=date;
+      if(!date) group.semData++;
     }
     return group;
   }
@@ -50,7 +51,9 @@
     if(!applicable(t,stage)) return '<span class="stage-na" title="Este componente não faz parte do modelo">Não se aplica</span>';
     if(!complete(t,stage)) return '<span class="stage-pending">Pendente</span>';
     const date=completedDate(t,stage);
-    return `<span class="status-check">✔ ${date ? formatDate(date) : 'Concluído'}</span>`;
+    return date
+      ? `<span class="status-check">✔ ${formatDate(date)}</span>`
+      : '<span class="stage-date-missing" title="Etapa marcada como finalizada, mas a data de fechamento não foi registrada no talão. Verifique o cadastro antes de corrigir.">⚠ Sem data</span>';
   }
   function escape(value) { return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
   function entryDetail(t,sector,formatDate) {
