@@ -810,7 +810,11 @@
       .date-picker-actions { flex-direction: column; align-items: stretch; }
       .date-picker-actions > div { justify-content: flex-end; }
     }
-  </style>
+      .detail-header-actions { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
+    .detail-print-button { background: #175da1; color: white; border: 0; border-radius: 7px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
+    .detail-print-button:hover { background: #104777; }
+    @media (max-width: 600px) { .detail-header-actions { gap: 7px; } .detail-print-button { padding: 8px; font-size: 12px; } }
+</style>
 
 
   <style id="modal-remessas-padrao-factor">
@@ -1089,7 +1093,10 @@
           <h3 id="cardDetailTitle">Lista de talões</h3>
           <p id="cardDetailSubtitle" class="modal-subtitle"></p>
         </div>
-        <span class="close-button" id="closeCardDetailModalButton">&times;</span>
+        <div class="detail-header-actions">
+          <button type="button" id="printCardDetailButton" class="detail-print-button" title="Imprimir os talões exibidos neste relatório">&#128424; Imprimir relatório</button>
+          <span class="close-button" id="closeCardDetailModalButton">&times;</span>
+        </div>
       </div>
       <div class="modal-body">
         <div id="cardDetailTotals" class="detail-summary-bar"></div>
@@ -1254,6 +1261,7 @@
     const atelierSummaryCard = document.getElementById("atelierSummaryCard");
     const cardDetailModal = document.getElementById("cardDetailModal");
     const closeCardDetailModalButton = document.getElementById("closeCardDetailModalButton");
+    const printCardDetailButton = document.getElementById("printCardDetailButton");
     const cardDetailTitle = document.getElementById("cardDetailTitle");
     const cardDetailSubtitle = document.getElementById("cardDetailSubtitle");
     const cardDetailTotals = document.getElementById("cardDetailTotals");
@@ -2211,6 +2219,71 @@
       cardDetailModal.classList.add("show");
     }
 
+    function printCardDetailReport() {
+      // Imprime exatamente os talões visíveis após os filtros deste modal.
+      const taloes = applyCardDetailFilters(currentCardDetailTaloes);
+      if (!taloes.length) {
+        alert("Não há talões para imprimir com os filtros selecionados.");
+        return;
+      }
+      const title = cardDetailTitle.textContent || "Relatório Ateliê - Costura";
+      const subtitle = cardDetailSubtitle.textContent || "";
+      const modelos = new Set(taloes.map(getModelKey)).size;
+      const filters = [
+        detailRemoveProduced?.checked ? "Remover talões já produzidos" : "",
+        detailOnlyNoEntry?.checked ? "Talões sem entrada" : "",
+        detailOnlyBippedNotFactory?.checked ? "Bipados na costura e não na fábrica" : ""
+      ].filter(Boolean);
+      // A tabela já renderizada conserva os mesmos agrupamentos e estados da tela.
+      const tableHTML = cardDetailTableBody.innerHTML;
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        alert("O navegador bloqueou a janela de impressão. Autorize pop-ups para esta página e tente novamente.");
+        return;
+      }
+      const documentHTML = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+        <title>${escapeHTML(title)} - Calçados Roma</title>
+        <style>
+          @page { size: A4 landscape; margin: 12mm; }
+          * { box-sizing: border-box; }
+          body { font-family: Arial, Helvetica, sans-serif; color: #172b45; margin: 0; font-size: 10px; }
+          .print-header { border-bottom: 2px solid #244e7e; padding-bottom: 9px; margin-bottom: 15px; }
+          .brand { font-weight: 700; letter-spacing: .06em; color: #244e7e; font-size: 11px; }
+          h1 { font-size: 19px; margin: 6px 0 4px; }
+          .subtitle, .filters, .date { color: #516478; margin-top: 4px; }
+          .totals { display: flex; gap: 20px; margin: 10px 0; padding: 8px 10px; background: #eef3f8; border: 1px solid #d8e2ee; font-size: 12px; }
+          .remessa-card { margin-bottom: 14px; break-inside: auto; page-break-inside: auto; }
+          .remessa-card-header { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px 10px; background: #edf2f8; border: 1px solid #cbd7e5; padding: 7px 9px; break-after: avoid; page-break-after: avoid; }
+          .remessa-card-header > div { min-width: 0; }
+          .remessa-info-label { display:block; font-size: 8px; font-weight: 700; color: #61758b; text-transform: uppercase; }
+          .remessa-info-value { display:block; margin-top: 2px; font-weight: 700; font-size: 10px; }
+          table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+          thead { display: table-header-group; }
+          th, td { border: 1px solid #cbd5e0; padding: 4px 5px; text-align: center; overflow-wrap: anywhere; }
+          th { background: #e4ecf5; text-transform: uppercase; font-size: 8px; }
+          td { font-size: 9px; }
+          th:nth-child(2), td:nth-child(2) { width: 15%; }
+          tr { break-inside: avoid; page-break-inside: avoid; }
+          .alert-cell, .missing-date-x { color: #a02b16; font-weight: bold; }
+          .missing-date-x { font-size: 14px; }
+          .empty-message { padding: 20px; text-align: center; }
+          @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        </style></head><body>
+        <div class="print-header"><div class="brand">CALÇADOS ROMA · RELATÓRIO ATELIÊ — COSTURA</div>
+        <h1>${escapeHTML(title)}</h1><div class="subtitle">${escapeHTML(subtitle)}</div>
+        <div class="date">Impresso em ${escapeHTML(new Date().toLocaleString("pt-BR"))}</div>
+        ${filters.length ? `<div class="filters"><strong>Filtros:</strong> ${filters.map(escapeHTML).join(" · ")}</div>` : ""}</div>
+        <div class="totals"><span><strong>${taloes.length.toLocaleString("pt-BR")}</strong> talões</span>
+        <span><strong>${sumTotal(taloes).toLocaleString("pt-BR")}</strong> pares</span>
+        <span><strong>${modelos.toLocaleString("pt-BR")}</strong> modelos</span></div>
+        ${tableHTML}
+        <script>window.addEventListener('load', () => { window.focus(); window.print(); });<\/script>
+        </body></html>`;
+      printWindow.document.open();
+      printWindow.document.write(documentHTML);
+      printWindow.document.close();
+    }
+
     function closeCardDetailModal() {
       cardDetailModal.classList.remove("show");
     }
@@ -2257,6 +2330,7 @@
     quickFiltersButton.addEventListener("click", openQuickModal);
     closeModalButton.addEventListener("click", closeModal);
     closeCardDetailModalButton.addEventListener("click", closeCardDetailModal);
+    printCardDetailButton.addEventListener("click", printCardDetailReport);
     closeQuickModalButton.addEventListener("click", closeQuickModal);
     closeDateModalButton.addEventListener("click", closeDateModal);
     corteRangeButton.addEventListener("click", () => openDateModal("corte"));
