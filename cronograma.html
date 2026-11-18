@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <script src="firebase-config.js"></script>
 <script src="roma-core.js"></script>
-  <script src="roma-producao.js"></script>
+  <script src="roma-producao.js?v=cronograma-datas-v19"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cronograma - Calçados Roma | Padrão Factor + Planejamento</title>
   <style>
@@ -25,6 +25,7 @@
     nav a{color:#fff;text-decoration:none;padding:6px 12px;border-radius:6px;display:block}
     nav a:hover{background:#777}
     .main-content{flex:1;padding:16px;display:flex;flex-direction:column;align-items:center}
+    .stage-date-missing{display:inline-block;color:#ad5200;font-weight:700;font-size:.86em;margin-left:5px;white-space:nowrap}
     /* Aumento o gap e centralizo para acomodar os novos botões */
     .filters-container{background:var(--card);padding:10px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08);width:100%;max-width:95%;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:flex-end}
     .form-group{display:flex;flex-direction:column;min-width:120px}
@@ -2131,7 +2132,7 @@
     function etapaCell(etapa,addSep,stageName){
       const classes=`${addSep?'separator-border':''} col-${stageName}`;
       if(etapa.aplicaveis===0) return `<td colspan="2" class="${classes} stage-na" title="Componente ausente dos modelos deste grupo">Não se aplica</td>`;
-      if(etapa.allDone) return `<td colspan="2" class="${classes}"><span class="status-check">✔ ${etapa.maxDate?formatDateAbreviado(etapa.maxDate):'Concluído'}</span></td>`;
+      if(etapa.allDone) return `<td colspan="2" class="${classes}">${etapa.maxDate ? `<span class="status-check">✔ ${formatDateAbreviado(etapa.maxDate)}</span>` : ''}${etapa.semData ? `<span class="stage-date-missing" title="${etapa.semData} talão(ões) com etapa concluída sem data registrada">⚠ ${etapa.semData} sem data</span>` : ''}</td>`;
       return `<td class="col-${stageName}">${etapa.paresFaltando}</td><td class="${classes}">${etapa.taloesFaltando}</td>`;
     }
 
